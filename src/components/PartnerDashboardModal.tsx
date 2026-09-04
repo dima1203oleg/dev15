@@ -6,6 +6,14 @@ import {
 } from 'lucide-react';
 import { PartnerProfile, WalletProjection, ReferralAttribution, LedgerEntry, PayoutRequest } from '../types';
 
+function parseMinorUnits(value: string): number {
+  const normalized = value.trim().replace(',', '.');
+  if (!/^\d+(?:\.\d{0,2})?$/.test(normalized)) return 0;
+  const [whole, fraction = ''] = normalized.split('.');
+  const minor = Number(`${whole}${fraction.padEnd(2, '0')}`);
+  return Number.isSafeInteger(minor) ? minor : 0;
+}
+
 interface PartnerDashboardModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -20,7 +28,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'TOOLKIT' | 'NETWORK' | 'LEDGER' | 'PAYOUTS'>('OVERVIEW');
   const [copiedLink, setCopiedLink] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
-  const [payoutAmount, setPayoutAmount] = useState<string>('500');
+  const [payoutAmount, setPayoutAmount] = useState<string>('0');
   const [payoutProvider, setPayoutProvider] = useState<'MONOBANK' | 'LIQPAY' | 'IBAN_SEPA'>('MONOBANK');
   const [payoutCardNumber, setPayoutCardNumber] = useState<string>('5375 4141 2948 1029');
   const [payoutSuccessMsg, setPayoutSuccessMsg] = useState<string | null>(null);
@@ -85,14 +93,19 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
 
   const wallet: WalletProjection = dashboardData?.wallet || {
     partnerId: partner.id,
-    pendingMinor: 45000,
+    pendingMinor: 0,
     heldMinor: 0,
-    availableMinor: 124500,
+    availableMinor: 0,
     lockedPayoutMinor: 0,
-    paidTotalMinor: 154000,
-    lifetimeEarnedMinor: 323500,
+    paidTotalMinor: 0,
+    lifetimeEarnedMinor: 0,
     currency: 'UAH'
   };
+
+  const payoutEligibility = dashboardData?.payoutEligibility;
+  const minimumPayoutMinor = Number.isSafeInteger(payoutEligibility?.minimumPayoutMinor)
+    ? payoutEligibility.minimumPayoutMinor
+    : null;
 
   const rankProgress = dashboardData?.rankProgress || {
     currentPaidL1: 154,
@@ -112,7 +125,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
 
   const handleRequestPayout = async (e: React.FormEvent) => {
     e.preventDefault();
-    const amountMinor = Math.round(Number(payoutAmount) * 100);
+    const amountMinor = parseMinorUnits(payoutAmount);
     try {
       const res = await fetch('/api/partner/payouts', {
         method: 'POST',
@@ -578,18 +591,20 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                   </label>
                   <input
                     type="number"
-                    min="500"
+                    min={minimumPayoutMinor === null ? undefined : minimumPayoutMinor / 100}
                     max={wallet.availableMinor / 100}
                     value={payoutAmount}
                     onChange={(e) => setPayoutAmount(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono text-base font-bold"
                   />
-                  <span className="text-[10px] text-slate-500 mt-1 block">Мінімум: 500 грн • Комісія: 0%</span>
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    Мінімум: {minimumPayoutMinor === null ? 'очікує FX snapshot' : `${(minimumPayoutMinor / 100).toLocaleString('uk-UA')} грн`} • Комісія провайдера — за рахунок партнера
+                  </span>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={wallet.availableMinor < 50000}
+                  disabled={minimumPayoutMinor === null || wallet.availableMinor < minimumPayoutMinor}
                   className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 disabled:opacity-40 text-slate-950 text-xs font-bold transition-all shadow"
                 >
                   Підтвердити та вивести кошти

@@ -4,6 +4,8 @@ Multi-device spatial product experience and prototype platform for SIREN UA.
 
 The canonical product direction is [`docs/MULTI_DEVICE_MASTER_SPEC.md`](docs/MULTI_DEVICE_MASTER_SPEC.md): one normalized intelligence core with device-specific Desktop, Laptop, Smartphone, Tablet, Foldable, TV, Watch, Automotive, Kiosk, Situation Board and XR presentation layers.
 
+The backend financial boundary is documented in [`docs/PARTNER_PLATFORM_MASTER_SPEC.md`](docs/PARTNER_PLATFORM_MASTER_SPEC.md). It is intentionally explicit about the current `NOT_CONNECTED` payment/FX/KYC/payout adapters.
+
 ## Run locally
 
 ```bash
@@ -28,6 +30,7 @@ Desktop architecture and viewport acceptance: [`docs/DESKTOP_EXPERIENCE.md`](doc
 ```bash
 npm run lint
 npm run build
+npm run test:financial
 ```
 
 See [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md) for the exact blockers before production use.

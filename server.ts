@@ -10,12 +10,15 @@ import {
   LedgerEntry, 
   WalletProjection, 
   PayoutRequest, 
-  CapValidationResult,
   AuditLogItem,
   UserSession,
   RankType,
   RiskLevel
 } from './src/types';
+import {
+  NotConnectedPayoutProvider,
+  validateAllocationCap
+} from './src/domain/partnerPlatform';
 
 // ============================================================================
 // IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
@@ -216,6 +219,7 @@ let attributions: ReferralAttribution[] = [];
 let ledgerEntries: LedgerEntry[] = [];
 let payoutRequests: PayoutRequest[] = [];
 let auditLogs: AuditLogItem[] = [];
+const payoutProvider = new NotConnectedPayoutProvider();
 
 // Seed Demo Partner (Gold Rank with realistic 154 Active L1s)
 const demoPartnerId = 'partner-demo-01';
@@ -399,17 +403,6 @@ function calculateWallet(partnerId: string): WalletProjection {
     }
   }
 
-  // Ensure minimum baseline display for demo realism
-  if (availableMinor < 124500) {
-    availableMinor = 124500; // 1,245.00 UAH
-  }
-  if (pendingMinor < 45000) {
-    pendingMinor = 45000; // 450.00 UAH
-  }
-  if (lifetimeEarnedMinor < 323500) {
-    lifetimeEarnedMinor = 323500; // 3,235.00 UAH
-  }
-
   return {
     partnerId,
     pendingMinor,
@@ -422,25 +415,6 @@ function calculateWallet(partnerId: string): WalletProjection {
   };
 }
 
-// 50% Hard Cap Validation Engine
-function validateCap(l1RateBps: number, l2RateBps: number, campaignBonusBps = 0): CapValidationResult {
-  const totalAllocationBps = l1RateBps + l2RateBps + campaignBonusBps;
-  const maxCapBps = 5000; // 50.00%
-  const passed = totalAllocationBps <= maxCapBps;
-
-  return {
-    passed,
-    totalAllocationBps,
-    maxCapBps,
-    l1RateBps,
-    l2RateBps,
-    campaignBonusBps,
-    reason: passed 
-      ? `CAP_VALIDATION_PASS: Загальний відсоток ${totalAllocationBps / 100}% не перевищує ліміт 50% QCB`
-      : `CAP_VALIDATION_FAILED: Перевищення 50% ліміту: ${totalAllocationBps / 100}% > 50.00%`
-  };
-}
-
 // ============================================================================
 // EXPRESS APPLICATION INITIALIZATION
 // ============================================================================
@@ -450,6 +424,12 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  const financialUnavailable = (res: express.Response) => res.status(503).json({
+    error: 'FINANCIAL_DATA_NOT_CONNECTED',
+    status: 'NOT_CONNECTED',
+    message: 'Фінансові дані, автентифікація та partner provider ще не підключені.'
+  });
 
   // --------------------------------------------------------------------------
   // 1. THREAT PIPELINE API (SirenUA-ThreatServer Integration Client)
@@ -528,6 +508,7 @@ async function startServer() {
 
   // Current User Session
   app.get('/api/auth/session', (req, res) => {
+    if (!financialDemoEnabled) return financialUnavailable(res);
     const partner = partners.get(demoPartnerId);
     const wallet = calculateWallet(demoPartnerId);
 
@@ -547,6 +528,7 @@ async function startServer() {
 
   // Switch Demo Role (For seamless UX testing)
   app.post('/api/auth/switch-role', (req, res) => {
+    if (!financialDemoEnabled) return financialUnavailable(res);
     const { role, rank } = req.body;
     const partner = partners.get(demoPartnerId);
 
@@ -572,6 +554,7 @@ async function startServer() {
 
   // Partner Dashboard Summary
   app.get('/api/partner/dashboard', (req, res) => {
+    if (!financialDemoEnabled) return financialUnavailable(res);
     const partner = partners.get(demoPartnerId);
     if (!partner) return res.status(404).json({ error: 'Partner not found' });
 
@@ -616,16 +599,36 @@ async function startServer() {
         formulaNotice: 'Партнерська ставка однакова для кваліфікованих L1 та L2.'
       },
       payoutEligibility: {
-        canRequestPayout: wallet.availableMinor >= 50000, // 500.00 UAH minimum
-        minimumPayoutMinor: 50000,
+        canRequestPayout: false,
+        minimumPayout: { baseCurrency: 'USD', baseAmount: '10.00', payoutCurrency: 'UAH', amountMinor: null, status: 'FX_SOURCE_NOT_CONNECTED' },
+        minimumPayoutMinor: null,
+        feesPaidBy: 'PARTNER',
         kycStatus: 'VERIFIED',
-        taxStatus: 'VERIFIED'
+        taxStatus: 'VERIFIED',
+        providerStatus: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED'
       }
+    });
+  });
+
+  // Financial platform capability/status boundary. This is intentionally
+  // explicit: UI may explain what is configured, but cannot infer a live
+  // payment, FX, KYC or payout connection from demo fixtures.
+  app.get('/api/partner/platform-status', (req, res) => {
+    res.json({
+      subscriptionBilling: 'NOT_CONNECTED',
+      fx: 'NOT_CONNECTED',
+      payoutProvider: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED',
+      kyc: 'NOT_CONNECTED',
+      fraud: 'RULES_ONLY',
+      ledger: 'IN_MEMORY_DEMO_PROJECTION',
+      financialDataMode: financialDemoEnabled ? 'DEMO_DATA' : 'NOT_CONNECTED',
+      productionNotice: 'Реальні платежі, FX, KYC та виплати потребують підключених server-side adapters.'
     });
   });
 
   // Network (L1 and L2 referrals list with privacy masking)
   app.get('/api/partner/network', (req, res) => {
+    if (!financialDemoEnabled) return financialUnavailable(res);
     const l1List = attributions.filter(a => a.referrerL1Id === demoPartnerId);
     const l2List = attributions.filter(a => a.referrerL2Id === demoPartnerId);
 
@@ -646,6 +649,7 @@ async function startServer() {
 
   // Earnings & Immutable Ledger Projection
   app.get('/api/partner/ledger', (req, res) => {
+    if (!financialDemoEnabled) return financialUnavailable(res);
     const entries = ledgerEntries.filter(e => e.partnerId === demoPartnerId);
     const wallet = calculateWallet(demoPartnerId);
 
@@ -659,82 +663,16 @@ async function startServer() {
 
   // Payout Request Submission
   app.post('/api/partner/payouts', (req, res) => {
-    if (!financialDemoEnabled) {
-      return res.status(503).json({
-        error: 'PAYOUT_PROVIDER_NOT_CONNECTED',
-        message: 'Провайдер виплат не підключений. Реальні кошти не переміщуються.'
-      });
-    }
-    const { amountMinor, provider, destinationAccount, idempotencyKey } = req.body;
-
-    const wallet = calculateWallet(demoPartnerId);
-    const amount = Number(amountMinor) || 50000;
-
-    if (amount < 50000) {
-      return res.status(400).json({ error: 'Мінімальна сума для виведення становить 500.00 грн (50000 minor units).' });
-    }
-
-    if (wallet.availableMinor < amount) {
-      return res.status(400).json({ error: 'Недостатньо доступних коштів на балансі гаманця.' });
-    }
-
-    const newPayout: PayoutRequest = {
-      id: `PO-${Date.now().toString(36).toUpperCase()}`,
-      partnerId: demoPartnerId,
-      amountMinor: amount,
-      currency: 'UAH',
-      provider: provider || 'MONOBANK',
-      destinationAccount: destinationAccount || 'UA823220010000026007123456789',
-      status: 'PROCESSING',
-      idempotencyKey: idempotencyKey || `idem-${Date.now()}`,
-      kycVerified: true,
-      taxIdVerified: true,
-      requestedAt: new Date().toISOString()
-    };
-
-    payoutRequests.push(newPayout);
-
-    // Immutable Ledger Entry for balance lock
-    ledgerEntries.push({
-      id: `led-${Date.now()}`,
-      transactionId: newPayout.id,
-      timestamp: new Date().toISOString(),
-      debitAccount: 'PARTNER_AVAILABLE_PAYABLE',
-      creditAccount: 'PARTNER_LOCKED_PAYOUT',
-      amountMinor: amount,
-      currency: 'UAH',
-      partnerId: demoPartnerId,
-      description: `Блокування коштів під виплату ${newPayout.id} (${provider})`,
-      idempotencyKey: newPayout.idempotencyKey
-    });
-
-    // Simulate fast settlement for demo
-    setTimeout(() => {
-      newPayout.status = 'PAID';
-      newPayout.completedAt = new Date().toISOString();
-      ledgerEntries.push({
-        id: `led-settle-${Date.now()}`,
-        transactionId: newPayout.id,
-        timestamp: new Date().toISOString(),
-        debitAccount: 'PARTNER_LOCKED_PAYOUT',
-        creditAccount: 'PAYOUT_DISBURSEMENT',
-        amountMinor: amount,
-        currency: 'UAH',
-        partnerId: demoPartnerId,
-        description: `Успішна виплата коштів ${newPayout.id} на рахунок ${destinationAccount}`,
-        idempotencyKey: `settle-${newPayout.idempotencyKey}`
-      });
-    }, 1500);
-
-    res.json({
-      success: true,
-      payout: newPayout,
-      message: 'Запит на виплату прийнято в обробку. Кошти будуть зараховані автоматично.'
+    return res.status(503).json({
+      error: payoutProvider.connected ? 'PAYOUT_PROVIDER_NOT_IMPLEMENTED' : 'PAYOUT_PROVIDER_NOT_CONNECTED',
+      message: 'Провайдер виплат не підключений. Реальні кошти не переміщуються.',
+      status: 'NOT_CONNECTED'
     });
   });
 
   // Payout History
   app.get('/api/partner/payouts', (req, res) => {
+    if (!financialDemoEnabled) return financialUnavailable(res);
     const list = payoutRequests.filter(p => p.partnerId === demoPartnerId);
     res.json({
       payouts: list.slice().reverse()
@@ -747,6 +685,7 @@ async function startServer() {
 
   // Admin Overview
   app.get('/api/admin/overview', (req, res) => {
+    if (!financialDemoEnabled) return financialUnavailable(res);
     const allPartners = Array.from(partners.values());
     let totalPaidMinor = 0;
     let totalAvailableMinor = 0;
@@ -772,8 +711,15 @@ async function startServer() {
   // Admin Validate Cap
   app.post('/api/admin/validate-cap', (req, res) => {
     const { l1RateBps, l2RateBps, campaignBonusBps } = req.body;
-    const result = validateCap(Number(l1RateBps) || 0, Number(l2RateBps) || 0, Number(campaignBonusBps) || 0);
-    res.json(result);
+    const l1 = Number(l1RateBps) || 0;
+    const l2 = Number(l2RateBps) || 0;
+    const campaign = Number(campaignBonusBps) || 0;
+    const result = validateAllocationCap([
+      { partnerId: 'L1', referralLevel: 'L1', rateBps: l1 },
+      { partnerId: 'L2', referralLevel: 'L2', rateBps: l2 },
+      { partnerId: 'CAMPAIGN', referralLevel: 'L1', rateBps: campaign }
+    ]);
+    res.json({ ...result, l1RateBps: l1, l2RateBps: l2, campaignBonusBps: campaign });
   });
 
   // Admin Toggle Threat Server Connection
@@ -791,6 +737,9 @@ async function startServer() {
 
   // Admin Simulation Sandbox Triggers
   app.post('/api/admin/sandbox/create-paid-user', (req, res) => {
+    if (!financialDemoEnabled) {
+      return res.status(409).json({ error: 'DEMO_ONLY', message: 'Sandbox-фінансові сценарії вимкнені поза development/demo mode.' });
+    }
     const partner = partners.get(demoPartnerId);
     if (!partner) return res.status(404).json({ error: 'Partner not found' });
 

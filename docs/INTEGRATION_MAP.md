@@ -10,4 +10,4 @@ Expected future boundary: shared identity, subscription status, region preferenc
 
 ## Payments and payouts
 
-Expected future boundary: recipient verification, KYC/AML, payout creation, provider webhook and reconciliation. Current in-memory payout settlement is allowed only in development/demo mode and is explicitly blocked in production.
+Expected future boundary: recipient verification, KYC/AML, payout creation, provider webhook and reconciliation. The current implementation has no settlement path: it returns `PAYOUT_PROVIDER_NOT_CONNECTED` and never simulates a paid payout.
