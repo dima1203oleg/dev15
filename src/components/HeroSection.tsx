@@ -5,9 +5,11 @@ import {
   Award
 } from 'lucide-react';
 import { ThreatEvent } from '../types';
+import { DEMO_SPATIAL_MODEL, EMPTY_SPATIAL_MODEL } from '../data/spatialModel';
 import { ThreeDShowcase } from './ThreeDShowcase';
 import { HeroIntelligenceStack } from './HeroIntelligenceStack';
 import { DeviceExperienceLab } from './DeviceExperienceLab';
+import { MobileExperience } from './MobileExperience';
 
 interface HeroSectionProps {
   onNavigateToMap: () => void;
@@ -26,8 +28,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   threats,
   threatDataMode
 }) => {
+  const mobileModel = threatDataMode === 'DEMO_DATA' ? DEMO_SPATIAL_MODEL : { ...EMPTY_SPATIAL_MODEL, dataMode: threatDataMode };
+
   return (
     <section className="relative overflow-hidden pt-6 pb-20 lg:pt-10 lg:pb-28">
+
+      <div className="mobile-home-only">
+        <MobileExperience model={mobileModel} onDownload={onNavigateToDownload} />
+      </div>
+
+      <div className="desktop-home-only">
       
       {/* Background High-Tech Cyan & Deep Space Gradients */}
       <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] sm:w-[1000px] h-[450px] bg-gradient-to-b from-cyan-500/10 via-blue-600/10 to-transparent blur-[140px] rounded-full pointer-events-none -z-10"></div>
@@ -346,6 +356,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         </div>
 
+      </div>
       </div>
     </section>
   );

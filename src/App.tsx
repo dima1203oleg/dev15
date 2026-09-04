@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { AlertTicker } from './components/AlertTicker';
 import { HeroSection } from './components/HeroSection';
 import { DesktopModeShell, TVModeShell } from './components/DeviceExperienceLab';
+import { MobileModeShell } from './components/MobileExperience';
 import { ThreatMapSection } from './components/ThreatMapSection';
 import { FeaturesSection } from './components/FeaturesSection';
 import { PartnerLandingSection } from './components/PartnerLandingSection';
@@ -111,29 +112,37 @@ export default function App() {
     return <DesktopModeShell dataMode={threatDataMode} />;
   }
 
+  if (window.location.pathname === '/mobile') {
+    return <MobileModeShell dataMode={threatDataMode} />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#0B0F17] text-slate-100 selection:bg-rose-500/30 selection:text-rose-200">
       
       {/* 1. Header Navigation */}
-      <Header
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-        onOpenPartnerCabinet={() => setIsPartnerCabinetOpen(true)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
-        threats={threats}
-        isThreatServerOnline={isThreatServerOnline}
-        threatDataMode={threatDataMode}
-        currentRole={currentRole}
-        onSwitchRole={handleSwitchRole}
-      />
+      <div className="mobile-global-chrome">
+        <Header
+          activeSection={activeSection}
+          setActiveSection={setActiveSection}
+          onOpenPartnerCabinet={() => setIsPartnerCabinetOpen(true)}
+          onOpenAdmin={() => setIsAdminOpen(true)}
+          threats={threats}
+          isThreatServerOnline={isThreatServerOnline}
+          threatDataMode={threatDataMode}
+          currentRole={currentRole}
+          onSwitchRole={handleSwitchRole}
+        />
+      </div>
 
       {/* 2. Official Alert Safety Ticker */}
-      <AlertTicker
-        threats={threats}
-        isThreatServerOnline={isThreatServerOnline}
-        threatDataMode={threatDataMode}
-        lastSyncAt={lastSyncAt}
-      />
+      <div className="mobile-global-alert">
+        <AlertTicker
+          threats={threats}
+          isThreatServerOnline={isThreatServerOnline}
+          threatDataMode={threatDataMode}
+          lastSyncAt={lastSyncAt}
+        />
+      </div>
 
       {/* 3. Main Sections Layout */}
       <main className="flex-1">

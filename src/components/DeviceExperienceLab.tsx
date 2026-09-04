@@ -33,6 +33,7 @@ import {
   SpatialLayer,
   ThreatSceneModel,
 } from '../data/spatialModel';
+import { MobileExperience } from './MobileExperience';
 
 type DeviceTab = {
   id: SpatialDevice;
@@ -296,7 +297,7 @@ const ARScene: React.FC = () => (
 );
 
 export const DeviceExperienceLab: React.FC<{ dataMode: SpatialDataMode }> = ({ dataMode }) => {
-  const [activeDevice, setActiveDevice] = useState<SpatialDevice>('DESKTOP');
+  const [activeDevice, setActiveDevice] = useState<SpatialDevice>(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches ? 'MOBILE' : 'DESKTOP');
   const model = useMemo(() => dataMode === 'DEMO_DATA' ? DEMO_SPATIAL_MODEL : { ...EMPTY_SPATIAL_MODEL, dataMode }, [dataMode]);
   const activeTab = DEVICE_TABS.find((tab) => tab.id === activeDevice) ?? DEVICE_TABS[1];
   const renderScene = () => {
@@ -304,7 +305,7 @@ export const DeviceExperienceLab: React.FC<{ dataMode: SpatialDataMode }> = ({ d
       case 'TV': return <TVScene model={model} />;
       case 'LAPTOP': return <LaptopScene model={model} />;
       case 'TABLET': return <TabletScene model={model} />;
-      case 'MOBILE': return <MobileScene model={model} />;
+      case 'MOBILE': return <MobileExperience model={model} />;
       case 'WATCH': return <GlanceScene model={model} device="WATCH" />;
       case 'CAR': return <GlanceScene model={model} device="CAR" />;
       case 'AR': return <ARScene />;
