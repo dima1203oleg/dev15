@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { 
   Shield, ArrowRight, Download, Radio, Compass, Navigation, Clock, MapPin, 
   Users, Bell, AlertTriangle, ChevronRight, QrCode, Sparkles, Building2,
@@ -6,11 +6,24 @@ import {
 } from 'lucide-react';
 import { ThreatEvent } from '../types';
 import { DEMO_SPATIAL_MODEL, EMPTY_SPATIAL_MODEL } from '../data/spatialModel';
-import { ThreeDShowcase } from './ThreeDShowcase';
 import { HeroIntelligenceStack } from './HeroIntelligenceStack';
-import { DeviceExperienceLab } from './DeviceExperienceLab';
 import { MobileExperience } from './MobileExperience';
 import { TabletExperience } from './TabletExperience';
+
+const ThreeDShowcase = React.lazy(() => import('./ThreeDShowcase').then(({ ThreeDShowcase: component }) => ({ default: component })));
+const DeviceExperienceLab = React.lazy(() => import('./DeviceExperienceLab').then(({ DeviceExperienceLab: component }) => ({ default: component })));
+
+const SpatialSurfaceLoading: React.FC<{ label: string }> = ({ label }) => (
+  <section className="device-constellation-preview" aria-label={label} aria-busy="true">
+    <div className="device-constellation-preview__grid" aria-hidden="true" />
+    <div className="device-constellation-preview__intro">
+      <div className="device-constellation-preview__eyebrow">SIREN SPATIAL ECOSYSTEM</div>
+      <h2>Завантажуємо просторову систему.</h2>
+      <p>Критична інформація вже доступна в інтерфейсі. Візуальний spatial layer підключається окремо.</p>
+      <div className="device-constellation-preview__state"><span /> INITIALIZING SPATIAL SURFACE</div>
+    </div>
+  </section>
+);
 
 interface HeroSectionProps {
   onNavigateToMap: () => void;
@@ -178,14 +191,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {/* ========================================================================= */}
         {/* THE MASTERPIECE 3D HOLOGRAPHIC & GADGET SHOWCASE — FIRST VISUAL SURFACE  */}
         {/* ========================================================================= */}
-        <ThreeDShowcase
-          onNavigateToDownload={onNavigateToDownload}
-          onNavigateToMap={onNavigateToMap}
-          onNavigateToPartner={onNavigateToPartner}
-          dataMode={threatDataMode}
-        />
+        <Suspense fallback={<SpatialSurfaceLoading label="Завантаження 3D-вітрини пристроїв SIREN UA" />}>
+          <ThreeDShowcase
+            onNavigateToDownload={onNavigateToDownload}
+            onNavigateToMap={onNavigateToMap}
+            onNavigateToPartner={onNavigateToPartner}
+            dataMode={threatDataMode}
+          />
+        </Suspense>
 
-        <DeviceExperienceLab dataMode={threatDataMode} />
+        <Suspense fallback={<SpatialSurfaceLoading label="Завантаження device experience SIREN UA" />}>
+          <DeviceExperienceLab dataMode={threatDataMode} />
+        </Suspense>
 
         {/* ========================================================================= */}
         {/* 4 HIGH-TECH CAPABILITY CARDS (Directly under 3D as in reference images)   */}

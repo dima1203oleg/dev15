@@ -235,6 +235,23 @@ button:focus-visible, a:focus-visible {
     linear-gradient(145deg, rgba(7, 18, 34, 0.96), rgba(2, 8, 18, 0.98));
 }
 
+/* The command surface uses compact metadata, but muted text must remain
+   readable against the deep navy canvas when inspected with WCAG tooling. */
+.desktop-command-stage .text-slate-500,
+.desktop-command-stage .text-slate-600 {
+  color: #94a3b8;
+}
+
+.desktop-mode-shell .text-slate-500,
+.desktop-mode-shell .text-slate-600 {
+  color: #94a3b8;
+}
+
+.tv-mode-shell .text-slate-500,
+.tv-mode-shell .text-slate-600 {
+  color: #94a3b8;
+}
+
 .desktop-command-stage--fullscreen {
   min-height: 100vh;
   border-radius: 0;

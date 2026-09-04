@@ -17,6 +17,7 @@ import {
 } from './src/types';
 import {
   NotConnectedPayoutProvider,
+  percentHalfUp,
   validateAllocationCap
 } from './src/domain/partnerPlatform';
 
@@ -427,7 +428,11 @@ function calculateWallet(partnerId: string): WalletProjection {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const configuredPort = Number.parseInt(process.env.PORT ?? '3000', 10);
+  if (!Number.isInteger(configuredPort) || configuredPort < 1 || configuredPort > 65535) {
+    throw new Error('PORT must be an integer between 1 and 65535.');
+  }
+  const PORT = configuredPort;
 
   app.disable('x-powered-by');
   app.use(express.json({ limit: '100kb' }));
@@ -821,7 +826,7 @@ async function startServer() {
     attributions.unshift(newAttr);
 
     // Post to Immutable Ledger (L1 rate: 20% or 25% of 149 UAH = 29.80 or 37.25 UAH)
-    const commissionMinor = Math.round((14900 * partner.partnerRateBps) / 10000);
+    const commissionMinor = Number(percentHalfUp(14900n, partner.partnerRateBps));
     ledgerEntries.push({
       id: `led-sandbox-${sequence}`,
       transactionId: `TX-SANDBOX-${sequence}`,
@@ -843,6 +848,12 @@ async function startServer() {
       commissionEarnedMinor: commissionMinor,
       partner
     });
+  });
+
+  // Do not let the SPA fallback turn an unknown API call into HTML. Clients
+  // need a deterministic JSON error so retries and monitoring can classify it.
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ error: 'API_NOT_FOUND', message: 'API route не знайдено.' });
   });
 
   // Keep API failures machine-readable. In particular, never leak a parser
@@ -872,7 +883,7 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    app.get(/.*/, (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

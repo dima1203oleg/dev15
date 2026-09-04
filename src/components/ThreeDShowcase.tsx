@@ -45,8 +45,6 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
   onNavigateToPartner,
   dataMode,
 }) => {
-  if (dataMode !== 'DEMO_DATA') return <SpatialUnavailableShowcase dataMode={dataMode} />;
-
   const [activeMode, setActiveMode] = useState<ShowcaseMode>('ECOSYSTEM');
   const [isExploded, setIsExploded] = useState<boolean>(false);
   const [isAutoRotate, setIsAutoRotate] = useState<boolean>(false);
@@ -64,6 +62,10 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
   // Parallax 3D mouse tracking
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Keep hook order stable when the API changes from unavailable to demo/live.
+  // The unavailable surface is a render state, not a different component lifecycle.
+  if (dataMode !== 'DEMO_DATA') return <SpatialUnavailableShowcase dataMode={dataMode} />;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current || isAutoRotate) return;

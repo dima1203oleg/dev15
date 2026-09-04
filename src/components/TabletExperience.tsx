@@ -158,11 +158,11 @@ const TabletSpatialDeck: React.FC<{
       <button type="button" className="tablet-deck-region-hit" onClick={onRegion} aria-label={`Відкрити регіон ${state.personalRegion}`}>
         <span className="tablet-deck-region-pin"><MapPin size={17} /></span><strong>{state.personalRegion}</strong><small>обрана зона · натисніть для деталей</small>
       </button>
-      <div className="tablet-deck-stack" role="list" aria-label="Шари карти">
+      <div className="tablet-deck-stack" role="group" aria-label="Шари карти">
         {displayLayers.map((layer: SpatialLayer, index) => {
           const active = layer.id === state.selectedLayer;
           const reverseIndex = displayLayers.length - index - 1;
-          return <button type="button" role="listitem" key={layer.id} className={`tablet-layer ${layerTone[layer.id]} ${active ? 'is-selected' : ''}`} style={{ ['--tablet-layer-index' as string]: reverseIndex, ['--tablet-layer-gap' as string]: state.layerSeparation }} onClick={() => onLayer(layer.id)} aria-pressed={active}>
+          return <button type="button" key={layer.id} className={`tablet-layer ${layerTone[layer.id]} ${active ? 'is-selected' : ''}`} style={{ ['--tablet-layer-index' as string]: reverseIndex, ['--tablet-layer-gap' as string]: state.layerSeparation }} onClick={() => onLayer(layer.id)} aria-pressed={active}>
             <span className="tablet-layer__edge" /><span><b>{layer.label}</b><small>{layer.detail}</small></span><ChevronRight size={15} />
           </button>;
         })}

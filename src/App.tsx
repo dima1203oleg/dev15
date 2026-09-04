@@ -3,7 +3,6 @@ import confetti from 'canvas-confetti';
 import { Header } from './components/Header';
 import { AlertTicker } from './components/AlertTicker';
 import { HeroSection } from './components/HeroSection';
-import { DesktopModeShell, TVModeShell } from './components/DeviceExperienceLab';
 import { MobileModeShell } from './components/MobileExperience';
 import { TabletModeShell } from './components/TabletExperience';
 import { ThreatMapSection } from './components/ThreatMapSection';
@@ -17,6 +16,18 @@ import { ThreatEvent, RegionAlert, Shelter } from './types';
 import { createSpatialModel } from './data/spatialModel';
 
 type ThreatDataMode = 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
+
+const DesktopModeShell = React.lazy(() => import('./components/DeviceExperienceLab').then(({ DesktopModeShell: component }) => ({ default: component })));
+const TVModeShell = React.lazy(() => import('./components/DeviceExperienceLab').then(({ TVModeShell: component }) => ({ default: component })));
+
+const SpatialRouteLoading: React.FC = () => (
+  <main className="min-h-screen bg-[#040812] px-6 py-10 text-slate-100" aria-busy="true" aria-label="SIREN UA spatial experience">
+    <div className="mx-auto max-w-3xl rounded-3xl border border-cyan-300/20 bg-slate-950/70 p-8">
+      <p className="text-xs font-mono tracking-[0.18em] text-cyan-200">SIREN UA · SPATIAL CORE</p>
+      <p className="mt-3 text-lg font-bold text-white">Завантажуємо просторову систему…</p>
+    </div>
+  </main>
+);
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<string>('home');
@@ -115,11 +126,11 @@ export default function App() {
   };
 
   if (window.location.pathname === '/tv') {
-    return <TVModeShell model={spatialModel} />;
+    return <React.Suspense fallback={<SpatialRouteLoading />}><TVModeShell model={spatialModel} /></React.Suspense>;
   }
 
   if (window.location.pathname === '/desktop') {
-    return <DesktopModeShell model={spatialModel} />;
+    return <React.Suspense fallback={<SpatialRouteLoading />}><DesktopModeShell model={spatialModel} /></React.Suspense>;
   }
 
   if (window.location.pathname === '/mobile') {

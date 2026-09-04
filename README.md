@@ -31,6 +31,11 @@ Desktop architecture and viewport acceptance: [`docs/DESKTOP_EXPERIENCE.md`](doc
 npm run lint
 npm run build
 npm run test:financial
+npm run test:e2e
+npm run test:performance
+npm audit --omit=dev
 ```
+
+`npm run test:e2e` starts the app in an explicit `NOT_CONNECTED` boundary and covers health/readiness contracts, public shells, mobile and desktop interactions, axe checks, golden screenshots, and critical-content timing. `npm run test:performance` enforces the main JavaScript/CSS bundle budgets after a production build.
 
 See [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md) for the exact blockers before production use.
