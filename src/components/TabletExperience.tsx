@@ -156,6 +156,7 @@ const TabletSpatialDeck: React.FC<{
   return <section className="tablet-deck-panel" aria-label="Інтерактивна просторова карта">
     <div className="tablet-deck-heading"><div><span className="tablet-kicker">INTERACTIVE SPATIAL MAP DECK</span><h1>{state.mode === 'ALERT_FOCUS' ? 'Фокус на події' : 'Ситуація, яку можна розкласти'}</h1></div><div className="tablet-deck-tools"><button type="button" className="tablet-icon-button" onClick={() => onSeparate(state.layerSeparation > 0.5 ? 0.16 : 0.82)} aria-label="Розсунути шари" aria-pressed={state.layerSeparation > 0.5}><Layers3 size={18} /></button><span className="tablet-gesture-hint">свайп · pinch · tap</span></div></div>
     <div className={`tablet-spatial-deck ${state.mode === 'ALERT_FOCUS' ? 'tablet-spatial-deck--alert' : ''}`} style={{ ['--tablet-zoom' as string]: state.layerSeparation > 0.6 ? 1.04 : 0.96 }} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+      <div className="tablet-deck-ambient" aria-hidden="true"><div className="tablet-deck-ambient__grid" /><div className="tablet-deck-ambient__halo tablet-deck-ambient__halo--blue" /><div className="tablet-deck-ambient__halo tablet-deck-ambient__halo--amber" /><div className="tablet-deck-ambient__scan" /><div className="tablet-deck-ambient__readout"><span>SPATIAL CORE</span><b>{model.dataMode === 'DEMO_DATA' ? 'SIMULATION' : model.dataMode === 'LIVE' ? 'LIVE FEED' : 'WAITING FOR SOURCE'}</b></div>{model.dataMode === 'DEMO_DATA' && <><i className="tablet-deck-beacon tablet-deck-beacon--one" /><i className="tablet-deck-beacon tablet-deck-beacon--two" /><i className="tablet-deck-beacon tablet-deck-beacon--three" /><span className="tablet-deck-arc tablet-deck-arc--one" /><span className="tablet-deck-arc tablet-deck-arc--two" /></>}</div>
       <div className="tablet-deck-orbit tablet-deck-orbit--one" /><div className="tablet-deck-orbit tablet-deck-orbit--two" />
       <button type="button" className="tablet-deck-region-hit" onClick={onRegion} aria-label={`Відкрити регіон ${state.personalRegion}`}>
         <span className="tablet-deck-region-pin"><MapPin size={17} /></span><strong>{state.personalRegion}</strong><small>обрана зона · натисніть для деталей</small>
@@ -224,7 +225,7 @@ export const TabletExperience: React.FC<{ model: ThreatSceneModel }> = ({ model 
   const [mode, setMode] = useState<TabletMode>('OVERVIEW');
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [personalRegion, setPersonalRegion] = useState(model.region.label);
-  const [activeLayers, setActiveLayers] = useState<SpatialLayerKey[]>(['LIVE_DATA', 'PERSONAL_REGION', 'RISK', 'TRAJECTORY', 'EVENTS']);
+  const [activeLayers, setActiveLayers] = useState<SpatialLayerKey[]>(['LIVE_DATA', 'SHELTERS', 'PERSONAL_REGION', 'RISK', 'TRAJECTORY', 'EVENTS']);
   const [selectedLayer, setSelectedLayer] = useState<SpatialLayerKey>('RISK');
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [contextPanelMode, setContextPanelMode] = useState<PanelMode>('STANDARD');
