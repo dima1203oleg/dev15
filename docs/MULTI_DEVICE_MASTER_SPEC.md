@@ -219,3 +219,63 @@ Definition of production-ready:
 - **Blocked / unverified:** authoritative ThreatServer, SirenUA identity/app contracts, real geographic mesh source, production database, payout provider and full CI/E2E/soak infrastructure because the referenced repositories/integrations are not currently accessible in this workspace.
 - **Current release status:** `BLOCKED`, not `PRODUCTION READY`.
 
+## 13. 3D Visual System — Live Spatial Digital Twin
+
+Цей розділ є єдиним джерелом вимог для 3D-візуальної частини всіх presentation layers.
+
+### 13.1 Core objective
+
+SIREN UA має показувати не звичайну карту з маркерами, а `SIREN UA LIVE SPATIAL DIGITAL TWIN`: нормалізовану просторову модель України, у якій географія, області, персональна зона, ризик, події, траєкторії, укриття, джерела, freshness і час пов’язані між собою.
+
+Wow-effect має виникати від зрозумілої структури даних: focus на області → elevation → relevant event → confirmed/estimated/predicted trajectory → confidence corridor → time reconstruction → повернення до LIVE. Не використовувати screen shake, вибухи, постійний хаотичний glow або military-game стилізацію.
+
+### 13.2 Geometry pipeline
+
+```text
+GeoJSON / TopoJSON
+  → normalization
+  → simplification
+  → triangulation
+  → region meshes
+  → selectable spatial layers
+  → adaptive GPU renderer
+```
+
+Кожна область — окремий selectable mesh із `regionId`, geometry, state, risk, selected/personal flags, `updatedAt` та confidence. PNG/JPEG silhouette не є джерелом географічної істини. До появи доступного authoritative geometry source використовується позначений 2D/2.5D fallback, а не вигадана мапа.
+
+### 13.3 Layer architecture
+
+Підтримати шари `BASE`, `ADMINISTRATIVE`, `INFRASTRUCTURE`, `PERSONAL_REGION`, `SHELTERS`, `RISK`, `EVENTS`, `TRAJECTORIES` і `TEMPORAL`. Compact view показує лише потрібну підмножину; `EXPLODED` view контрольовано розділяє шари по spatial axis і потім плавно recomposes їх.
+
+`SirenSpatialCore` споживає лише normalized `ThreatSceneModel`. Raw API parsing, risk calculation, ETA calculation і business logic не можуть жити всередині mesh/presentation components.
+
+### 13.4 Semantic trajectories
+
+Trajectory має розділяти observed/estimated/predicted path, direction, confidence, `updatedAt` і status. Confirmed = solid/stable; estimated = lighter/transparent; predicted = dashed/fading із `Confidence Corridor`. Поточна позиція показується лише за наявності підтвердженого поля. Spatial arc height — лише visual separation, не altitude.
+
+Event node має marker, status ring, category, timestamp і короткий DOM label. Новий event отримує один-два controlled pulses і переходить у stable state. За високої щільності застосовуються relevance, priority та clustering.
+
+### 13.5 Camera, time and safety states
+
+Camera modes: `NATIONAL`, `REGION`, `DISTRICT`, `EVENT_FOCUS`, `EXPLODED`, `TIMELINE`, `FULLSCREEN`. Camera має bounded orbit/zoom/pan, 30–45° perspective target і smooth transitions 500–900ms. Timeline має синхронізувати карту, risk, events і trajectories; history завжди має видимий badge і кнопку `ДО LIVE`.
+
+При `STALE`, `ERROR` або `NOT CONNECTED` live styling вимикається. Critical state піднімає лише relevant region/event/trajectory/status; весь екран не стає червоним. Safety data, ETA, freshness, source і accessibility залишаються semantic DOM поруч із canvas.
+
+### 13.6 Rendering and fallback
+
+Профілі: `ULTRA`, `HIGH`, `MEDIUM`, `LOW`, `STATIC`. Знижувати якість у порядку particles → reflections → complex shadows → volumetrics → DPR; останніми зберігати geometry, risk, events, trajectories і labels. Використовувати lazy loading, adaptive DPR, render-on-demand, shared materials, batching/instancing і compressed assets.
+
+WebGL2 — baseline; WebGPU — progressive enhancement. При недоступному WebGL показувати 2D/2.5D safety mode з тією самою інформацією. Critical HTML/status має бути видимим до завантаження важкого 3D engine.
+
+### 13.7 3D acceptance gates
+
+- separate region meshes from authoritative geometry;
+- compact/exploded layer interaction and recomposition;
+- region/event focus and semantic DOM equivalent;
+- confirmed/estimated/predicted visual distinction and confidence corridor;
+- timeline history/live reconstruction;
+- stale/offline/NOT CONNECTED and WebGL fallback;
+- reduced motion, keyboard, screen reader and color-independent semantics;
+- 1366×768, 1440×900, 1920×1080, 4K and ultrawide visual regression;
+- FPS/GPU/memory profiling and 30-minute, 2-hour and 4-hour long-session checks;
+- no fake live paths, positions, ETA, risk, shelter availability or accuracy claims.

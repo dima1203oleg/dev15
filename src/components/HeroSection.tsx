@@ -184,6 +184,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           onNavigateToDownload={onNavigateToDownload}
           onNavigateToMap={onNavigateToMap}
           onNavigateToPartner={onNavigateToPartner}
+          dataMode={threatDataMode}
         />
 
         {/* ========================================================================= */}

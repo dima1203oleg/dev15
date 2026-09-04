@@ -5,9 +5,10 @@ import {
   ChevronRight, Database, Bell, Check, Flame, Crosshair,
   TrendingUp, Users, DollarSign, CreditCard, Activity, Play,
   Square, QrCode, ArrowUpRight, Copy, Share2, Volume2, VolumeX,
-  Compass, Zap
+  Compass, Zap, WifiOff
 } from 'lucide-react';
 import { tacticalAudio } from '../utils/audioTactical';
+import { SpatialDataMode } from '../data/spatialModel';
 
 export type ShowcaseMode = 'ECOSYSTEM' | 'DESKTOP' | 'LAPTOP' | 'PHONE' | 'TABLET' | 'HOLOGRAM';
 
@@ -15,13 +16,35 @@ interface ThreeDShowcaseProps {
   onNavigateToDownload: () => void;
   onNavigateToMap: () => void;
   onNavigateToPartner?: () => void;
+  dataMode: SpatialDataMode;
 }
+
+const SpatialUnavailableShowcase: React.FC<{ dataMode: SpatialDataMode }> = ({ dataMode }) => (
+  <section className="relative mx-auto my-8 w-full max-w-7xl overflow-hidden rounded-3xl border border-slate-700/70 bg-gradient-to-br from-[#071322] via-[#050b16] to-[#03060c] p-6 shadow-[0_0_70px_rgba(0,180,255,0.08)] sm:p-10" aria-label="3D-візуалізація недоступна">
+    <div className="pointer-events-none absolute inset-0 siren-grid opacity-25" />
+    <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+      <div>
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-600/70 bg-slate-950/70 px-3 py-1.5 text-[10px] font-mono tracking-[0.14em] text-slate-400"><Database className="h-3.5 w-3.5 text-cyan-300" /> SPATIAL DIGITAL TWIN</div>
+        <h2 className="max-w-md text-3xl font-black tracking-tight text-white">Просторова модель очікує джерело даних.</h2>
+        <p className="mt-4 max-w-lg text-sm leading-6 text-slate-400">3D-візуалізація буде доступна після підключення авторитетної геометрії України та realtime-джерела. Ми не показуємо синтетичні траєкторії як оперативну інформацію.</p>
+        <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-slate-600/70 bg-slate-950/80 px-3 py-2 text-[10px] font-mono text-amber-200"><span className="h-1.5 w-1.5 rounded-full bg-amber-300" /> {dataMode === 'NOT_CONNECTED' ? 'NOT CONNECTED' : 'LIVE SOURCE UNAVAILABLE'}</div>
+      </div>
+      <div className="relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-3xl border border-cyan-300/15 bg-[#040b16]/80">
+        <div className="absolute h-52 w-[80%] rounded-[50%] border border-cyan-300/20 [transform:rotateX(65deg)] [box-shadow:0_0_80px_rgba(34,211,238,0.14)]" />
+        <div className="relative z-10 flex flex-col items-center gap-3 text-center"><WifiOff className="h-8 w-8 text-cyan-300/70" /><span className="text-sm font-bold text-slate-200">2D / 2.5D FALLBACK</span><span className="text-xs text-slate-500">Без фальшивих live-даних</span></div>
+      </div>
+    </div>
+  </section>
+);
 
 export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
   onNavigateToDownload,
   onNavigateToMap,
-  onNavigateToPartner
+  onNavigateToPartner,
+  dataMode,
 }) => {
+  if (dataMode !== 'DEMO_DATA') return <SpatialUnavailableShowcase dataMode={dataMode} />;
+
   const [activeMode, setActiveMode] = useState<ShowcaseMode>('ECOSYSTEM');
   const [isExploded, setIsExploded] = useState<boolean>(false);
   const [isAutoRotate, setIsAutoRotate] = useState<boolean>(false);
