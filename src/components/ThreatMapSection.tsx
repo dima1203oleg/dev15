@@ -8,13 +8,15 @@ interface ThreatMapSectionProps {
   regions: RegionAlert[];
   shelters: Shelter[];
   isThreatServerOnline: boolean;
+  threatDataMode: 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
 }
 
 export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
   threats,
   regions,
   shelters,
-  isThreatServerOnline
+  isThreatServerOnline,
+  threatDataMode
 }) => {
   const [selectedRegionId, setSelectedRegionId] = useState<string>('reg-kyiv');
   const [activeTab, setActiveTab] = useState<'MAP' | 'SIMULATOR' | 'SHELTERS'>('MAP');
@@ -22,8 +24,24 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [navigatedShelterId, setNavigatedShelterId] = useState<string | null>(null);
 
-  const safeRegions = (regions && regions.length > 0) ? regions : DEFAULT_REGIONS;
-  const selectedRegion = safeRegions.find(r => r.id === selectedRegionId) || safeRegions[0] || DEFAULT_REGIONS[0];
+  const safeRegions = (regions && regions.length > 0)
+    ? regions
+    : threatDataMode === 'DEMO_DATA'
+      ? DEFAULT_REGIONS
+      : [];
+  const selectedRegion = safeRegions.find(r => r.id === selectedRegionId) || safeRegions[0] || {
+    id: 'unavailable',
+    name: 'Дані регіонів недоступні',
+    nameEn: 'Regional data unavailable',
+    code: '—',
+    hasAlert: false,
+    alertType: 'NONE' as const,
+    riskLevel: 'NORMAL' as const,
+    threatCount: 0,
+    sheltersCount: 0,
+    lastUpdated: '—',
+    districts: []
+  };
 
   // 7-Step Interactive Simulator Data
   const simulationSteps = [
@@ -81,6 +99,16 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
   return (
     <section id="map-section" className="py-12 lg:py-20 bg-[#090D14] border-t border-b border-slate-800/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {threatDataMode !== 'DEMO_DATA' && !isThreatServerOnline && (
+          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/5 px-4 py-3 text-sm text-amber-100/90">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+            <div>
+              <p className="font-semibold">Актуальні дані тимчасово недоступні</p>
+              <p className="mt-0.5 text-xs text-amber-100/60">Цей інтерфейс не підміняє офіційні сповіщення. Після підключення авторитетного ThreatServer тут з’являться часові мітки, confidence та свіжість даних.</p>
+            </div>
+          </div>
+        )}
         
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
@@ -270,6 +298,16 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
                   />
                   <circle cx="390" cy="261" r="6" fill="#f43f5e" />
                 </svg>
+
+                {threatDataMode !== 'DEMO_DATA' && !isThreatServerOnline && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#070B11]/80 p-6 text-center backdrop-blur-[2px]">
+                    <div className="max-w-sm rounded-2xl border border-amber-400/25 bg-slate-950/90 px-5 py-4 shadow-2xl">
+                      <div className="font-mono text-xs font-bold tracking-[0.18em] text-amber-300">NOT CONNECTED</div>
+                      <p className="mt-2 text-sm font-semibold text-white">Карта очікує авторитетне джерело даних</p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-400">Схематичні шари нижче не є live-телеметрією. Під час небезпеки користуйтеся офіційними сповіщеннями.</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Map Bottom Metadata Legend */}
                 <div className="absolute bottom-3 inset-x-4 flex flex-wrap items-center justify-between gap-2 text-[11px] bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800">

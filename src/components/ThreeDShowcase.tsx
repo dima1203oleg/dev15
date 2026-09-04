@@ -248,12 +248,16 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
         ref={containerRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="relative w-full min-h-[640px] sm:min-h-[720px] lg:min-h-[780px] rounded-3xl bg-gradient-to-b from-[#060911] via-[#080d1a] to-[#04060a] border border-cyan-500/20 shadow-[0_0_90px_rgba(0,180,255,0.12)] overflow-hidden flex items-center justify-center p-3 sm:p-6 select-none perspective-[1600px]"
+        className="showcase-canvas relative w-full min-h-[640px] sm:min-h-[720px] lg:min-h-[780px] rounded-3xl bg-gradient-to-b from-[#060911] via-[#080d1a] to-[#04060a] border border-cyan-500/20 shadow-[0_0_90px_rgba(0,180,255,0.12)] overflow-hidden flex items-center justify-center p-3 sm:p-6 select-none perspective-[1600px]"
       >
         
         {/* Ambient Grid Floor & Radial Lighting */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(0,180,255,0.14),transparent_65%)] pointer-events-none"></div>
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#0e1a2f_1px,transparent_1px),linear-gradient(to_bottom,#0e1a2f_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_50%,#000_70%,transparent_100%)] opacity-35 pointer-events-none"></div>
+        <div className="absolute left-4 top-4 z-20 flex items-center gap-2 rounded-full border border-amber-400/25 bg-slate-950/75 px-3 py-1.5 text-[10px] font-mono tracking-[0.16em] text-amber-200/80 backdrop-blur-md">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+          DEMO DATA · VISUAL TARGET
+        </div>
 
         {/* Ambient Floating Laser Beams & Particles */}
         <div className="absolute top-10 left-12 w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_15px_#00d4ff] animate-ping opacity-70"></div>

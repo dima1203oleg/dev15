@@ -1,5 +1,5 @@
-import React from 'react';
-import { Shield, Radio, Activity, Users, Settings, Download, ExternalLink, Flame, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, Radio, Activity, Users, Settings, Download, ExternalLink, Flame, CheckCircle2, Menu, X } from 'lucide-react';
 import { ThreatEvent } from '../types';
 
 interface HeaderProps {
@@ -9,6 +9,7 @@ interface HeaderProps {
   onOpenAdmin: () => void;
   threats: ThreatEvent[];
   isThreatServerOnline: boolean;
+  threatDataMode: 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
   currentRole: string;
   onSwitchRole: (role: string, rank?: string) => void;
 }
@@ -20,10 +21,17 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAdmin,
   threats,
   isThreatServerOnline,
+  threatDataMode,
   currentRole,
   onSwitchRole
 }) => {
   const activeThreatsCount = threats.length;
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  const navigateMobile = (section: string) => {
+    setActiveSection(section);
+    setMobileNavOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[#0B0F17]/90 border-b border-slate-800/80">
@@ -128,19 +136,28 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Action CTAs & Controls */}
           <div className="flex items-center gap-2 sm:gap-3">
+
+            <button
+              onClick={() => setMobileNavOpen((isOpen) => !isOpen)}
+              aria-label={mobileNavOpen ? 'Закрити меню' : 'Відкрити меню'}
+              aria-expanded={mobileNavOpen}
+              className="md:hidden flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700/70 bg-slate-900/80 text-slate-200"
+            >
+              {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
             
             {/* Live Threat Indicator */}
             <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-xs">
               <span className={`w-2 h-2 rounded-full ${isThreatServerOnline ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`}></span>
               <span className="text-slate-300 font-mono text-[11px]">
-                {isThreatServerOnline ? 'ThreatServer: LIVE' : 'DATA UNAVAILABLE'}
+                {threatDataMode === 'DEMO_DATA' ? 'DEMO DATA' : threatDataMode === 'LIVE' && isThreatServerOnline ? 'ThreatServer: LIVE' : 'NOT CONNECTED'}
               </span>
             </div>
 
             {/* Partner Cabinet Button */}
             <button
               onClick={onOpenPartnerCabinet}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-amber-500/20 to-amber-600/10 hover:from-amber-500/30 hover:to-amber-600/20 text-amber-300 border border-amber-500/40 transition-all shadow-md shadow-amber-950/20 active:scale-98"
+              className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-amber-500/20 to-amber-600/10 hover:from-amber-500/30 hover:to-amber-600/20 text-amber-300 border border-amber-500/40 transition-all shadow-md shadow-amber-950/20 active:scale-98"
               id="open-partner-cabinet-btn"
             >
               <Users className="w-4 h-4 text-amber-400" />
@@ -154,7 +171,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenAdmin}
               title="Панель адміністратора"
-              className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 transition-colors"
+              className="hidden sm:flex p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 transition-colors"
               id="open-admin-btn"
             >
               <Settings className="w-4 h-4" />
@@ -162,6 +179,30 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
         </div>
+
+        {mobileNavOpen && (
+          <div className="md:hidden absolute left-3 right-3 top-[calc(100%+0.5rem)] z-50 rounded-2xl border border-cyan-400/20 bg-[#07101d]/95 p-2 shadow-2xl shadow-black/50 backdrop-blur-xl">
+            {[
+              ['home', 'Головна'],
+              ['map', 'Карта ситуації'],
+              ['features', 'Можливості'],
+              ['partner', 'Партнерка 5–25%'],
+              ['download', 'Завантажити']
+            ].map(([section, label]) => (
+              <button
+                key={section}
+                onClick={() => navigateMobile(section)}
+                className={`flex min-h-11 w-full items-center justify-between rounded-xl px-4 text-left text-sm ${activeSection === section ? 'bg-cyan-400/10 text-cyan-200' : 'text-slate-300 hover:bg-slate-800/80'}`}
+              >
+                <span>{label}</span>
+                {section === 'map' && activeThreatsCount > 0 && <span className="rounded-full bg-rose-500/20 px-2 py-0.5 text-xs text-rose-300">{activeThreatsCount}</span>}
+              </button>
+            ))}
+            <button onClick={() => { onOpenPartnerCabinet(); setMobileNavOpen(false); }} className="mt-2 min-h-11 w-full rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 text-left text-sm font-semibold text-amber-200">
+              Відкрити кабінет партнера
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

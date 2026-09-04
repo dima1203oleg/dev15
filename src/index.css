@@ -1,5 +1,67 @@
 @import "tailwindcss";
 
+:root {
+  color-scheme: dark;
+  --siren-ink: #040812;
+  --siren-panel: rgba(8, 18, 35, 0.78);
+  --siren-line: rgba(105, 176, 255, 0.18);
+  --siren-cyan: #29d9ff;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--siren-ink);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(9, 95, 155, 0.2), transparent 34rem),
+    linear-gradient(180deg, #050914 0%, #070d19 45%, #03060d 100%);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0.14;
+  background-image: radial-gradient(rgba(255,255,255,0.18) 0.5px, transparent 0.5px);
+  background-size: 4px 4px;
+  mix-blend-mode: soft-light;
+}
+
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--siren-cyan);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: rgba(41, 217, 255, 0.28);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #03060d;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#124468, #0b2238);
+  border: 2px solid #03060d;
+  border-radius: 999px;
+}
+
 @layer utilities {
   .preserve-3d {
     transform-style: preserve-3d;
@@ -71,3 +133,40 @@
   animation: laserBeam 2.5s ease-in-out infinite;
 }
 
+.siren-glass {
+  background: linear-gradient(145deg, rgba(15, 33, 56, 0.86), rgba(3, 9, 19, 0.72));
+  border: 1px solid var(--siren-line);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 24px 70px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+}
+
+.siren-grid {
+  background-image:
+    linear-gradient(rgba(56, 148, 215, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 148, 215, 0.08) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(ellipse at center, black 35%, transparent 78%);
+}
+
+@media (max-width: 767px) {
+  body::before {
+    opacity: 0.08;
+  }
+
+  .showcase-canvas {
+    min-height: 670px !important;
+    border-radius: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

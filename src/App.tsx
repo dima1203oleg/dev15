@@ -11,18 +11,22 @@ import { PartnerDashboardModal } from './components/PartnerDashboardModal';
 import { AdminDashboardModal } from './components/AdminDashboardModal';
 import { Footer } from './components/Footer';
 import { ThreatEvent, RegionAlert, Shelter } from './types';
-import { DEFAULT_REGIONS, DEFAULT_THREATS, DEFAULT_SHELTERS } from './data/mockData';
+
+type ThreatDataMode = 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<string>('home');
   const [isPartnerCabinetOpen, setIsPartnerCabinetOpen] = useState<boolean>(false);
   const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
   
-  // Real-time threat & environment state initialized with authentic default situational data
-  const [threats, setThreats] = useState<ThreatEvent[]>(DEFAULT_THREATS);
-  const [regions, setRegions] = useState<RegionAlert[]>(DEFAULT_REGIONS);
-  const [shelters, setShelters] = useState<Shelter[]>(DEFAULT_SHELTERS);
-  const [isThreatServerOnline, setIsThreatServerOnline] = useState<boolean>(true);
+  // Never render bundled data as live data. The API decides whether this is a
+  // demo feed or an authoritative integration; production starts empty.
+  const [threats, setThreats] = useState<ThreatEvent[]>([]);
+  const [regions, setRegions] = useState<RegionAlert[]>([]);
+  const [shelters, setShelters] = useState<Shelter[]>([]);
+  const [isThreatServerOnline, setIsThreatServerOnline] = useState<boolean>(false);
+  const [threatDataMode, setThreatDataMode] = useState<ThreatDataMode>('NOT_CONNECTED');
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<string>('PARTNER');
   const [currentRank, setCurrentRank] = useState<string>('GOLD');
 
@@ -36,10 +40,12 @@ export default function App() {
         fetch('/api/threats/shelters').then(r => r.json()).catch(() => ({ shelters: [] }))
       ]);
 
-      setIsThreatServerOnline(statusRes.connected !== false);
-      if (threatsRes.threats) setThreats(threatsRes.threats);
-      if (regionsRes.regions) setRegions(regionsRes.regions);
-      if (sheltersRes.shelters) setShelters(sheltersRes.shelters);
+      setIsThreatServerOnline(statusRes.connected === true);
+      setThreatDataMode(statusRes.mode ?? (statusRes.connected ? 'LIVE' : 'NOT_CONNECTED'));
+      setLastSyncAt(statusRes.lastSyncAt ?? null);
+      setThreats(Array.isArray(threatsRes.threats) ? threatsRes.threats : []);
+      setRegions(Array.isArray(regionsRes.regions) ? regionsRes.regions : []);
+      setShelters(Array.isArray(sheltersRes.shelters) ? sheltersRes.shelters : []);
     } catch (err) {
       console.error('Error fetching situational data:', err);
     }
@@ -107,6 +113,7 @@ export default function App() {
         onOpenAdmin={() => setIsAdminOpen(true)}
         threats={threats}
         isThreatServerOnline={isThreatServerOnline}
+        threatDataMode={threatDataMode}
         currentRole={currentRole}
         onSwitchRole={handleSwitchRole}
       />
@@ -115,6 +122,8 @@ export default function App() {
       <AlertTicker
         threats={threats}
         isThreatServerOnline={isThreatServerOnline}
+        threatDataMode={threatDataMode}
+        lastSyncAt={lastSyncAt}
       />
 
       {/* 3. Main Sections Layout */}
@@ -143,6 +152,7 @@ export default function App() {
             el?.scrollIntoView({ behavior: 'smooth' });
           }}
           threats={threats}
+          threatDataMode={threatDataMode}
         />
 
         {/* Interactive Threat Map & 7-Step Simulator */}
@@ -151,6 +161,7 @@ export default function App() {
           regions={regions}
           shelters={shelters}
           isThreatServerOnline={isThreatServerOnline}
+          threatDataMode={threatDataMode}
         />
 
         {/* Feature Pillars: Yellow/Red Differentiated Model & Technology */}

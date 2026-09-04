@@ -18,12 +18,15 @@ import {
 } from './src/types';
 
 // ============================================================================
-// IN-MEMORY DURABLE ENTERPRISE STATE (Initialized with realistic live & audit data)
+// IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
 // ============================================================================
 
 // 1. Threat & Situational Intelligence Data
-let isThreatServerConnected = true; // Can be toggled in Admin Settings
-let threatDataMode: 'LIVE' | 'DEMO_SANDBOX' = 'LIVE';
+const isDevelopment = process.env.NODE_ENV !== 'production';
+const demoDataEnabled = isDevelopment || process.env.SIREN_DATA_MODE === 'DEMO';
+const financialDemoEnabled = isDevelopment || process.env.SIREN_FINANCIAL_MODE === 'DEMO';
+let isThreatServerConnected = demoDataEnabled;
+let threatDataMode: 'DEMO_DATA' | 'NOT_CONNECTED' = demoDataEnabled ? 'DEMO_DATA' : 'NOT_CONNECTED';
 
 let mockLiveThreats: ThreatEvent[] = [
   {
@@ -454,23 +457,24 @@ async function startServer() {
 
   // Status & Health
   app.get('/api/threats/status', (req, res) => {
+    const connected = demoDataEnabled && isThreatServerConnected;
     res.json({
-      connected: isThreatServerConnected,
-      status: isThreatServerConnected ? 'ONLINE' : 'DATA_UNAVAILABLE',
-      mode: threatDataMode,
-      threatCount: isThreatServerConnected ? mockLiveThreats.length : 0,
-      activeAlertsCount: isThreatServerConnected ? mockRegions.filter(r => r.hasAlert).length : 0,
-      lastSyncAt: new Date().toISOString(),
-      authoritativeSource: 'SirenUA-ThreatServer v2.4.1 (Atlas Trinity Engine)',
+      connected,
+      status: connected ? 'DEMO_DATA' : 'NOT_CONNECTED',
+      mode: connected ? threatDataMode : 'NOT_CONNECTED',
+      threatCount: connected ? mockLiveThreats.length : 0,
+      activeAlertsCount: connected ? mockRegions.filter(r => r.hasAlert).length : 0,
+      lastSyncAt: connected ? new Date().toISOString() : null,
+      authoritativeSource: connected ? 'Local demo fixture (not authoritative)' : 'SirenUA-ThreatServer — configuration required',
       officialDisclaimer: 'Під час небезпеки дотримуйтеся офіційних повідомлень та рекомендацій органів влади.'
     });
   });
 
   // Live Threats Stream
   app.get('/api/threats/live', (req, res) => {
-    if (!isThreatServerConnected) {
+    if (!demoDataEnabled || !isThreatServerConnected) {
       return res.status(503).json({
-        error: 'DATA_UNAVAILABLE',
+        error: 'NOT_CONNECTED',
         message: 'Актуальні дані тимчасово недоступні. Під час небезпеки користуйтеся офіційними джерелами.'
       });
     }
@@ -478,7 +482,8 @@ async function startServer() {
     res.json({
       threats: mockLiveThreats,
       timestamp: new Date().toISOString(),
-      freshness: 'REAL_TIME',
+      freshness: 'DEMO_DATA',
+      dataMode: 'DEMO_DATA',
       count: mockLiveThreats.length
     });
   });
@@ -486,8 +491,9 @@ async function startServer() {
   // Regions & Alert States
   app.get('/api/threats/regions', (req, res) => {
     res.json({
-      regions: mockRegions,
-      timestamp: new Date().toISOString()
+      regions: demoDataEnabled && isThreatServerConnected ? mockRegions : [],
+      timestamp: new Date().toISOString(),
+      dataMode: demoDataEnabled && isThreatServerConnected ? 'DEMO_DATA' : 'NOT_CONNECTED'
     });
   });
 
@@ -495,14 +501,18 @@ async function startServer() {
   app.get('/api/threats/shelters', (req, res) => {
     const { district } = req.query;
     res.json({
-      shelters: mockShelters,
-      count: mockShelters.length,
-      nearestDistance: '340 м'
+      shelters: demoDataEnabled && isThreatServerConnected ? mockShelters : [],
+      count: demoDataEnabled && isThreatServerConnected ? mockShelters.length : 0,
+      nearestDistance: demoDataEnabled && isThreatServerConnected ? '340 м' : null,
+      dataMode: demoDataEnabled && isThreatServerConnected ? 'DEMO_DATA' : 'NOT_CONNECTED'
     });
   });
 
   // Interactive Simulator Step Trigger (Demo Mode)
   app.post('/api/threats/simulate-step', (req, res) => {
+    if (!demoDataEnabled) {
+      return res.status(409).json({ error: 'DEMO_ONLY', message: 'Симулятор доступний лише в development/demo режимі.' });
+    }
     const { step } = req.body;
     // Step 1 to 7 interactive walkthrough
     res.json({
@@ -649,6 +659,12 @@ async function startServer() {
 
   // Payout Request Submission
   app.post('/api/partner/payouts', (req, res) => {
+    if (!financialDemoEnabled) {
+      return res.status(503).json({
+        error: 'PAYOUT_PROVIDER_NOT_CONNECTED',
+        message: 'Провайдер виплат не підключений. Реальні кошти не переміщуються.'
+      });
+    }
     const { amountMinor, provider, destinationAccount, idempotencyKey } = req.body;
 
     const wallet = calculateWallet(demoPartnerId);
@@ -747,8 +763,8 @@ async function startServer() {
       totalPaidOutMinor: totalPaidMinor,
       totalAvailableReserveMinor: totalAvailableMinor,
       capComplianceStatus: '100%_PASS',
-      threatServerHealth: isThreatServerConnected ? 'HEALTHY' : 'OFFLINE',
-      activeThreatsCount: mockLiveThreats.length,
+      threatServerHealth: demoDataEnabled && isThreatServerConnected ? 'DEMO_DATA' : 'NOT_CONNECTED',
+      activeThreatsCount: demoDataEnabled && isThreatServerConnected ? mockLiveThreats.length : 0,
       fraudIncidentsCount: 0
     });
   });
@@ -762,7 +778,11 @@ async function startServer() {
 
   // Admin Toggle Threat Server Connection
   app.post('/api/admin/toggle-threat-server', (req, res) => {
+    if (!demoDataEnabled) {
+      return res.status(409).json({ connected: false, error: 'NOT_CONNECTED', message: 'Спочатку підключіть авторитетний ThreatServer.' });
+    }
     isThreatServerConnected = !isThreatServerConnected;
+    threatDataMode = isThreatServerConnected ? 'DEMO_DATA' : 'NOT_CONNECTED';
     res.json({
       connected: isThreatServerConnected,
       message: isThreatServerConnected ? 'ThreatServer підключено' : 'ThreatServer відключено (режим DATA UNAVAILABLE)'

@@ -1,0 +1,3 @@
+# Security Baseline
+
+Before production: server-side authz for every partner/admin route; CSRF protection where cookie auth is used; strict validation; rate limits; secure headers; secret scanning; signed webhook verification with timestamp/replay protection; IDOR, XSS, SQLi, SSRF and privilege-escalation tests; append-only audit records; no card, tax or KYC details in partner UI.

@@ -41,11 +41,8 @@ export const DownloadSection: React.FC = () => {
               <h3 className="text-base font-bold text-white">Apple iOS</h3>
               <p className="text-xs text-slate-400 mt-1">iOS 16.0 або новіша</p>
             </div>
-            <button 
-              onClick={() => alert('Перехід в App Store: Застосунок SIREN UA')}
-              className="mt-6 w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white border border-slate-700"
-            >
-              Завантажити в App Store
+            <button disabled className="mt-6 w-full py-2.5 rounded-xl bg-slate-800/60 text-xs font-bold text-slate-400 border border-slate-700/70 cursor-not-allowed">
+              NOT AVAILABLE · App Store
             </button>
           </div>
 
@@ -58,11 +55,8 @@ export const DownloadSection: React.FC = () => {
               <h3 className="text-base font-bold text-white">Google Play</h3>
               <p className="text-xs text-slate-400 mt-1">Android 9.0 або новіша</p>
             </div>
-            <button 
-              onClick={() => alert('Перехід в Google Play: Застосунок SIREN UA')}
-              className="mt-6 w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white border border-slate-700"
-            >
-              Завантажити в Play Market
+            <button disabled className="mt-6 w-full py-2.5 rounded-xl bg-slate-800/60 text-xs font-bold text-slate-400 border border-slate-700/70 cursor-not-allowed">
+              COMING SOON · Google Play
             </button>
           </div>
 
@@ -75,11 +69,8 @@ export const DownloadSection: React.FC = () => {
               <h3 className="text-base font-bold text-white">Прямий APK</h3>
               <p className="text-xs text-slate-400 mt-1">Версія v2.4.1 (SHA-256)</p>
             </div>
-            <button 
-              onClick={() => alert('Завантаження SirenUA-v2.4.1.apk')}
-              className="mt-6 w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white border border-slate-700"
-            >
-              Завантажити .apk
+            <button disabled className="mt-6 w-full py-2.5 rounded-xl bg-slate-800/60 text-xs font-bold text-slate-400 border border-slate-700/70 cursor-not-allowed">
+              NOT AVAILABLE · APK
             </button>
           </div>
 
@@ -106,13 +97,13 @@ export const DownloadSection: React.FC = () => {
         <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 sm:p-8 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2">
             <span className="px-2.5 py-0.5 rounded bg-slate-800 text-slate-300 text-xs font-mono font-bold">
-              DEEP LINK АТРИБУЦІЯ
+              DEEP LINK · EXAMPLE ONLY
             </span>
             <h4 className="text-lg font-bold text-white">
               Безшовна інтеграція реферального посилання
             </h4>
             <p className="text-slate-400 text-xs max-w-xl">
-              При переході за посиланням реферальний код автоматично підхоплюється як у Web-версії, так і під час встановлення через Universal Link (`sirenua://ref/SIREN_ATLAS`).
+              Приклад формату для майбутньої server-side атрибуції. Реальні Universal Links та store destinations ще не підключені.
             </p>
           </div>
 

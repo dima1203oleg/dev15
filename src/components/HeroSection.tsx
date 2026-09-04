@@ -13,6 +13,7 @@ interface HeroSectionProps {
   onNavigateToPartner: () => void;
   onNavigateToDownload: () => void;
   threats: ThreatEvent[];
+  threatDataMode: 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -20,7 +21,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onNavigateToFeatures,
   onNavigateToPartner,
   onNavigateToDownload,
-  threats
+  threats,
+  threatDataMode
 }) => {
   return (
     <section className="relative overflow-hidden pt-6 pb-20 lg:pt-10 lg:pb-28">
@@ -47,15 +49,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
 
           {/* Main Headline (Exact words from reference image 1) */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] font-['Plus_Jakarta_Sans']">
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.04] font-['Plus_Jakarta_Sans']">
             Не просто тривога. <br />
-            Це ваша{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-500 drop-shadow-[0_0_35px_rgba(0,212,255,0.4)]">
-              перевага
-            </span>{' '}
-            <br />
-            у кожній хвилині.
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-500 drop-shadow-[0_0_35px_rgba(0,212,255,0.4)]">
+              Розумій ситуацію.
+            </span>
           </h1>
+
+          <div className={`mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-mono ${
+            threatDataMode === 'LIVE' ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' :
+            threatDataMode === 'DEMO_DATA' ? 'border-amber-400/30 bg-amber-400/10 text-amber-300' :
+            'border-slate-700 bg-slate-900/70 text-slate-400'
+          }`}>
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            {threatDataMode === 'LIVE' ? 'THREATSERVER · LIVE' : threatDataMode === 'DEMO_DATA' ? 'DEMO DATA · ВІЗУАЛЬНИЙ РЕЖИМ' : 'NOT CONNECTED · ПІДКЛЮЧЕННЯ ОЧІКУЄТЬСЯ'}
+          </div>
 
           {/* 4 Feature Key Bullets with Shields (Exact match to Reference Image 1) */}
           <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto text-left">
@@ -128,7 +136,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </svg>
               <div>
                 <div className="text-[9px] text-slate-400 leading-tight">Доступно в</div>
-                <div className="text-xs font-bold text-white leading-tight">Google Play</div>
+                <div className="text-xs font-bold text-slate-400 leading-tight">COMING SOON</div>
               </div>
             </button>
 
