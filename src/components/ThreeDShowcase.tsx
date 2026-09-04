@@ -20,22 +20,24 @@ interface ThreeDShowcaseProps {
 }
 
 const SpatialUnavailableShowcase: React.FC<{ dataMode: SpatialDataMode }> = ({ dataMode }) => (
-  <section className="relative mx-auto my-8 w-full max-w-7xl overflow-hidden rounded-3xl border border-slate-700/70 bg-gradient-to-br from-[#071322] via-[#050b16] to-[#03060c] p-6 shadow-[0_0_70px_rgba(0,180,255,0.08)] sm:p-10" aria-label="3D-візуалізація недоступна">
-    <div className="pointer-events-none absolute inset-0 siren-grid opacity-25" />
-    <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-      <div>
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-600/70 bg-slate-950/70 px-3 py-1.5 text-[10px] font-mono tracking-[0.14em] text-slate-400"><Database className="h-3.5 w-3.5 text-cyan-300" /> SPATIAL DIGITAL TWIN</div>
-        <h2 className="max-w-md text-3xl font-black tracking-tight text-white">Просторова модель очікує джерело даних.</h2>
-        <p className="mt-4 max-w-lg text-sm leading-6 text-slate-400">3D-візуалізація буде доступна після підключення авторитетної геометрії України та realtime-джерела. Ми не показуємо синтетичні траєкторії як оперативну інформацію.</p>
-        <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-slate-600/70 bg-slate-950/80 px-3 py-2 text-[10px] font-mono text-amber-200"><span className="h-1.5 w-1.5 rounded-full bg-amber-300" /> {dataMode === 'NOT_CONNECTED' ? 'NOT CONNECTED' : 'LIVE SOURCE UNAVAILABLE'}</div>
-      </div>
-      <div className="relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-3xl border border-cyan-300/15 bg-[#040b16]/80">
-        <div className="absolute h-52 w-[80%] rounded-[50%] border border-cyan-300/20 [transform:rotateX(65deg)] [box-shadow:0_0_80px_rgba(34,211,238,0.14)]" />
-        <div className="relative z-10 flex flex-col items-center gap-3 text-center"><WifiOff className="h-8 w-8 text-cyan-300/70" /><span className="text-sm font-bold text-slate-200">2D / 2.5D FALLBACK</span><span className="text-xs text-slate-500">Без фальшивих live-даних</span></div>
-      </div>
+  <section className="device-constellation-preview" aria-label="3D-вітрина пристроїв SIREN UA">
+    <div className="device-constellation-preview__grid" aria-hidden="true" />
+    <div className="device-constellation-preview__intro">
+      <div className="device-constellation-preview__eyebrow"><Database className="h-3.5 w-3.5 text-cyan-300" /> SIREN SPATIAL ECOSYSTEM</div>
+      <h2>Одна просторова система.<br /><span>Кожен пристрій — свій погляд.</span></h2>
+      <p>Тут живе 3D-візуальна мова SIREN UA: desktop бачить масштаб, планшет працює шарами, смартфон дає персональну відповідь.</p>
+      <div className="device-constellation-preview__state"><span /> {dataMode === 'NOT_CONNECTED' ? 'DESIGN PREVIEW · LIVE DATA NOT CONNECTED' : 'DESIGN PREVIEW · LIVE SOURCE UNAVAILABLE'}</div>
     </div>
+    <div className="device-constellation" aria-label="Візуальна демонстрація desktop, tablet та smartphone">
+      <div className="constellation-device constellation-device--desktop"><div className="constellation-device__bezel"><div className="constellation-screen"><PreviewScreen label="DESKTOP · SPATIAL COMMAND" wide /><div className="preview-map preview-map--wide"><span className="preview-map__core" /><span className="preview-map__line preview-map__line--one" /><span className="preview-map__line preview-map__line--two" /><i className="preview-map__node preview-map__node--one" /><i className="preview-map__node preview-map__node--two" /><div className="preview-map__planes"><span /><span /><span /></div></div><div className="preview-screen__rail"><span /><span /><span /></div></div></div><div className="constellation-device__stand" /></div>
+      <div className="constellation-device constellation-device--tablet"><div className="constellation-device__bezel"><div className="constellation-screen"><PreviewScreen label="TABLET · TOUCH SPATIAL" /><div className="preview-map"><span className="preview-map__core" /><span className="preview-map__line preview-map__line--one" /><i className="preview-map__node preview-map__node--one" /><div className="preview-map__planes"><span /><span /><span /></div></div><div className="preview-screen__chips"><span>ШАРИ</span><span>ФОКУС</span><span>ЧАС</span></div></div></div></div>
+      <div className="constellation-device constellation-device--phone"><div className="constellation-device__bezel"><div className="constellation-screen"><PreviewScreen label="PHONE · PERSONAL SAFETY" /><div className="preview-map"><span className="preview-map__core" /><span className="preview-map__line preview-map__line--two" /><div className="preview-map__planes"><span /><span /><span /></div></div><div className="preview-screen__status"><span /> MY REGION · PERSONAL VIEW</div></div></div></div>
+    </div>
+    <div className="device-constellation-preview__footer"><span><Monitor className="h-4 w-4" /> Desktop</span><span><Tablet className="h-4 w-4" /> Tablet</span><span><Smartphone className="h-4 w-4" /> Smartphone</span><span className="device-constellation-preview__footer-state"><WifiOff className="h-3.5 w-3.5" /> Без фальшивих live-даних</span></div>
   </section>
 );
+
+const PreviewScreen: React.FC<{ label: string; wide?: boolean }> = ({ label, wide }) => <div className={`preview-screen__header ${wide ? 'preview-screen__header--wide' : ''}`}><span className="preview-screen__logo">✦ SIREN <b>UA</b></span><span>{label}</span><span className="preview-screen__signal" /></div>;
 
 export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
   onNavigateToDownload,

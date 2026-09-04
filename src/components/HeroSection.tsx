@@ -175,10 +175,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <HeroIntelligenceStack />
         </div>
 
-        <DeviceExperienceLab dataMode={threatDataMode} />
-
         {/* ========================================================================= */}
-        {/* THE MASTERPIECE 3D HOLOGRAPHIC & GADGET SHOWCASE                           */}
+        {/* THE MASTERPIECE 3D HOLOGRAPHIC & GADGET SHOWCASE — FIRST VISUAL SURFACE  */}
         {/* ========================================================================= */}
         <ThreeDShowcase
           onNavigateToDownload={onNavigateToDownload}
@@ -186,6 +184,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           onNavigateToPartner={onNavigateToPartner}
           dataMode={threatDataMode}
         />
+
+        <DeviceExperienceLab dataMode={threatDataMode} />
 
         {/* ========================================================================= */}
         {/* 4 HIGH-TECH CAPABILITY CARDS (Directly under 3D as in reference images)   */}
