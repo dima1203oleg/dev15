@@ -7,6 +7,7 @@ import {
 import { ThreatEvent } from '../types';
 import { ThreeDShowcase } from './ThreeDShowcase';
 import { HeroIntelligenceStack } from './HeroIntelligenceStack';
+import { DeviceExperienceLab } from './DeviceExperienceLab';
 
 interface HeroSectionProps {
   onNavigateToMap: () => void;
@@ -157,6 +158,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
           <HeroIntelligenceStack />
         </div>
+
+        <DeviceExperienceLab dataMode={threatDataMode} />
 
         {/* ========================================================================= */}
         {/* THE MASTERPIECE 3D HOLOGRAPHIC & GADGET SHOWCASE                           */}

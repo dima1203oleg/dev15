@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { Header } from './components/Header';
 import { AlertTicker } from './components/AlertTicker';
 import { HeroSection } from './components/HeroSection';
+import { TVModeShell } from './components/DeviceExperienceLab';
 import { ThreatMapSection } from './components/ThreatMapSection';
 import { FeaturesSection } from './components/FeaturesSection';
 import { PartnerLandingSection } from './components/PartnerLandingSection';
@@ -101,6 +102,10 @@ export default function App() {
       console.error(e);
     }
   };
+
+  if (window.location.pathname === '/tv') {
+    return <TVModeShell dataMode={threatDataMode} />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0B0F17] text-slate-100 selection:bg-rose-500/30 selection:text-rose-200">
