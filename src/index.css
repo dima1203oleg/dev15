@@ -117,6 +117,11 @@ button:focus-visible, a:focus-visible {
   }
 }
 
+@keyframes signalOrbit {
+  from { transform: rotate(0deg); transform-origin: 600px 360px; }
+  to { transform: rotate(360deg); transform-origin: 600px 360px; }
+}
+
 .animate-float-slow {
   animation: floatSlow 6s ease-in-out infinite;
 }
@@ -131,6 +136,11 @@ button:focus-visible, a:focus-visible {
 
 .animate-laser-beam {
   animation: laserBeam 2.5s ease-in-out infinite;
+}
+
+.animate-signal-orbit {
+  animation: signalOrbit 18s linear infinite;
+  transform-box: fill-box;
 }
 
 .siren-glass {

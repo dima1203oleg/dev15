@@ -124,7 +124,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
             }`}
           >
             <Monitor className="w-4 h-4" />
-            <span>32″ Монітор РЛС</span>
+            <span>Телевізор</span>
           </button>
 
           <button
@@ -136,7 +136,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
             }`}
           >
             <Laptop className="w-4 h-4" />
-            <span>MacBook Партнер-Дек</span>
+            <span>Комп’ютер</span>
           </button>
 
           <button
@@ -148,7 +148,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
             }`}
           >
             <Smartphone className="w-4 h-4" />
-            <span>iPhone 16 Pro</span>
+            <span>Смартфон</span>
           </button>
 
           <button
@@ -160,7 +160,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
             }`}
           >
             <Tablet className="w-4 h-4" />
-            <span>iPad Тактик</span>
+            <span>Планшет</span>
           </button>
 
           <button
@@ -264,6 +264,21 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
         <div className="absolute bottom-16 right-16 w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_20px_#f43f5e] animate-ping opacity-80"></div>
         <div className="absolute top-1/2 right-8 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_12px_#fbbf24] animate-pulse"></div>
 
+        {/* A spatial signal constellation gives the showcase its own visual language. */}
+        <svg className="pointer-events-none absolute inset-0 z-0 h-full w-full opacity-70" viewBox="0 0 1200 720" fill="none" aria-hidden="true">
+          <ellipse cx="600" cy="360" rx="420" ry="190" stroke="rgba(41,217,255,0.18)" strokeDasharray="4 14" />
+          <ellipse cx="600" cy="360" rx="285" ry="135" stroke="rgba(129,140,248,0.16)" strokeDasharray="2 12" transform="rotate(-18 600 360)" />
+          <path d="M120 470 C330 240 450 530 620 350 S920 180 1080 370" stroke="rgba(41,217,255,0.3)" strokeWidth="1" strokeDasharray="5 11" className="animate-dash-flow" />
+          <g className="animate-signal-orbit">
+            <circle cx="178" cy="384" r="5" fill="#29d9ff" />
+            <circle cx="178" cy="384" r="16" stroke="#29d9ff" strokeOpacity=".28" />
+            <circle cx="1000" cy="298" r="5" fill="#fbbf24" />
+            <circle cx="1000" cy="298" r="16" stroke="#fbbf24" strokeOpacity=".28" />
+            <circle cx="770" cy="570" r="5" fill="#34d399" />
+            <circle cx="770" cy="570" r="16" stroke="#34d399" strokeOpacity=".28" />
+          </g>
+        </svg>
+
         {/* Central 3D Scene Root */}
         <div
           className={`relative w-full h-full flex items-center justify-center preserve-3d transition-transform duration-300 ease-out ${
@@ -282,7 +297,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
           {(activeMode === 'ECOSYSTEM' || activeMode === 'DESKTOP') && (
             <div className="relative w-full max-w-5xl flex items-center justify-center preserve-3d">
               
-              {/* 1. BIG 32" DESKTOP DISPLAY (Center Back) */}
+              {/* 1. LARGE TELEVISION / SITUATIONAL DISPLAY (Center Back) */}
               <div
                 className={`relative w-[340px] sm:w-[620px] lg:w-[820px] rounded-3xl p-3 sm:p-4 bg-gradient-to-b from-slate-700 via-slate-900 to-black border-2 sm:border-[3px] border-slate-600/90 shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_60px_rgba(0,212,255,0.25)] preserve-3d transition-all duration-500 ${
                   activeMode === 'DESKTOP' ? 'scale-105 sm:scale-110 z-40' : 'z-10'
@@ -565,7 +580,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
 
                 </div>
 
-                {/* Stand for iMac Display */}
+                {/* Stand for television display */}
                 <div className="w-32 h-14 mx-auto bg-gradient-to-b from-slate-700 to-slate-900 border-x border-b border-slate-600 rounded-b-2xl shadow-2xl"></div>
                 <div className="w-52 h-3 mx-auto bg-slate-800 rounded-full border border-slate-600 shadow-xl"></div>
               </div>
@@ -622,7 +637,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
                 </div>
               </div>
 
-              {/* 3. TACTICAL TABLET (iPad) ON THE LEFT FOREGROUND (Exact match to Image 1) */}
+              {/* 3. TABLET ON THE LEFT FOREGROUND */}
               <div
                 onClick={() => setActiveMode('TABLET')}
                 className="absolute -bottom-16 sm:-bottom-20 -left-6 sm:-left-12 lg:-left-24 w-[210px] sm:w-[270px] lg:w-[310px] rounded-3xl p-2.5 sm:p-3 bg-gradient-to-br from-slate-700 via-slate-900 to-black border-2 border-slate-600 shadow-[0_30px_70px_rgba(0,0,0,0.9),0_0_40px_rgba(0,212,255,0.25)] preserve-3d cursor-pointer hover:scale-102 transition-all z-30"
@@ -705,7 +720,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
                 </div>
               </div>
 
-              {/* 4. SMARTPHONE (iPhone 16 Pro) IN FRONT CENTER (Exact match to Image 1) */}
+              {/* 4. SMARTPHONE IN FRONT CENTER */}
               <div
                 onClick={() => setActiveMode('PHONE')}
                 className="absolute -bottom-24 sm:-bottom-28 left-1/2 -translate-x-1/2 w-[160px] sm:w-[210px] h-[340px] sm:h-[420px] rounded-[40px] p-2 bg-gradient-to-br from-slate-700 via-slate-900 to-black border-[3px] border-slate-600 shadow-[0_35px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(0,212,255,0.4)] preserve-3d cursor-pointer hover:scale-102 transition-all z-40"
@@ -787,7 +802,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
                 </div>
               </div>
 
-              {/* 5. LAPTOP (MacBook Pro) ON THE RIGHT FOREGROUND (Exact match to Image 1) */}
+              {/* 5. COMPUTER ON THE RIGHT FOREGROUND */}
               <div
                 onClick={() => setActiveMode('LAPTOP')}
                 className="absolute -bottom-20 sm:-bottom-24 -right-8 sm:-right-16 lg:-right-24 w-[240px] sm:w-[320px] lg:w-[370px] rounded-2xl p-2 sm:p-3 bg-gradient-to-b from-slate-700 via-slate-800 to-black border border-slate-600 shadow-[0_30px_70px_rgba(0,0,0,0.9),0_0_40px_rgba(59,130,246,0.25)] preserve-3d cursor-pointer hover:scale-102 transition-all z-30"
@@ -795,7 +810,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
                   transform: 'translateZ(180px) rotateY(-18deg) rotateX(12deg)'
                 }}
               >
-                {/* MacBook Display: Partner Command Desk */}
+                {/* Computer display: Partner Command Desk */}
                 <div className="w-full rounded-xl bg-[#060a12] border border-slate-800 p-2.5 sm:p-3 flex flex-col justify-between text-white font-['Plus_Jakarta_Sans'] text-[9px]">
                   
                   {/* Laptop Topbar */}
@@ -871,14 +886,14 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
           )}
 
           {/* ========================================================================= */}
-          {/* MODE 2: STANDALONE LAPTOP (MacBook Pro Partner Desk)                      */}
+          {/* MODE 2: STANDALONE COMPUTER (Partner Desk)                                */}
           {/* ========================================================================= */}
           {activeMode === 'LAPTOP' && (
             <div className="relative w-full max-w-2xl p-4 rounded-3xl bg-slate-950/90 border border-blue-500/40 shadow-2xl backdrop-blur-xl text-white font-['Plus_Jakarta_Sans']">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
                 <div className="flex items-center gap-2">
                   <Laptop className="w-5 h-5 text-cyan-400" />
-                  <span className="font-bold text-base">MacBook Pro: Панель Управління Партнера</span>
+                  <span className="font-bold text-base">Комп’ютер: Панель управління партнера</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-mono font-bold">
@@ -963,7 +978,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
           )}
 
           {/* ========================================================================= */}
-          {/* MODE 3: STANDALONE PHONE (iPhone 16 Pro Flagship)                         */}
+          {/* MODE 3: STANDALONE SMARTPHONE                                          */}
           {/* ========================================================================= */}
           {activeMode === 'PHONE' && (
             <div className="relative w-[280px] sm:w-[320px] h-[580px] sm:h-[640px] rounded-[50px] p-3 bg-gradient-to-br from-slate-700 via-slate-900 to-black border-[4px] border-slate-600 shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_50px_rgba(0,212,255,0.4)] preserve-3d">
@@ -990,7 +1005,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
                   </div>
                 </div>
 
-                {/* Radar view inside iPhone */}
+                {/* Radar view inside smartphone */}
                 <div className="flex-1 rounded-2xl bg-[#040810] border border-slate-800 relative overflow-hidden flex flex-col justify-between p-3">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(244,63,94,0.35),transparent_65%)]"></div>
                   
@@ -1029,14 +1044,14 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
           )}
 
           {/* ========================================================================= */}
-          {/* MODE 4: STANDALONE TABLET (iPad Tactical Commander)                       */}
+          {/* MODE 4: STANDALONE TABLET                                               */}
           {/* ========================================================================= */}
           {activeMode === 'TABLET' && (
             <div className="relative w-full max-w-2xl p-4 rounded-3xl bg-slate-950/90 border border-cyan-500/40 shadow-2xl backdrop-blur-xl text-white font-['Plus_Jakarta_Sans']">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
                 <div className="flex items-center gap-2">
                   <Tablet className="w-5 h-5 text-cyan-400" />
-                  <span className="font-bold text-base">iPad Pro Tactical Slate: Регіональна Матриця Загроз</span>
+                  <span className="font-bold text-base">Планшет: Регіональна матриця загроз</span>
                 </div>
                 <span className="px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-mono text-xs font-bold">
                   АКТИВНО 24/7
