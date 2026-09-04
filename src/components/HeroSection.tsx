@@ -38,7 +38,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {/* ========================================================================= */}
         {/* HERO TITLE & CALL TO ACTION HEADER (Matching reference images)           */}
         {/* ========================================================================= */}
-        <div className="flex flex-col items-center text-center max-w-7xl mx-auto lg:grid lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center lg:text-left">
+        <div className="grid max-w-7xl mx-auto gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
+          <div className="flex flex-col items-center text-center lg:col-span-1 lg:items-start lg:text-left">
           
           {/* Eyebrow Pill as in Image 2: "У БЕЗПЕЧНІШЕ ЗАВТРА" */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-cyan-500/40 text-xs font-mono tracking-widest text-cyan-300 mb-5 shadow-lg shadow-cyan-950/30">
@@ -152,9 +153,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
           </div>
 
-        </div>
+          </div>
 
-        <HeroIntelligenceStack />
+          <HeroIntelligenceStack />
+        </div>
 
         {/* ========================================================================= */}
         {/* THE MASTERPIECE 3D HOLOGRAPHIC & GADGET SHOWCASE                           */}
