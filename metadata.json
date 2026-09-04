@@ -1,0 +1,6 @@
+{
+  "name": "SirenUA Web Platform",
+  "description": "Central web platform for SIREN UA: Threat situation map, district risk trajectory, shelters, and Partner Revenue Platform with 2-level referral model and immutable ledger.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

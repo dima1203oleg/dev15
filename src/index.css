@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotateX(2deg);
+  }
+  50% {
+    transform: translateY(-8px) rotateX(0deg);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.4;
+    filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.4));
+  }
+  50% {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 24px rgba(0, 212, 255, 0.8));
+  }
+}
+
+@keyframes radarSweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dashFlow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+@keyframes laserBeam {
+  0%, 100% {
+    opacity: 0.3;
+    filter: drop-shadow(0 0 6px #00d4ff);
+  }
+  50% {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 18px #00d4ff);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+.animate-dash-flow {
+  animation: dashFlow 1.5s linear infinite;
+}
+
+.animate-laser-beam {
+  animation: laserBeam 2.5s ease-in-out infinite;
+}
+
