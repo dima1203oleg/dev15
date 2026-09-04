@@ -9,7 +9,9 @@ export const PartnerLandingSection: React.FC<PartnerLandingSectionProps> = ({ on
   // Interactive Calculator State
   const [calcL1Count, setCalcL1Count] = useState<number>(35); // Silver tier
   const [calcL2Count, setCalcL2Count] = useState<number>(70);
-  const subscriptionPriceUah = 149; // Monthly Pro plan
+  // This calculator is intentionally illustrative. Production earnings must
+  // come from the versioned QCB/ledger API, not from a frontend price.
+  const illustrativeSubscriptionPriceUah = 149;
 
   // Determine Rank and Partner Rate based on L1 count
   let currentRank = 'Starter';
@@ -33,8 +35,8 @@ export const PartnerLandingSection: React.FC<PartnerLandingSectionProps> = ({ on
   }
 
   // Monthly Earnings Calculations (L1 + L2 at single Partner Rate)
-  const l1MonthlyRevenue = calcL1Count * subscriptionPriceUah * (ratePercent / 100);
-  const l2MonthlyRevenue = calcL2Count * subscriptionPriceUah * (ratePercent / 100);
+  const l1MonthlyRevenue = calcL1Count * illustrativeSubscriptionPriceUah * (ratePercent / 100);
+  const l2MonthlyRevenue = calcL2Count * illustrativeSubscriptionPriceUah * (ratePercent / 100);
   const totalMonthlyEarnings = Math.round(l1MonthlyRevenue + l2MonthlyRevenue);
 
   return (
@@ -54,7 +56,7 @@ export const PartnerLandingSection: React.FC<PartnerLandingSectionProps> = ({ on
             </span>
           </h2>
           <p className="mt-4 text-slate-300 text-base leading-relaxed">
-            SIREN UA — це реальний продукт безпеки з високою цінністю. Ви рекомендуєте корисний застосунок своїй аудиторії та отримуєте стабільну щомісячну винагороду за кожну активну передплату.
+            SIREN UA — це реальний продукт безпеки з високою цінністю. Ви рекомендуєте корисний застосунок своїй аудиторії та можете отримувати винагороду за кваліфіковані активні передплати.
           </p>
         </div>
 
@@ -216,13 +218,13 @@ export const PartnerLandingSection: React.FC<PartnerLandingSectionProps> = ({ on
             <div className="lg:col-span-7 space-y-6">
               <div>
                 <span className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 text-xs font-bold font-mono">
-                  КАЛЬКУЛЯТОР ПРИБУТКУ
+                  ІЛЮСТРАТИВНИЙ КАЛЬКУЛЯТОР
                 </span>
                 <h3 className="text-2xl font-bold text-white mt-2">
                   Розрахуйте свій щомісячний дохід
                 </h3>
                 <p className="text-slate-400 text-xs mt-1">
-                  Виходячи з вартості передплати Pro (149 грн/міс) та вашого рангу
+                  Приклад за умовною ціною 149 грн/міс. Фактична виплата залежить від QCB, правил каналу та ledger.
                 </p>
               </div>
 

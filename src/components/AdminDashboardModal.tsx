@@ -157,27 +157,27 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                 <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
                   <span className="text-slate-400 block mb-1">Активних загроз:</span>
                   <div className="text-base font-bold font-mono text-rose-400">
-                    {overviewStats?.activeThreatsCount || 2}
+                    {overviewStats ? overviewStats.activeThreatsCount : '—'}
                   </div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
                   <span className="text-slate-400 block mb-1">Cap Compliance:</span>
                   <div className="text-base font-bold font-mono text-emerald-400">
-                    100% VALIDATED
+                    {overviewStats?.capComplianceStatus === '100%_PASS' ? 'RULES PASS' : 'NOT CONNECTED'}
                   </div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
                   <span className="text-slate-400 block mb-1">Fraud Alerts:</span>
                   <div className="text-base font-bold font-mono text-slate-300">
-                    0 (CLEAR)
+                    {overviewStats ? `${overviewStats.fraudIncidentsCount} (DEMO/REPORTED)` : '—'}
                   </div>
                 </div>
               </div>
 
               {/* Sandbox Controls */}
-              <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+              {overviewStats?.financialDataMode === 'DEMO_DATA' ? <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                 <h4 className="font-bold text-white flex items-center gap-2">
                   <Play className="w-4 h-4 text-amber-400" />
                   Пісочниця тестування бізнес-логіки (Sandbox)
@@ -205,7 +205,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                     {isThreatServerOnline ? 'Відключити ThreatServer (DATA UNAVAILABLE)' : 'Підключити ThreatServer (LIVE)'}
                   </button>
                 </div>
-              </div>
+              </div> : <div className="p-5 rounded-2xl bg-amber-950/20 border border-amber-500/30 text-amber-200">Фінансовий backend не підключений. Sandbox вимкнено.</div>}
             </div>
           )}
 
@@ -278,12 +278,12 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
               <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
                 <h4 className="font-bold text-white">SirenUA-ThreatServer Integration Dossier</h4>
                 <p className="text-slate-400">
-                  Авторитетне джерело оперативних радіолокаційних даних: `atlastrinity/SirenUA-ThreatServer`
+                  Авторитетне джерело оперативних даних: зовнішній ThreatServer потребує окремого підключення та перевірки доступу.
                 </p>
                 <div className="p-3 rounded-lg bg-slate-950 font-mono text-[11px] text-slate-300 space-y-1">
-                  <div>ENDPOINT: https://threat-server.sirenua.com/api/v1/telemetry</div>
-                  <div>STATUS: {isThreatServerOnline ? 'CONNECTED (HTTP 200 OK)' : 'DISCONNECTED (DATA UNAVAILABLE)'}</div>
-                  <div>FAILOVER PROTOCOL: Fallback to Official Civil Defense Feeds</div>
+                  <div>ENDPOINT: server-side configuration (THREAT_SERVER_URL)</div>
+                  <div>STATUS: {isThreatServerOnline ? 'DEMO DATA' : 'NOT CONNECTED'}</div>
+                  <div>FAILOVER: офіційні повідомлення органів влади</div>
                 </div>
               </div>
             </div>

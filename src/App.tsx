@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { Header } from './components/Header';
 import { AlertTicker } from './components/AlertTicker';
@@ -14,6 +14,7 @@ import { PartnerDashboardModal } from './components/PartnerDashboardModal';
 import { AdminDashboardModal } from './components/AdminDashboardModal';
 import { Footer } from './components/Footer';
 import { ThreatEvent, RegionAlert, Shelter } from './types';
+import { createSpatialModel } from './data/spatialModel';
 
 type ThreatDataMode = 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
 
@@ -30,8 +31,8 @@ export default function App() {
   const [isThreatServerOnline, setIsThreatServerOnline] = useState<boolean>(false);
   const [threatDataMode, setThreatDataMode] = useState<ThreatDataMode>('NOT_CONNECTED');
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
-  const [currentRole, setCurrentRole] = useState<string>('PARTNER');
-  const [currentRank, setCurrentRank] = useState<string>('GOLD');
+  const [currentRole, setCurrentRole] = useState<string>('USER');
+  const [currentRank, setCurrentRank] = useState<string>('—');
 
   // Fetch threat feed on mount and on periodic sync
   const fetchThreatData = async () => {
@@ -59,6 +60,14 @@ export default function App() {
     const interval = setInterval(fetchThreatData, 12000);
     return () => clearInterval(interval);
   }, []);
+
+  const spatialModel = useMemo(() => createSpatialModel({
+    dataMode: threatDataMode,
+    threats,
+    regions,
+    shelters,
+    lastUpdated: lastSyncAt
+  }), [threatDataMode, threats, regions, shelters, lastSyncAt]);
 
   // Sandbox simulation: Add 1 paid subscriber to demo partner
   const handleSimulateNewSubscriber = async () => {
@@ -106,19 +115,19 @@ export default function App() {
   };
 
   if (window.location.pathname === '/tv') {
-    return <TVModeShell dataMode={threatDataMode} />;
+    return <TVModeShell model={spatialModel} />;
   }
 
   if (window.location.pathname === '/desktop') {
-    return <DesktopModeShell dataMode={threatDataMode} />;
+    return <DesktopModeShell model={spatialModel} />;
   }
 
   if (window.location.pathname === '/mobile') {
-    return <MobileModeShell dataMode={threatDataMode} />;
+    return <MobileModeShell model={spatialModel} />;
   }
 
   if (window.location.pathname === '/tablet') {
-    return <TabletModeShell dataMode={threatDataMode} />;
+    return <TabletModeShell model={spatialModel} />;
   }
 
   return (

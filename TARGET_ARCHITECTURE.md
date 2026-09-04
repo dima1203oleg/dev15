@@ -7,14 +7,14 @@
             ┌──────────────────┴──────────────────┐
             │                                     │
     MOBILE APPLICATION                       WEB PLATFORM
-  (atlastrinity/SirenUA)              (atlastrinity/SirenUA-Website)
+  (mobile client: access required)    (dima1203oleg/Dev15)
             │                                     │
             └──────────────────┬──────────────────┘
                                │
                        IDENTITY LAYER
                                │
                     THREAT SERVER / RADAR
-               (atlastrinity/SirenUA-ThreatServer)
+               (authoritative ThreatServer: access required)
                                │
                  ┌─────────────┼─────────────┐
                  │             │             │
@@ -33,11 +33,11 @@
 ```
 
 ## 2. Production Hardening Checklist
-- [x] Strict 2-Level Referral Tree (L1 + L2 only; L3+ strictly non-commissionable).
-- [x] L2 unlocked immediately at Starter (5% L1 + 5% L2).
-- [x] Absolute 50% QCB Hard Cap validation on all financial routes.
-- [x] Minor currency units & Basis points calculations with standard HALF_UP rounding.
-- [x] Double-Entry Immutable Ledger preventing direct balance mutations.
-- [x] Official Civil Defense disclaimer and distinct CONFIRMED / ESTIMATED confidence markers.
-- [x] Grace period engine preserving rank for 14 days with cooldown limits.
-- [x] Payout lifecycle FSM with KYC, AML/Sanctions screening, and Idempotency keys.
+- [x] Domain primitives: strict L1/L2, rank thresholds, QCB, 50% cap, minor units, HALF_UP rounding.
+- [x] Domain/test ledger: append-only balanced transactions and wallet projection.
+- [x] Explicit `DEMO_DATA` / `NOT_CONNECTED` threat and financial boundaries.
+- [ ] Persistent database, migrations and transactional outbox.
+- [ ] Real identity/authentication, server-side RBAC and MFA for finance admins.
+- [ ] Signed payment/payout webhooks, KYC/AML/tax and provider reconciliation.
+- [ ] Authoritative ThreatServer, geography and real-time resilience.
+- [ ] Full CI, security, accessibility, E2E, performance and soak evidence.

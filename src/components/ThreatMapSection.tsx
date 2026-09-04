@@ -42,6 +42,7 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
     lastUpdated: '—',
     districts: []
   };
+  const isUnavailable = threatDataMode === 'NOT_CONNECTED';
 
   // 7-Step Interactive Simulator Data
   const simulationSteps = [
@@ -208,7 +209,10 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
                 {/* Radar Grid overlay */}
                 <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none"></div>
 
-                {/* SVG Visual Representation of Ukrainian Airspace & Threat Vectors */}
+                {/* The schematic SVG is a labelled demo fixture only. Production must
+                    render an authoritative geometry/data surface instead. */}
+                {threatDataMode === 'DEMO_DATA' ? <>
+                <div className="absolute right-5 top-5 z-10 rounded-full border border-amber-300/40 bg-amber-400/10 px-2.5 py-1 text-[10px] font-mono font-bold tracking-wider text-amber-200">DEMO DATA · СХЕМА</div>
                 <svg className="w-full h-72 sm:h-80" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
                   {/* Ukraine Outline approximation contours */}
                   <path 
@@ -298,6 +302,9 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
                   />
                   <circle cx="390" cy="261" r="6" fill="#f43f5e" />
                 </svg>
+                </> : <div className="flex min-h-72 w-full max-w-2xl items-center justify-center rounded-xl border border-slate-800 bg-slate-950/70 p-8 text-center sm:min-h-80">
+                  <div><div className="font-mono text-xs font-bold tracking-[0.18em] text-amber-300">NOT CONNECTED</div><p className="mt-2 text-sm font-semibold text-white">Схематична карта не використовується як оперативна</p><p className="mt-1 text-xs leading-relaxed text-slate-400">Авторитетна геометрія та телеметрія з’являться після підключення перевіреного джерела.</p></div>
+                </div>}
 
                 {threatDataMode !== 'DEMO_DATA' && !isThreatServerOnline && (
                   <div className="absolute inset-0 flex items-center justify-center bg-[#070B11]/80 p-6 text-center backdrop-blur-[2px]">
@@ -348,7 +355,7 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
                     selectedRegion?.riskLevel === 'ELEVATED' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
                     'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                   }`}>
-                    {selectedRegion?.riskLevel || 'HIGH'}
+                    {isUnavailable ? 'ДАНІ НЕДОСТУПНІ' : selectedRegion?.riskLevel || 'UNKNOWN'}
                   </span>
                 </div>
 
@@ -380,7 +387,7 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
 
                 <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
                   <span>Доступних укриттів:</span>
-                  <span className="font-bold text-white font-mono">{selectedRegion?.sheltersCount ?? 4120}</span>
+                  <span className="font-bold text-white font-mono">{isUnavailable ? '—' : selectedRegion?.sheltersCount ?? '—'}</span>
                 </div>
               </div>
 

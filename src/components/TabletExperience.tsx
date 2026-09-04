@@ -28,8 +28,6 @@ import {
   X,
 } from 'lucide-react';
 import {
-  DEMO_SPATIAL_MODEL,
-  EMPTY_SPATIAL_MODEL,
   SpatialDataMode,
   SpatialLayer,
   SpatialLayerKey,
@@ -75,7 +73,6 @@ const tabletModeLabel: Record<TabletMode, string> = {
   ALERT_FOCUS: 'Фокус уваги',
 };
 
-const makeModel = (dataMode: SpatialDataMode) => dataMode === 'DEMO_DATA' ? DEMO_SPATIAL_MODEL : { ...EMPTY_SPATIAL_MODEL, dataMode };
 
 const freshnessLabel = (model: ThreatSceneModel) => {
   if (model.dataMode === 'LIVE') return model.lastUpdated ? `LIVE · ${model.lastUpdated}` : 'LIVE · оновлюється';
@@ -110,7 +107,7 @@ const TabletHeader: React.FC<{
     <div className="tablet-header__actions">
       <button type="button" className="tablet-icon-button" onClick={onReset} aria-label="Скинути стан карти" title="Скинути стан"><RotateCcw size={17} /></button>
       <button type="button" className={`tablet-presentation-button ${presentation ? 'is-active' : ''}`} onClick={onPresentation} aria-pressed={presentation}><Sparkles size={16} /> <span>{presentation ? 'Вийти з показу' : 'Як це працює'}</span></button>
-      <button type="button" className="tablet-icon-button tablet-menu-button" aria-label="Меню"><Menu size={20} /></button>
+      <button type="button" className="tablet-icon-button tablet-menu-button" aria-label="Меню недоступне у цьому режимі" title="Навігація доступна через панель режимів" disabled><Menu size={20} /></button>
     </div>
   </header>
 );
@@ -210,7 +207,7 @@ const TabletTimeline: React.FC<{ model: ThreatSceneModel; state: TabletSceneStat
   return <section className="tablet-timeline-panel" aria-label="Хронологія ситуації"><div className="tablet-timeline-heading"><div><span className="tablet-kicker">TIME RECONSTRUCTION</span><h2>{isHistory ? `ІСТОРІЯ · ${timeline[state.timelinePosition]?.time ?? '—'}` : 'LIVE · синхронізація часу'}</h2></div>{isHistory ? <button type="button" className="tablet-live-button" onClick={onLive}><Play size={14} /> До LIVE</button> : <span className="tablet-timeline-live"><span /> {model.dataMode === 'LIVE' ? 'LIVE' : model.dataMode === 'DEMO_DATA' ? 'DEMO TIMELINE' : 'TIMELINE OFFLINE'}</span>}</div><input className="tablet-timeline-range" type="range" min="0" max={Math.max(0, timeline.length - 1)} value={Math.min(state.timelinePosition, Math.max(0, timeline.length - 1))} onChange={(event) => onPosition(Number(event.target.value))} aria-label="Позиція на хронології" disabled={!timeline.length} /><div className="tablet-timeline-events">{timeline.length ? timeline.map((item, index) => <button type="button" key={item.id} className={index === state.timelinePosition ? 'is-active' : ''} onClick={() => onPosition(index)}><span className={`tablet-timeline-dot tablet-timeline-dot--${item.tone}`} /> <b>{item.time}</b><small>{item.label}</small></button>) : <span className="tablet-empty-copy">Історична шкала з’явиться після підключення джерела.</span>}</div></section>;
 };
 
-const TabletShelters: React.FC<{ model: ThreatSceneModel }> = ({ model }) => <section className="tablet-shelters-panel"><div className="tablet-panel-heading"><div><span className="tablet-kicker">SHELTER VIEW</span><h2>Укриття поруч</h2></div><Home size={20} className="text-emerald-300" /></div><div className="tablet-shelter-layout"><div className="tablet-shelter-map"><div className="tablet-shelter-map__pulse" /><MapPin size={26} /><span>Карта маршруту</span><small>Точне прокладання маршруту відкривається через підключений картографічний сервіс.</small></div><div className="tablet-shelter-list">{model.shelters.length ? model.shelters.map((shelter) => <article className="tablet-shelter-card" key={shelter.id}><span className="tablet-shelter-icon"><Home size={16} /></span><div><strong>{shelter.label}</strong><small>{shelter.distance} · орієнтовний час залежить від маршруту</small><span>{shelter.status} · статус джерела</span></div><button type="button" aria-label={`Відкрити маршрут до ${shelter.label}`}><ArrowRight size={16} /></button></article>) : <div className="tablet-empty-state"><WifiOff size={18} /><span>Дані про укриття тимчасово недоступні.</span></div>}</div></div></section>;
+const TabletShelters: React.FC<{ model: ThreatSceneModel }> = ({ model }) => <section className="tablet-shelters-panel"><div className="tablet-panel-heading"><div><span className="tablet-kicker">SHELTER VIEW</span><h2>Укриття поруч</h2></div><Home size={20} className="text-emerald-300" /></div><div className="tablet-shelter-layout"><div className="tablet-shelter-map"><div className="tablet-shelter-map__pulse" /><MapPin size={26} /><span>Карта маршруту</span><small>Точне прокладання маршруту відкривається через підключений картографічний сервіс.</small></div><div className="tablet-shelter-list">{model.shelters.length ? model.shelters.map((shelter) => <article className="tablet-shelter-card" key={shelter.id}><span className="tablet-shelter-icon"><Home size={16} /></span><div><strong>{shelter.label}</strong><small>{shelter.distance} · пішохідний час не надано</small><span>{shelter.status} · статус джерела</span></div><button type="button" aria-label={`Маршрут до ${shelter.label} недоступний без картографічного сервісу`} title="Потрібен підключений картографічний сервіс" disabled><ArrowRight size={16} /></button></article>) : <div className="tablet-empty-state"><WifiOff size={18} /><span>Дані про укриття тимчасово недоступні.</span></div>}</div></div></section>;
 
 const TabletPartner: React.FC<{ model: ThreatSceneModel }> = ({ model }) => <section className="tablet-partner-panel"><div className="tablet-panel-heading"><div><span className="tablet-kicker">PARTNER SPATIAL VIEW</span><h2>Партнерська програма</h2></div><Users size={21} className="text-violet-300" /></div><div className="tablet-partner-grid"><div className="tablet-rank-card"><span className="tablet-section-label">RANK PROGRESS · DEMO FIXTURE</span><strong>GOLD <em>20%</em></strong><b>154 / 200</b><div className="tablet-progress"><span /></div><small>46 до Platinum · правила мають надходити з backend</small></div><div className="tablet-network-card"><div className="tablet-network-ring tablet-network-ring--l2"><span>L2</span></div><div className="tablet-network-ring tablet-network-ring--l1"><span>L1</span></div><div className="tablet-network-core"><Users size={18} /><span>YOU</span></div><small>Два рівні · privacy-safe aggregate view</small></div><div className="tablet-source-analytics"><span className="tablet-section-label">SOURCE ANALYTICS</span>{['TikTok', 'Telegram', 'Instagram', 'Direct'].map((source, index) => <div key={source}><span>{source}</span><i style={{ width: `${72 - index * 14}%` }} /><b>{model.dataMode === 'DEMO_DATA' ? ['42%', '26%', '18%', '14%'][index] : '—'}</b></div>)}</div></div><div className="tablet-partner-note"><BarChart3 size={16} /> Фінансові баланси, ранги та payout не є live-функцією цього demo; потрібні auth, DB та payment provider.</div></section>;
 
@@ -268,4 +265,4 @@ export const TabletExperience: React.FC<{ model: ThreatSceneModel }> = ({ model 
 
 const stateLabel = (model: ThreatSceneModel) => model.dataMode === 'LIVE' ? 'LIVE' : model.dataMode === 'DEMO_DATA' ? 'DEMO' : 'OFFLINE';
 
-export const TabletModeShell: React.FC<{ dataMode: SpatialDataMode }> = ({ dataMode }) => <TabletExperience model={makeModel(dataMode)} />;
+export const TabletModeShell: React.FC<{ model: ThreatSceneModel }> = ({ model }) => <TabletExperience model={model} />;

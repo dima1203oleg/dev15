@@ -123,7 +123,7 @@ ETA is a range with confidence, calculation time and source. A forecast must nev
 - **Smartphone:** Personal Safety Companion; personal region → risk → freshness → relevant threat → direction → ETA → shelter. Maximum 3–4 spatial layers and bottom sheets instead of hover tooltips.
 - **Tablet:** Touch Spatial Intelligence; portrait vertical feed and landscape map-first 65/35 workspace. Controlled layer separation, pinch, swipe, region sheet, event focus, timeline sync, shelter split view and presentation mode.
 
-These three experiences are already implemented in Dev15 and remain the first production priority.
+These three experiences exist locally as review/presentation shells and remain the first production priority; they are not production-certified until the authoritative data, identity and persistence integrations are supplied.
 
 ### P1 — Laptop, Foldable, TV, Situation Board
 

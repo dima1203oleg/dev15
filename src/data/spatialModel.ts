@@ -6,6 +6,8 @@
  * must never be presented as authoritative live data.
  */
 
+import { RegionAlert, Shelter, ThreatEvent } from '../types';
+
 export type SpatialDevice = 'TV' | 'DESKTOP' | 'LAPTOP' | 'TABLET' | 'MOBILE' | 'WATCH' | 'CAR' | 'AR';
 
 export type SpatialDataMode = 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
@@ -75,6 +77,56 @@ export interface ThreatSceneModel {
   trajectories: TrajectoryModel[];
   shelters: ShelterModel[];
   timeline: TimelineEvent[];
+}
+
+export function createSpatialModel(args: {
+  dataMode: SpatialDataMode;
+  threats: ThreatEvent[];
+  regions: RegionAlert[];
+  shelters: Shelter[];
+  lastUpdated: string | null;
+}): ThreatSceneModel {
+  const region = args.regions[0];
+  const leadThreat = args.threats[0];
+  return {
+    dataMode: args.dataMode,
+    lastUpdated: args.lastUpdated,
+    region: {
+      id: region?.id ?? 'unknown',
+      label: region?.name ?? 'Регіон не визначено',
+      status: region?.riskLevel ?? 'Дані недоступні',
+      risk: region?.riskLevel ?? 'UNKNOWN'
+    },
+    risk: {
+      label: region?.riskLevel ?? 'Очікуємо підключення',
+      level: region?.riskLevel ?? 'UNKNOWN',
+      confidence: leadThreat?.confidence ?? 'UNKNOWN'
+    },
+    activeEvents: args.threats.length,
+    layers: SPATIAL_LAYERS,
+    events: args.threats.map((threat) => ({
+      id: threat.id,
+      label: threat.categoryLabel,
+      status: threat.status,
+      confidence: threat.confidence,
+      eta: threat.estimatedArrivalMin
+    })),
+    trajectories: args.threats.map((threat) => ({
+      id: `${threat.id}-trajectory`,
+      direction: threat.directionLabel,
+      confidence: threat.confidence,
+      status: threat.status
+    })),
+    shelters: args.shelters.map((shelter) => ({
+      id: shelter.id,
+      label: shelter.name,
+      distance: shelter.distanceMeters === undefined ? 'Відстань недоступна' : `${shelter.distanceMeters} м`,
+      status: 'Статус доступності не надано'
+    })),
+    // The current HTTP contract has no historical timeline endpoint. Do not
+    // manufacture history from current events; an empty timeline is honest.
+    timeline: []
+  };
 }
 
 export const SPATIAL_LAYERS: SpatialLayer[] = [

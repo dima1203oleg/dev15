@@ -63,11 +63,20 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      setDashboardData(null);
       fetchPartnerData();
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  if (loading && !dashboardData) {
+    return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"><div className="w-full max-w-md rounded-3xl border border-cyan-400/20 bg-[#090D14] p-8 text-center"><RefreshCw className="mx-auto h-6 w-6 animate-spin text-cyan-300" /><p className="mt-4 text-sm text-slate-300">Завантажуємо partner-дані…</p></div></div>;
+  }
+
+  if (dashboardData?.error) {
+    return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"><div className="w-full max-w-md rounded-3xl border border-amber-400/30 bg-[#090D14] p-8"><div className="flex items-start justify-between gap-4"><div><div className="text-[10px] font-mono uppercase tracking-widest text-amber-300">PARTNER PLATFORM</div><h2 className="mt-2 text-xl font-bold text-white">Фінансові дані недоступні</h2></div><button type="button" onClick={onClose} className="rounded-xl bg-slate-800 p-2 text-slate-300" aria-label="Закрити"><X className="h-5 w-5" /></button></div><p className="mt-4 text-sm leading-6 text-slate-400">{dashboardData.message || 'Підключіть identity, database та billing provider перед використанням партнерського кабінету.'}</p><div className="mt-5 rounded-xl border border-slate-800 bg-slate-950/70 p-3 font-mono text-xs text-amber-200">STATUS: {dashboardData.status || 'NOT_CONNECTED'}</div></div></div>;
+  }
 
   const partner: PartnerProfile = dashboardData?.partner || {
     id: 'partner-demo-01',

@@ -219,6 +219,7 @@ let attributions: ReferralAttribution[] = [];
 let ledgerEntries: LedgerEntry[] = [];
 let payoutRequests: PayoutRequest[] = [];
 let auditLogs: AuditLogItem[] = [];
+let sandboxSequence = 0;
 const payoutProvider = new NotConnectedPayoutProvider();
 
 // Seed Demo Partner (Gold Rank with realistic 154 Active L1s)
@@ -409,7 +410,7 @@ function calculateWallet(partnerId: string): WalletProjection {
     heldMinor,
     availableMinor,
     lockedPayoutMinor,
-    paidTotalMinor: paidTotalMinor || 154000,
+    paidTotalMinor,
     lifetimeEarnedMinor,
     currency: 'UAH'
   };
@@ -423,12 +424,28 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.disable('x-powered-by');
+  app.use(express.json({ limit: '100kb' }));
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('X-Frame-Options', 'DENY');
+    next();
+  });
 
   const financialUnavailable = (res: express.Response) => res.status(503).json({
     error: 'FINANCIAL_DATA_NOT_CONNECTED',
     status: 'NOT_CONNECTED',
     message: 'Фінансові дані, автентифікація та partner provider ще не підключені.'
+  });
+
+  app.get('/api/health', (_req, res) => {
+    res.json({
+      status: 'ok',
+      threatDataMode,
+      financialDataMode: financialDemoEnabled ? 'DEMO_DATA' : 'NOT_CONNECTED',
+      payoutProvider: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED'
+    });
   });
 
   // --------------------------------------------------------------------------
@@ -702,6 +719,7 @@ async function startServer() {
       totalPaidOutMinor: totalPaidMinor,
       totalAvailableReserveMinor: totalAvailableMinor,
       capComplianceStatus: '100%_PASS',
+      financialDataMode: financialDemoEnabled ? 'DEMO_DATA' : 'NOT_CONNECTED',
       threatServerHealth: demoDataEnabled && isThreatServerConnected ? 'DEMO_DATA' : 'NOT_CONNECTED',
       activeThreatsCount: demoDataEnabled && isThreatServerConnected ? mockLiveThreats.length : 0,
       fraudIncidentsCount: 0
@@ -753,10 +771,12 @@ async function startServer() {
       partner.partnerRateBps = 2500;
     }
 
+    sandboxSequence += 1;
+    const sequence = sandboxSequence;
     const newAttr: ReferralAttribution = {
-      id: `attr-l1-${Date.now()}`,
-      userId: `usr-new-${Date.now()}`,
-      userAnonymousLabel: `Користувач #L1-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: `attr-l1-sandbox-${sequence}`,
+      userId: `usr-new-sandbox-${sequence}`,
+      userAnonymousLabel: `Користувач #L1-SANDBOX-${sequence}`,
       referrerL1Id: demoPartnerId,
       sourceChannel: 'TIKTOK',
       utmCampaign: 'sandbox_test',
@@ -772,8 +792,8 @@ async function startServer() {
     // Post to Immutable Ledger (L1 rate: 20% or 25% of 149 UAH = 29.80 or 37.25 UAH)
     const commissionMinor = Math.round((14900 * partner.partnerRateBps) / 10000);
     ledgerEntries.push({
-      id: `led-${Date.now()}`,
-      transactionId: `TX-${Date.now()}`,
+      id: `led-sandbox-${sequence}`,
+      transactionId: `TX-SANDBOX-${sequence}`,
       timestamp: new Date().toISOString(),
       debitAccount: 'PLATFORM_REVENUE',
       creditAccount: 'PARTNER_AVAILABLE_PAYABLE',
@@ -783,7 +803,7 @@ async function startServer() {
       referralLevel: 'L1',
       rateBps: partner.partnerRateBps,
       description: `Комісія L1 (${partner.partnerRateBps / 100}%) за нового передплатника ${newAttr.userAnonymousLabel}`,
-      idempotencyKey: `idem-sb-${Date.now()}`
+      idempotencyKey: `idem-sb-${sequence}`
     });
 
     res.json({
@@ -791,6 +811,20 @@ async function startServer() {
       newAttribution: newAttr,
       commissionEarnedMinor: commissionMinor,
       partner
+    });
+  });
+
+  // Keep API failures machine-readable. In particular, never leak a parser
+  // stack trace or an HTML error page to clients consuming JSON endpoints.
+  app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const error = err as { type?: string; status?: number; message?: string };
+    if (error.type === 'entity.parse.failed') {
+      return res.status(400).json({ error: 'INVALID_JSON', message: 'Некоректне тіло JSON-запиту.' });
+    }
+    console.error('[SIREN UA] request failure:', error.message ?? 'unknown error');
+    return res.status(error.status && error.status >= 400 ? error.status : 500).json({
+      error: 'INTERNAL_SERVER_ERROR',
+      message: 'Внутрішня помилка сервера.'
     });
   });
 

@@ -163,7 +163,7 @@ export const Header: React.FC<HeaderProps> = ({
               <Users className="w-4 h-4 text-amber-400" />
               <span>Кабінет партнера</span>
               <span className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[10px] bg-amber-400/20 font-bold text-amber-300 border border-amber-400/30">
-                GOLD 20%
+                {currentRole === 'PARTNER' ? 'ПАРТНЕР' : 'УВІЙТИ'}
               </span>
             </button>
 
