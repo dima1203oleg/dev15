@@ -30,7 +30,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
   const [showQrModal, setShowQrModal] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState<string>('0');
   const [payoutProvider, setPayoutProvider] = useState<'MONOBANK' | 'LIQPAY' | 'IBAN_SEPA'>('MONOBANK');
-  const [payoutCardNumber, setPayoutCardNumber] = useState<string>('5375 4141 2948 1029');
+  const [payoutCardNumber, setPayoutCardNumber] = useState<string>('');
   const [payoutSuccessMsg, setPayoutSuccessMsg] = useState<string | null>(null);
 
   // Local state fetched from server API
@@ -78,53 +78,22 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
     return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"><div className="w-full max-w-md rounded-3xl border border-amber-400/30 bg-[#090D14] p-8"><div className="flex items-start justify-between gap-4"><div><div className="text-[10px] font-mono uppercase tracking-widest text-amber-300">PARTNER PLATFORM</div><h2 className="mt-2 text-xl font-bold text-white">Фінансові дані недоступні</h2></div><button type="button" onClick={onClose} className="rounded-xl bg-slate-800 p-2 text-slate-300" aria-label="Закрити"><X className="h-5 w-5" /></button></div><p className="mt-4 text-sm leading-6 text-slate-400">{dashboardData.message || 'Підключіть identity, database та billing provider перед використанням партнерського кабінету.'}</p><div className="mt-5 rounded-xl border border-slate-800 bg-slate-950/70 p-3 font-mono text-xs text-amber-200">STATUS: {dashboardData.status || 'NOT_CONNECTED'}</div></div></div>;
   }
 
-  const partner: PartnerProfile = dashboardData?.partner || {
-    id: 'partner-demo-01',
-    userId: 'usr-demo-01',
-    referralCode: 'SIREN_ATLAS',
-    rank: 'GOLD',
-    effectiveRank: 'GOLD',
-    partnerRateBps: 2000,
-    rankState: 'ACTIVE',
-    graceInfo: { isActive: false, daysRemaining: 0, cycleCount: 0, preservedRank: 'GOLD', preservedRateBps: 2000 },
-    qualityScore: 98,
-    qualityStatus: 'QUALITY_GOOD',
-    ambassadorTier: 'CANDIDATE',
-    isAmbassadorApproved: false,
-    activeL1PaidCount: 154,
-    activeL2PaidCount: 382,
-    totalL1Count: 220,
-    totalL2Count: 510,
-    totalClicks: 4890,
-    totalInstalls: 1420,
-    createdAt: '2026-01-15'
-  };
+  if (!dashboardData?.partner || !dashboardData?.wallet) {
+    return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"><div className="w-full max-w-md rounded-3xl border border-amber-400/30 bg-[#090D14] p-8"><div className="flex items-start justify-between gap-4"><div><div className="text-[10px] font-mono uppercase tracking-widest text-amber-300">PARTNER PLATFORM</div><h2 className="mt-2 text-xl font-bold text-white">Неповна відповідь partner API</h2></div><button type="button" onClick={onClose} className="rounded-xl bg-slate-800 p-2 text-slate-300" aria-label="Закрити"><X className="h-5 w-5" /></button></div><p className="mt-4 text-sm leading-6 text-slate-400">Кабінет не показує непідтверджені баланси або ранги. Повторіть запит після підключення фінансового backend.</p><div className="mt-5 rounded-xl border border-slate-800 bg-slate-950/70 p-3 font-mono text-xs text-amber-200">STATUS: INCOMPLETE_RESPONSE</div></div></div>;
+  }
 
-  const wallet: WalletProjection = dashboardData?.wallet || {
-    partnerId: partner.id,
-    pendingMinor: 0,
-    heldMinor: 0,
-    availableMinor: 0,
-    lockedPayoutMinor: 0,
-    paidTotalMinor: 0,
-    lifetimeEarnedMinor: 0,
-    currency: 'UAH'
-  };
+  const partner: PartnerProfile = dashboardData.partner;
+
+  const wallet: WalletProjection = dashboardData.wallet;
 
   const payoutEligibility = dashboardData?.payoutEligibility;
   const minimumPayoutMinor = Number.isSafeInteger(payoutEligibility?.minimumPayoutMinor)
     ? payoutEligibility.minimumPayoutMinor
     : null;
 
-  const rankProgress = dashboardData?.rankProgress || {
-    currentPaidL1: 154,
-    nextRank: 'PLATINUM',
-    targetThreshold: 200,
-    remainingToNext: 46,
-    percentageToNext: 77
-  };
+  const rankProgress = dashboardData.rankProgress;
 
-  const referralUrl = `https://sirenua.com/join/${partner.referralCode}`;
+  const referralUrl = `${window.location.origin}/r/${encodeURIComponent(partner.referralCode)}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralUrl);
@@ -292,12 +261,12 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                   <div className="text-2xl font-extrabold text-amber-400 font-mono mt-1">
                     {(wallet.availableMinor / 100).toLocaleString('uk-UA')} <span className="text-sm font-bold">грн</span>
                   </div>
-                  <span className="text-[10px] text-slate-400 mt-1 block">Миттєве виведення від 500 грн</span>
+                  <span className="text-[10px] text-slate-400 mt-1 block">Мінімум: еквівалент $10 · FX snapshot</span>
                 </div>
 
                 {/* Pending Hold */}
                 <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-                  <span className="text-xs text-slate-400 font-medium block">В очікуванні (Hold 14 днів):</span>
+                  <span className="text-xs text-slate-400 font-medium block">В очікуванні (versioned hold policy):</span>
                   <div className="text-2xl font-extrabold text-slate-200 font-mono mt-1">
                     {(wallet.pendingMinor / 100).toLocaleString('uk-UA')} <span className="text-sm font-bold">грн</span>
                   </div>
@@ -521,7 +490,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
                 <span className="text-slate-400">Подвійний запис (Double-entry) • Жодних прямих змін балансу</span>
                 <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold">
-                  ZERO_SUM_INTEGRITY: PASS
+                  DOUBLE_ENTRY_VIEW · {ledgerEntries.length ? 'ENTRIES LOADED' : 'NO ENTRIES'}
                 </span>
               </div>
 

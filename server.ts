@@ -26,8 +26,13 @@ import {
 
 // 1. Threat & Situational Intelligence Data
 const isDevelopment = process.env.NODE_ENV !== 'production';
-const demoDataEnabled = isDevelopment || process.env.SIREN_DATA_MODE === 'DEMO';
-const financialDemoEnabled = isDevelopment || process.env.SIREN_FINANCIAL_MODE === 'DEMO';
+// Development defaults to fixtures for local UI work, but an explicit
+// NOT_CONNECTED mode must always be respected so disconnected behavior can be
+// tested locally before deployment.
+const demoDataEnabled = process.env.SIREN_DATA_MODE === 'DEMO'
+  || (isDevelopment && process.env.SIREN_DATA_MODE !== 'NOT_CONNECTED');
+const financialDemoEnabled = process.env.SIREN_FINANCIAL_MODE === 'DEMO'
+  || (isDevelopment && process.env.SIREN_FINANCIAL_MODE !== 'NOT_CONNECTED');
 let isThreatServerConnected = demoDataEnabled;
 let threatDataMode: 'DEMO_DATA' | 'NOT_CONNECTED' = demoDataEnabled ? 'DEMO_DATA' : 'NOT_CONNECTED';
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Radio, Compass, Navigation, Clock, MapPin, Shield, AlertTriangle, Layers, Info, CheckCircle2, Play, RefreshCw, Eye, Check } from 'lucide-react';
+import { Radio, Compass, Navigation, Clock, MapPin, Shield, AlertTriangle, Layers, Info, CheckCircle2, Play, RefreshCw, Eye } from 'lucide-react';
 import { ThreatEvent, RegionAlert, Shelter } from '../types';
 import { DEFAULT_REGIONS } from '../data/mockData';
 
@@ -22,7 +22,6 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
   const [activeTab, setActiveTab] = useState<'MAP' | 'SIMULATOR' | 'SHELTERS'>('MAP');
   const [simulatorStep, setSimulatorStep] = useState<number>(1);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [navigatedShelterId, setNavigatedShelterId] = useState<string | null>(null);
 
   const safeRegions = (regions && regions.length > 0)
     ? regions
@@ -543,28 +542,14 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => {
-                    setNavigatedShelterId(sh.id);
-                    setTimeout(() => setNavigatedShelterId(null), 4000);
-                  }}
-                  className={`mt-4 w-full py-2.5 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all ${
-                    navigatedShelterId === sh.id
-                      ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-900/40'
-                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                  }`}
+                <button
+                  type="button"
+                  disabled
+                  title="Потрібен підключений картографічний сервіс"
+                  className="mt-4 w-full py-2.5 rounded-xl text-xs font-semibold border border-slate-700 bg-slate-800/60 text-slate-400 flex items-center justify-center gap-1.5 cursor-not-allowed"
                 >
-                  {navigatedShelterId === sh.id ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-white animate-bounce" />
-                      <span>Маршрут побудовано (~4 хв пішки)</span>
-                    </>
-                  ) : (
-                    <>
-                      <Navigation className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Прокласти маршрут</span>
-                    </>
-                  )}
+                  <Navigation className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Маршрут недоступний</span>
                 </button>
               </div>
             ))}
