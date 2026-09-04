@@ -435,6 +435,7 @@ async function startServer() {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('X-Frame-Options', 'DENY');
+    if (_req.path.startsWith('/api/')) res.setHeader('Cache-Control', 'no-store');
     next();
   });
 
@@ -450,6 +451,22 @@ async function startServer() {
       threatDataMode,
       financialDataMode: financialDemoEnabled ? 'DEMO_DATA' : 'NOT_CONNECTED',
       payoutProvider: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED'
+    });
+  });
+
+  app.get('/api/ready', (_req, res) => {
+    const checks: Record<'threatData' | 'financialData' | 'payoutProvider', string> = {
+      threatData: isThreatServerConnected ? threatDataMode : 'NOT_CONNECTED',
+      financialData: financialDemoEnabled ? 'DEMO_DATA' : 'NOT_CONNECTED',
+      payoutProvider: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED'
+    };
+    const ready = checks.threatData === 'LIVE'
+      && checks.financialData === 'CONNECTED'
+      && checks.payoutProvider === 'CONNECTED';
+    res.status(ready ? 200 : 503).json({
+      status: ready ? 'ready' : 'not_ready',
+      checks,
+      message: ready ? 'Production dependencies are connected.' : 'Потрібні production-інтеграції ще не підключені.'
     });
   });
 
@@ -733,10 +750,19 @@ async function startServer() {
 
   // Admin Validate Cap
   app.post('/api/admin/validate-cap', (req, res) => {
-    const { l1RateBps, l2RateBps, campaignBonusBps } = req.body;
-    const l1 = Number(l1RateBps) || 0;
-    const l2 = Number(l2RateBps) || 0;
-    const campaign = Number(campaignBonusBps) || 0;
+    if (!financialDemoEnabled) return financialUnavailable(res);
+    const { l1RateBps, l2RateBps, campaignBonusBps } = req.body ?? {};
+    const parseRate = (value: unknown): number | null => {
+      if (typeof value === 'number' && Number.isInteger(value)) return value;
+      if (typeof value === 'string' && /^\d+$/.test(value)) return Number(value);
+      return null;
+    };
+    const l1 = parseRate(l1RateBps);
+    const l2 = parseRate(l2RateBps);
+    const campaign = parseRate(campaignBonusBps);
+    if (l1 === null || l2 === null || campaign === null) {
+      return res.status(400).json({ error: 'INVALID_RATE_BPS', message: 'Ставки мають бути цілими невід’ємними значеннями в basis points.' });
+    }
     const result = validateAllocationCap([
       { partnerId: 'L1', referralLevel: 'L1', rateBps: l1 },
       { partnerId: 'L2', referralLevel: 'L2', rateBps: l2 },
