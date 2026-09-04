@@ -10,6 +10,7 @@ import { ThreeDShowcase } from './ThreeDShowcase';
 import { HeroIntelligenceStack } from './HeroIntelligenceStack';
 import { DeviceExperienceLab } from './DeviceExperienceLab';
 import { MobileExperience } from './MobileExperience';
+import { TabletExperience } from './TabletExperience';
 
 interface HeroSectionProps {
   onNavigateToMap: () => void;
@@ -29,12 +30,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   threatDataMode
 }) => {
   const mobileModel = threatDataMode === 'DEMO_DATA' ? DEMO_SPATIAL_MODEL : { ...EMPTY_SPATIAL_MODEL, dataMode: threatDataMode };
+  const tabletModel = threatDataMode === 'DEMO_DATA' ? DEMO_SPATIAL_MODEL : { ...EMPTY_SPATIAL_MODEL, dataMode: threatDataMode };
 
   return (
     <section className="relative overflow-hidden pt-6 pb-20 lg:pt-10 lg:pb-28">
 
       <div className="mobile-home-only">
         <MobileExperience model={mobileModel} onDownload={onNavigateToDownload} />
+      </div>
+
+      <div className="tablet-home-only">
+        <TabletExperience model={tabletModel} />
       </div>
 
       <div className="desktop-home-only">

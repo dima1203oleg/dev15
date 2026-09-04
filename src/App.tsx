@@ -5,6 +5,7 @@ import { AlertTicker } from './components/AlertTicker';
 import { HeroSection } from './components/HeroSection';
 import { DesktopModeShell, TVModeShell } from './components/DeviceExperienceLab';
 import { MobileModeShell } from './components/MobileExperience';
+import { TabletModeShell } from './components/TabletExperience';
 import { ThreatMapSection } from './components/ThreatMapSection';
 import { FeaturesSection } from './components/FeaturesSection';
 import { PartnerLandingSection } from './components/PartnerLandingSection';
@@ -114,6 +115,10 @@ export default function App() {
 
   if (window.location.pathname === '/mobile') {
     return <MobileModeShell dataMode={threatDataMode} />;
+  }
+
+  if (window.location.pathname === '/tablet') {
+    return <TabletModeShell dataMode={threatDataMode} />;
   }
 
   return (
