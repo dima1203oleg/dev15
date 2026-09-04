@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import { Header } from './components/Header';
 import { AlertTicker } from './components/AlertTicker';
 import { HeroSection } from './components/HeroSection';
-import { TVModeShell } from './components/DeviceExperienceLab';
+import { DesktopModeShell, TVModeShell } from './components/DeviceExperienceLab';
 import { ThreatMapSection } from './components/ThreatMapSection';
 import { FeaturesSection } from './components/FeaturesSection';
 import { PartnerLandingSection } from './components/PartnerLandingSection';
@@ -105,6 +105,10 @@ export default function App() {
 
   if (window.location.pathname === '/tv') {
     return <TVModeShell dataMode={threatDataMode} />;
+  }
+
+  if (window.location.pathname === '/desktop') {
+    return <DesktopModeShell dataMode={threatDataMode} />;
   }
 
   return (

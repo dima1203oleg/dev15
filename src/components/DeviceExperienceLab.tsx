@@ -12,10 +12,13 @@ import {
   Glasses,
   Home,
   Layers3,
+  Maximize2,
   MapPin,
   Monitor,
   Move3d,
+  RotateCcw,
   Radio,
+  SlidersHorizontal,
   Smartphone,
   Tablet,
   Tv,
@@ -77,9 +80,11 @@ const SpatialCore: React.FC<{
   model: ThreatSceneModel;
   device: SpatialDevice;
   compact?: boolean;
-}> = ({ model, device, compact = false }) => {
+  activeLayerIds?: string[];
+  selectedRegion?: string | null;
+}> = ({ model, device, compact = false, activeLayerIds, selectedRegion }) => {
   const visibleLayers = device === 'MOBILE' || device === 'WATCH' || device === 'CAR' ? 3 : device === 'TV' ? 5 : 6;
-  const layers = model.layers.slice(0, visibleLayers);
+  const layers = model.layers.filter((layer) => !activeLayerIds || activeLayerIds.includes(layer.id)).slice(0, visibleLayers);
   const isUnavailable = model.dataMode === 'NOT_CONNECTED';
 
   return (
@@ -88,7 +93,7 @@ const SpatialCore: React.FC<{
       <div className="spatial-core__grid" />
       <div className="spatial-core__orbit spatial-core__orbit--one" />
       <div className="spatial-core__orbit spatial-core__orbit--two" />
-      <div className="spatial-core__layers" aria-hidden="true">
+      <div className={`spatial-core__layers ${selectedRegion ? 'spatial-core__layers--focused' : ''}`} aria-hidden="true">
         {layers.map((layer, index) => (
           <div
             className={`spatial-layer ${toneClasses[layer.tone]}`}
@@ -117,7 +122,7 @@ const SpatialCore: React.FC<{
       ) : (
         <div className="spatial-core__status">
           <span className="h-2 w-2 rounded-full bg-amber-300 shadow-[0_0_14px_#fcd34d]" />
-          <span>{model.region.label} · {model.risk.label}</span>
+          <span>{selectedRegion ? `${selectedRegion} · ${model.risk.label}` : `${model.region.label} · ${model.risk.label}`}</span>
         </div>
       )}
     </div>
@@ -172,13 +177,92 @@ const Timeline: React.FC<{ model: ThreatSceneModel }> = ({ model }) => (
   </div>
 );
 
-const DesktopScene: React.FC<{ model: ThreatSceneModel }> = ({ model }) => (
-  <div className="device-scene device-scene--desktop">
-    <StoryRail model={model} />
-    <div className="min-w-0"><SpatialCore model={model} device="DESKTOP" /><Timeline model={model} /></div>
-    <LiveRail model={model} />
+const DESKTOP_REGIONS = [
+  { id: 'national', label: 'Україна', status: 'Національний огляд' },
+  { id: 'kyiv', label: 'Київський регіон', status: 'Підвищена увага' },
+  { id: 'east', label: 'Східний сектор', status: 'Поточні події' },
+];
+
+const DesktopMapFallback: React.FC<{ model: ThreatSceneModel; selectedRegion: string | null }> = ({ model, selectedRegion }) => (
+  <div className="desktop-map-fallback" role="img" aria-label="2D fallback карти: 3D-візуалізація недоступна">
+    <div className="desktop-map-fallback__grid" />
+    <div className="desktop-map-fallback__shape" />
+    <div className="desktop-map-fallback__marker desktop-map-fallback__marker--west">Захід</div>
+    <div className="desktop-map-fallback__marker desktop-map-fallback__marker--center">{selectedRegion ?? model.region.label}</div>
+    <div className="desktop-map-fallback__marker desktop-map-fallback__marker--east">Схід</div>
+    <div className="desktop-map-fallback__message"><WifiOff className="h-4 w-4" /> 2D FALLBACK · spatial canvas вимкнено</div>
   </div>
 );
+
+const DesktopScene: React.FC<{ model: ThreatSceneModel }> = ({ model }) => {
+  const [sceneMode, setSceneMode] = useState<'MARKETING' | 'INTELLIGENCE' | 'ALERT_FOCUS'>('MARKETING');
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [activeLayerIds, setActiveLayerIds] = useState<string[]>(model.layers.map((layer) => layer.id));
+  const [timelineIndex, setTimelineIndex] = useState(Math.max(model.timeline.length - 1, 0));
+  const [isFallback, setIsFallback] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const stageRef = React.useRef<HTMLDivElement>(null);
+  const isLive = timelineIndex === Math.max(model.timeline.length - 1, 0);
+  const currentTime = model.timeline[timelineIndex]?.time ?? model.lastUpdated ?? '—';
+  const timelineModel = useMemo(() => {
+    if (isLive || model.dataMode !== 'DEMO_DATA') return model;
+    const historicalEvents = Math.max(2, model.activeEvents - ((model.timeline.length - 1 - timelineIndex) * 2));
+    return { ...model, activeEvents: historicalEvents, risk: { ...model.risk, label: timelineIndex === 0 ? 'Увага' : 'Підвищений ризик' } };
+  }, [isLive, model, timelineIndex]);
+
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+      if (event.key.toLowerCase() === 'l') setTimelineIndex(Math.max(model.timeline.length - 1, 0));
+      if (event.key.toLowerCase() === 't') setSceneMode('INTELLIGENCE');
+      if (event.key.toLowerCase() === 'r') { setSelectedRegion(null); setSceneMode('MARKETING'); }
+      if (event.key === 'Escape') setSceneMode('INTELLIGENCE');
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [model.timeline.length]);
+
+  React.useEffect(() => {
+    setTimelineIndex(Math.max(model.timeline.length - 1, 0));
+    setActiveLayerIds((current) => current.length === 0 && model.layers.length > 0 ? model.layers.map((layer) => layer.id) : current.filter((id) => model.layers.some((layer) => layer.id === id)));
+  }, [model.dataMode, model.layers.length, model.timeline.length]);
+
+  const toggleLayer = (layerId: string) => {
+    setActiveLayerIds((current) => current.includes(layerId) ? current.filter((id) => id !== layerId) : [...current, layerId]);
+  };
+
+  const focusRegion = (regionId: string) => {
+    setSelectedRegion(regionId === 'national' ? null : DESKTOP_REGIONS.find((region) => region.id === regionId)?.label ?? regionId);
+    setSceneMode(regionId === 'national' ? 'INTELLIGENCE' : 'ALERT_FOCUS');
+  };
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await stageRef.current?.requestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch {
+      setIsFullscreen(false);
+    }
+  };
+
+  const modeTitle = sceneMode === 'MARKETING' ? 'Побачити повну картину' : sceneMode === 'ALERT_FOCUS' ? 'Focused Alert Mode' : 'Spatial Command View';
+
+  return <div ref={stageRef} className={`device-scene device-scene--desktop desktop-command-stage desktop-command-stage--${sceneMode.toLowerCase()} ${isFullscreen ? 'desktop-command-stage--fullscreen' : ''}`}>
+    <div className="desktop-command-stage__topbar"><div><p className="text-[10px] font-mono tracking-[0.2em] text-cyan-300/70">SIREN SPATIAL COMMAND DESKTOP</p><h3 className="mt-1 text-xl font-black text-white sm:text-2xl">{modeTitle}</h3></div><div className="flex items-center gap-2"><span className="hidden rounded-full border border-slate-700 bg-slate-950/60 px-2.5 py-1 text-[9px] font-mono text-slate-500 lg:inline">F · FULLSCREEN &nbsp; L · LIVE &nbsp; T · TIMELINE &nbsp; R · RESET</span><button type="button" onClick={() => setIsFallback((value) => !value)} className="desktop-control-button" aria-pressed={isFallback} title="Перемкнути 2D fallback"><SlidersHorizontal className="h-4 w-4" /><span className="hidden sm:inline">{isFallback ? '3D core' : '2D fallback'}</span></button><button type="button" onClick={toggleFullscreen} className="desktop-control-button" title="На весь екран"><Maximize2 className="h-4 w-4" /><span className="hidden sm:inline">{isFullscreen ? 'Вийти' : 'Fullscreen'}</span></button></div></div>
+    <div className="desktop-command-stage__body">
+      <aside className="desktop-context-panel"><div className="desktop-panel-kicker">PRODUCT / PERSONAL CONTEXT</div><div className="mt-3 rounded-2xl border border-cyan-300/20 bg-cyan-400/[0.05] p-4"><div className="flex items-center gap-2 text-[10px] font-mono text-cyan-200"><MapPin className="h-3.5 w-3.5" /> МІЙ РАЙОН</div><div className="mt-2 text-base font-bold text-white">{selectedRegion ?? 'Не обрано'}</div><div className="mt-1 text-xs text-slate-500">{selectedRegion ? 'Фокус активовано' : 'Виберіть регіон на карті'}</div></div><div className="mt-4"><div className="desktop-panel-kicker">РЕГІОНАЛЬНИЙ ФОКУС</div><div className="mt-2 space-y-2">{DESKTOP_REGIONS.map((region) => <button type="button" key={region.id} onClick={() => focusRegion(region.id)} className={`desktop-region-button ${selectedRegion === region.label || (region.id === 'national' && !selectedRegion) ? 'desktop-region-button--active' : ''}`}><span><span className="block text-xs font-bold text-white">{region.label}</span><span className="mt-1 block text-[10px] text-slate-500">{region.status}</span></span><ChevronRight className="h-4 w-4 text-slate-500" /></button>)}</div></div><div className="mt-5"><div className="desktop-panel-kicker">ШАРИ КАРТИ</div><div className="mt-2 space-y-2">{model.layers.map((layer) => <button type="button" key={layer.id} onClick={() => toggleLayer(layer.id)} aria-pressed={activeLayerIds.includes(layer.id)} className="desktop-layer-toggle"><span className={`desktop-layer-toggle__dot ${activeLayerIds.includes(layer.id) ? `desktop-layer-toggle__dot--${layer.tone}` : ''}`} /><span className="flex-1 text-left text-[10px] text-slate-300">{layer.label}</span><span className={`text-[10px] ${activeLayerIds.includes(layer.id) ? 'text-cyan-200' : 'text-slate-600'}`}>{activeLayerIds.includes(layer.id) ? 'ON' : 'OFF'}</span></button>)}</div></div></aside>
+      <section className="desktop-command-stage__map" aria-label="Центральна просторова карта SIREN UA"><div className="desktop-map-header"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_14px_#67e8f9]" /><span className="text-[10px] font-mono tracking-[0.16em] text-cyan-100">3D UKRAINE CORE</span></div><span className="text-[10px] font-mono text-slate-500">{isLive ? 'LIVE VIEW' : `TIMELINE · ${currentTime}`}</span></div>{isFallback ? <DesktopMapFallback model={timelineModel} selectedRegion={selectedRegion} /> : <SpatialCore model={timelineModel} device="DESKTOP" activeLayerIds={activeLayerIds} selectedRegion={selectedRegion} />}<div className="desktop-map-actions"><button type="button" onClick={() => { setSceneMode('INTELLIGENCE'); setSelectedRegion(null); }} className="desktop-map-action"><Monitor className="h-3.5 w-3.5" /> Україна</button><button type="button" onClick={() => focusRegion('kyiv')} className="desktop-map-action"><MapPin className="h-3.5 w-3.5" /> Мій район</button><button type="button" onClick={() => { setSelectedRegion(null); setActiveLayerIds(model.layers.map((layer) => layer.id)); }} className="desktop-map-action"><RotateCcw className="h-3.5 w-3.5" /> Скинути</button></div><div className="desktop-map-legend"><span><i className="desktop-legend-dot desktop-legend-dot--safe" /> Спокійно</span><span><i className="desktop-legend-dot desktop-legend-dot--attention" /> Увага</span><span><i className="desktop-legend-dot desktop-legend-dot--high" /> Підвищений ризик</span><span><i className="desktop-legend-dot desktop-legend-dot--critical" /> Високий ризик</span></div></section>
+      <aside className="desktop-intelligence-panel"><LiveRail model={timelineModel} /><div className="mt-3 rounded-2xl border border-rose-300/20 bg-rose-400/[0.05] p-4"><div className="flex items-center justify-between"><span className="desktop-panel-kicker">АКТИВНІ ПОДІЇ</span><span className="rounded-full bg-rose-400/10 px-2 py-1 text-[10px] text-rose-200">{timelineModel.activeEvents || '—'}</span></div>{timelineModel.events.length === 0 ? <p className="mt-3 text-xs text-slate-500">Актуальні події тимчасово недоступні.</p> : <div className="mt-3 space-y-2">{timelineModel.events.map((event) => <button type="button" key={event.id} onClick={() => setSceneMode('ALERT_FOCUS')} className="desktop-event-button"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-rose-300 shadow-[0_0_12px_#fb7185]" /><span className="min-w-0 text-left"><span className="block truncate text-xs font-bold text-white">{event.label}</span><span className="mt-1 block text-[10px] text-slate-500">{event.confidence} · {event.eta}</span></span><ArrowRight className="h-3.5 w-3.5 text-slate-500" /></button>)}</div>}</div><div className="mt-3 rounded-2xl border border-amber-300/20 bg-amber-400/[0.05] p-4"><div className="flex items-center gap-2 text-[10px] font-mono tracking-[0.14em] text-amber-200"><Clock3 className="h-3.5 w-3.5" /> ОРІЄНТОВНИЙ ЧАС</div><div className="mt-2 text-2xl font-black text-white">{model.dataMode === 'DEMO_DATA' ? '10–15 хв' : '—'}</div><div className="mt-1 text-[10px] text-slate-500">оцінка за поточними даними · {timelineModel.risk.confidence}</div></div></aside>
+    </div>
+    <div className="desktop-command-stage__timeline"><div className="flex items-center justify-between gap-4"><div><div className="desktop-panel-kicker">EVENT TIMELINE / TIME SCRUBBER</div><div className="mt-1 text-xs text-slate-300">{isLive ? 'Поточний момент' : `Реконструкція стану · ${currentTime}`}</div></div>{isLive ? <span className="flex items-center gap-2 text-[10px] font-mono text-emerald-200"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> LIVE</span> : <button type="button" onClick={() => setTimelineIndex(Math.max(model.timeline.length - 1, 0))} className="desktop-live-button">Повернутися в LIVE <ArrowRight className="h-3.5 w-3.5" /></button>}</div><input className="desktop-timeline-range" type="range" min="0" max={Math.max(model.timeline.length - 1, 0)} step="1" value={timelineIndex} onChange={(event) => setTimelineIndex(Number(event.target.value))} aria-label="Перемотати хронологію подій" />{model.timeline.length > 0 && <div className="mt-2 flex justify-between gap-3">{model.timeline.map((item, index) => <button type="button" key={item.id} onClick={() => setTimelineIndex(index)} className={`desktop-timeline-point ${timelineIndex === index ? 'desktop-timeline-point--active' : ''}`}><span className="block h-2 w-2 rounded-full bg-current" /><span className="mt-1 block font-mono">{item.time}</span><span className="mt-1 hidden text-slate-500 sm:block">{item.label}</span></button>)}</div>}</div>
+    {sceneMode === 'MARKETING' && <div className="desktop-marketing-overlay"><div><p className="text-[10px] font-mono tracking-[0.18em] text-cyan-300/70">MARKETING MODE → INTELLIGENCE MODE</p><h4 className="mt-2 text-lg font-black text-white">Увійдіть усередину живої системи</h4></div><button type="button" onClick={() => setSceneMode('INTELLIGENCE')} className="desktop-primary-action">Переглянути ситуацію <ArrowRight className="h-4 w-4" /></button></div>}
+  </div>;
+};
 
 const LaptopScene: React.FC<{ model: ThreatSceneModel }> = ({ model }) => (
   <div className="device-scene device-scene--laptop">
@@ -235,4 +319,10 @@ export const TVModeShell: React.FC<{ dataMode: SpatialDataMode }> = ({ dataMode 
   const model = dataMode === 'DEMO_DATA' ? DEMO_SPATIAL_MODEL : { ...EMPTY_SPATIAL_MODEL, dataMode };
 
   return <main className="tv-mode-shell min-h-screen bg-[#040812] px-5 py-6 text-slate-100 sm:px-10 sm:py-10" aria-label="SIREN UA TV mode"><div className="mx-auto max-w-[1800px]"><header className="mb-6 flex items-center justify-between border-b border-slate-800/80 pb-5"><div><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-300/30 bg-cyan-400/10 text-lg text-cyan-200">✦</div><div><div className="text-lg font-black tracking-tight text-white">SIREN <span className="text-cyan-300">UA</span></div><div className="text-[9px] font-mono tracking-[0.18em] text-slate-500">SPATIAL SITUATIONAL DISPLAY</div></div></div></div><div className="flex items-center gap-3"><DataBadge mode={model.dataMode} /><span className="hidden text-xs text-slate-500 sm:inline">REMOTE READY · OK / BACK</span></div></header><TVScene model={model} /></div></main>;
+};
+
+export const DesktopModeShell: React.FC<{ dataMode: SpatialDataMode }> = ({ dataMode }) => {
+  const model = dataMode === 'DEMO_DATA' ? DEMO_SPATIAL_MODEL : { ...EMPTY_SPATIAL_MODEL, dataMode };
+
+  return <main className="desktop-mode-shell min-h-screen bg-[#040812] px-4 py-5 text-slate-100 sm:px-8 sm:py-8" aria-label="SIREN UA desktop experience"><div className="mx-auto max-w-[2200px]"><header className="mb-5 flex items-center justify-between border-b border-slate-800/80 pb-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-300/30 bg-cyan-400/10 text-lg text-cyan-200">✦</div><div><div className="text-lg font-black tracking-tight text-white">SIREN <span className="text-cyan-300">UA</span></div><div className="text-[9px] font-mono tracking-[0.18em] text-slate-500">SPATIAL COMMAND DESKTOP</div></div></div><div className="flex items-center gap-3"><DataBadge mode={model.dataMode} /><span className="hidden text-xs text-slate-500 lg:inline">Карта · Загрози · Хронологія · Партнери · Кабінет</span></div></header><DesktopScene model={model} /></div></main>;
 };

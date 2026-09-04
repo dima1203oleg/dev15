@@ -11,6 +11,10 @@ npm run dev
 
 The development server intentionally uses labelled `DEMO_DATA`. It is not authoritative threat information.
 
+Desktop review shell: `http://127.0.0.1:3000/desktop`.
+
+Desktop architecture and viewport acceptance: [`docs/DESKTOP_EXPERIENCE.md`](docs/DESKTOP_EXPERIENCE.md).
+
 ## Verify
 
 ```bash
