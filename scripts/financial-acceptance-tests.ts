@@ -35,6 +35,9 @@ const qcb = calculateQcb({ gross: usd(100n), storeCosts: usd(15n), processingCos
   version: 'web-v1', includeStoreCosts: true, includeProcessingCosts: true, includeTaxes: true
 });
 assert.equal(qcb.amountMinor, 80n);
+assert.throws(() => calculateQcb({ gross: usd(100n), storeCosts: usd(-1n) }, {
+  version: 'web-v1', includeStoreCosts: true, includeProcessingCosts: true, includeTaxes: true
+}), /INVALID_MONEY/);
 
 const starter = resolveRank(1);
 const platinum = resolveRank(200);
@@ -73,6 +76,15 @@ const snapshots = createCommissionSnapshots({
 assert.equal(snapshots.length, 2);
 assert.equal(snapshots[0].state, 'HELD');
 assert.equal(snapshots[0].qcb.amountMinor, 100n);
+const samePartnerSnapshots = createCommissionSnapshots({
+  id: 'same-partner-payment', userId: 'user-1',
+  attribution: { ...attribution, secondLevelPartnerId: 'p1' },
+  payment: { gross: usd(100n) },
+  qcbPolicy: { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true },
+  directPartnerRank: DEFAULT_RANK_RULES[4], secondLevelPartnerRank: DEFAULT_RANK_RULES[4],
+  ruleVersion: 'comp-v1', createdAt: trial.endsAt
+}, true);
+assert.equal(samePartnerSnapshots.length, 1, 'one partner cannot receive both L1 and L2 for one payment');
 
 // The orchestration boundary increments rank only for a real qualified paid payment.
 const platform = new InMemoryPartnerPlatform(new ImmutableLedger(), { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true }, true);
@@ -99,7 +111,17 @@ const ledger = new ImmutableLedger();
 ledger.commission({ id: 'commission-1', partnerId: 'p1', amountMinor: 25n, currency: 'USD', hold: true, source: 'PAYMENT_1', idempotencyKey: 'commission:1', createdAt: trial.endsAt, ruleVersion: 'comp-v1' });
 ledger.commission({ id: 'commission-1', partnerId: 'p1', amountMinor: 25n, currency: 'USD', hold: true, source: 'PAYMENT_1', idempotencyKey: 'commission:1', createdAt: trial.endsAt, ruleVersion: 'comp-v1' });
 assert.equal(ledger.all.length, 1);
+assert.throws(() => ledger.commission({ id: 'different', partnerId: 'p1', amountMinor: 25n, currency: 'USD', hold: true, source: 'PAYMENT_1', idempotencyKey: 'commission:1', createdAt: trial.endsAt, ruleVersion: 'comp-v1' }), /IDEMPOTENCY_CONFLICT/);
+assert.throws(() => ledger.append({
+  id: 'mixed', source: 'PAYMENT_2', idempotencyKey: 'commission:2', createdAt: trial.endsAt, ruleVersion: 'comp-v1',
+  lines: [
+    { account: 'PLATFORM_REVENUE', direction: 'DEBIT', amountMinor: 25n, currency: 'USD' },
+    { account: 'PARTNER_AVAILABLE', direction: 'CREDIT', amountMinor: 25n, currency: 'EUR', partnerId: 'p1' }
+  ]
+}), /MULTI_CURRENCY_TRANSACTION/);
 ledger.moveBucket({ id: 'vest-1', partnerId: 'p1', from: 'HELD', to: 'AVAILABLE', amountMinor: 25n, currency: 'USD', source: 'HOLD_EXPIRED', idempotencyKey: 'vest:1', createdAt: trial.endsAt });
+assert.equal(ledger.moveBucket({ id: 'vest-1', partnerId: 'p1', from: 'HELD', to: 'AVAILABLE', amountMinor: 25n, currency: 'USD', source: 'HOLD_EXPIRED', idempotencyKey: 'vest:1', createdAt: trial.endsAt }).id, 'vest-1');
+assert.throws(() => ledger.moveBucket({ id: 'overdraw', partnerId: 'p1', from: 'AVAILABLE', to: 'LOCKED_FOR_PAYOUT', amountMinor: 26n, currency: 'USD', source: 'PAYOUT_REQUESTED', idempotencyKey: 'payout:overdraw', createdAt: trial.endsAt }), /INSUFFICIENT_LEDGER_BUCKET/);
 ledger.moveBucket({ id: 'lock-1', partnerId: 'p1', from: 'AVAILABLE', to: 'LOCKED_FOR_PAYOUT', amountMinor: 25n, currency: 'USD', source: 'PAYOUT_REQUESTED', idempotencyKey: 'payout:1', createdAt: trial.endsAt });
 ledger.moveBucket({ id: 'paid-1', partnerId: 'p1', from: 'LOCKED_FOR_PAYOUT', to: 'PAID', amountMinor: 25n, currency: 'USD', source: 'PAYOUT_PAID', idempotencyKey: 'payout-paid:1', createdAt: trial.endsAt });
 const wallet = ledger.project('p1', 'USD');

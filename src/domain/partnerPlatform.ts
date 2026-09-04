@@ -20,6 +20,11 @@ export interface Money {
   currency: Currency;
 }
 
+function assertMoney(value: Money, code = 'INVALID_MONEY'): void {
+  if (!value || typeof value.amountMinor !== 'bigint' || value.amountMinor < 0n) throw new Error(code);
+  if (!['USD', 'UAH', 'EUR', 'PLN'].includes(value.currency)) throw new Error('INVALID_CURRENCY');
+}
+
 export interface RankRule {
   rank: Rank;
   minQualifiedActivePaidL1: number;
@@ -62,8 +67,9 @@ export function startTrial(userId: string, startedAt: string, trialDays = 30): T
 
 export function trialStatus(trial: Trial, at: string): Trial['status'] {
   const now = new Date(at).getTime();
-  if (!Number.isFinite(now)) throw new Error('INVALID_DATE');
-  return now < new Date(trial.endsAt).getTime() ? 'TRIAL_ACTIVE' : 'TRIAL_EXPIRED';
+  const ends = new Date(trial.endsAt).getTime();
+  if (!Number.isFinite(now) || !Number.isFinite(ends)) throw new Error('INVALID_DATE');
+  return now < ends ? 'TRIAL_ACTIVE' : 'TRIAL_EXPIRED';
 }
 
 export interface Attribution {
@@ -162,6 +168,10 @@ function subtractIfIncluded(value: bigint, deduction: Money | undefined, include
 }
 
 export function calculateQcb(payment: QualifiedPaymentInput, policy: QcbPolicy): Money {
+  assertMoney(payment.gross);
+  for (const deduction of [payment.refunds, payment.chargebacks, payment.nonCommissionableTaxes, payment.storeCosts, payment.processingCosts, payment.nonCommissionableDiscounts, payment.promoCredits]) {
+    if (deduction) assertMoney(deduction);
+  }
   const currency = payment.gross.currency;
   let qcb = payment.gross.amountMinor;
   qcb = subtractIfIncluded(qcb, payment.refunds, true, currency);
@@ -283,7 +293,7 @@ export function createCommissionSnapshots(input: QualifiedPayment, hold: boolean
   const allocations: CommissionAllocation[] = [
     { partnerId: input.attribution.directPartnerId, referralLevel: 'L1', rateBps: input.directPartnerRank.rateBps }
   ];
-  if (input.secondLevelPartnerRank && input.attribution.secondLevelPartnerId) {
+  if (input.secondLevelPartnerRank && input.attribution.secondLevelPartnerId && input.attribution.secondLevelPartnerId !== input.attribution.directPartnerId) {
     allocations.push({ partnerId: input.attribution.secondLevelPartnerId, referralLevel: 'L2', rateBps: input.secondLevelPartnerRank.rateBps });
   }
   const calculation = calculateCommissions(qualification.qcb, allocations);
@@ -356,8 +366,23 @@ export class ImmutableLedger {
 
   append(transaction: LedgerTransaction): LedgerTransaction {
     const existing = this.idempotency.get(transaction.idempotencyKey);
-    if (existing) return existing;
+    if (existing) {
+      const sameLines = existing.lines.length === transaction.lines.length
+        && existing.lines.every((line, index) => {
+          const candidate = transaction.lines[index];
+          return line.account === candidate.account
+            && line.direction === candidate.direction
+            && line.amountMinor === candidate.amountMinor
+            && line.currency === candidate.currency
+            && line.partnerId === candidate.partnerId;
+        });
+      if (existing.id !== transaction.id || existing.source !== transaction.source || existing.ruleVersion !== transaction.ruleVersion || !sameLines) {
+        throw new Error('IDEMPOTENCY_CONFLICT');
+      }
+      return existing;
+    }
     if (!transaction.lines.length || transaction.lines.some((line) => line.amountMinor <= 0n)) throw new Error('INVALID_LEDGER_LINES');
+    if (new Set(transaction.lines.map((line) => line.currency)).size !== 1) throw new Error('MULTI_CURRENCY_TRANSACTION');
     const debit = transaction.lines.filter((line) => line.direction === 'DEBIT').reduce((sum, line) => sum + line.amountMinor, 0n);
     const credit = transaction.lines.filter((line) => line.direction === 'CREDIT').reduce((sum, line) => sum + line.amountMinor, 0n);
     if (debit !== credit) throw new Error('LEDGER_NOT_BALANCED');
@@ -382,7 +407,12 @@ export class ImmutableLedger {
   }
 
   moveBucket(args: { id: string; partnerId: string; from: WalletBucket; to: WalletBucket; amountMinor: bigint; currency: Currency; source: string; idempotencyKey: string; createdAt: string }): LedgerTransaction {
-    return this.append({
+    const bucketProjection: Record<WalletBucket, keyof WalletProjection> = {
+      PENDING: 'pending', HELD: 'held', AVAILABLE: 'available', LOCKED_FOR_PAYOUT: 'lockedForPayout',
+      PAID: 'paid', REVERSED: 'reversed', DEBT: 'debt'
+    };
+    if (args.amountMinor <= 0n) throw new Error('INVALID_LEDGER_LINES');
+    const transaction: LedgerTransaction = {
       id: args.id,
       source: args.source,
       idempotencyKey: args.idempotencyKey,
@@ -391,7 +421,12 @@ export class ImmutableLedger {
         { account: bucketAccount[args.from], direction: 'DEBIT', amountMinor: args.amountMinor, currency: args.currency, partnerId: args.partnerId },
         { account: bucketAccount[args.to], direction: 'CREDIT', amountMinor: args.amountMinor, currency: args.currency, partnerId: args.partnerId }
       ]
-    });
+    };
+    // Idempotent retries must resolve before checking the now-consumed source
+    // bucket. A changed payload still fails closed inside append().
+    if (this.idempotency.has(args.idempotencyKey)) return this.append(transaction);
+    if (this.project(args.partnerId, args.currency)[bucketProjection[args.from]] < args.amountMinor) throw new Error('INSUFFICIENT_LEDGER_BUCKET');
+    return this.append(transaction);
   }
 
   project(partnerId: string, currency: Currency): WalletProjection {
@@ -580,7 +615,8 @@ export interface FxSnapshot {
 }
 
 export function convertWithFx(amount: Money, payoutCurrency: Currency, fx: FxSnapshot): Money {
-  if (amount.currency !== fx.baseCurrency || payoutCurrency !== fx.payoutCurrency || fx.rateDenominator <= 0n) throw new Error('INVALID_FX_SNAPSHOT');
+  assertMoney(amount);
+  if (amount.currency !== fx.baseCurrency || payoutCurrency !== fx.payoutCurrency || fx.rateNumerator <= 0n || fx.rateDenominator <= 0n) throw new Error('INVALID_FX_SNAPSHOT');
   return { currency: payoutCurrency, amountMinor: (amount.amountMinor * fx.rateNumerator + fx.rateDenominator / 2n) / fx.rateDenominator };
 }
 
@@ -607,6 +643,9 @@ export interface PayoutCheck {
 }
 
 export function checkPayoutEligibility(input: PayoutEligibilityInput): PayoutCheck {
+  assertMoney(input.requested);
+  assertMoney(input.available);
+  assertMoney(input.policy.minimumBase);
   const minimumPayout = convertWithFx(input.policy.minimumBase, input.requested.currency, input.fx);
   if (input.requested.currency !== input.available.currency || input.requested.amountMinor > input.available.amountMinor) return { allowed: false, code: 'INSUFFICIENT_AVAILABLE_BALANCE', minimumPayout };
   if (input.requested.amountMinor < minimumPayout.amountMinor) return { allowed: false, code: 'BELOW_MINIMUM_PAYOUT', minimumPayout };
