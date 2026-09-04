@@ -1,7 +1,7 @@
 # CURRENT ARCHITECTURE AUDIT — SIREN UA ECOSYSTEM 2026
 
 ## 1. Executive Summary & Repositories Overview
-This audit establishes the baseline for the only repository available in this workspace:
+This audit establishes the baseline for the only SIREN UA repository available in this workspace:
 - **`dima1203oleg/Dev15`** (current write target):
   React 19 + TypeScript + Vite + Express prototype with explicit demo/not-connected boundaries, spatial UI shells and typed financial domain primitives.
 
@@ -9,6 +9,11 @@ The previously referenced `atlastrinity/SirenUA-Website`, `atlastrinity/SirenUA`
 `atlastrinity/SirenUA-ThreatServer` repositories were checked from the available GitHub
 URLs and returned `Repository not found`. Their code and integrations therefore remain
 unverified and cannot be claimed as part of this audit.
+
+A separate local repository, `/Users/dima1203/Desktop/glass` (`bilawalsidhu/gods-eye-view`),
+was also found. It is a Cesium-based intelligence-globe project with unrelated history and
+user changes. Its tests/build were inspected read-only; it is not a SIREN UA repository and
+was not modified or integrated.
 
 ## 2. Technology Stack & Runtime Profile
 - **Frontend**: React 19, TypeScript 5.8, Tailwind CSS v4, Motion (v12), Lucide Icons.
