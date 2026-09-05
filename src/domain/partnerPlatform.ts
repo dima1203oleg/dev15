@@ -1,3 +1,5 @@
+import { createHmac, timingSafeEqual } from 'node:crypto';
+
 /**
  * SIREN UA Partner Platform 4.0
  *
@@ -68,6 +70,61 @@ export function canQualifySubscription(state: SubscriptionState): boolean {
   return state === 'PREMIUM_ACTIVE';
 }
 
+export type SubscriptionTransitionEvent =
+  | 'TRIAL_STARTED'
+  | 'TRIAL_ENDING'
+  | 'TRIAL_EXPIRED'
+  | 'PAYMENT_REQUESTED'
+  | 'PAYMENT_SUCCEEDED'
+  | 'PAYMENT_FAILED'
+  | 'SUBSCRIPTION_PAST_DUE'
+  | 'SUBSCRIPTION_GRACE'
+  | 'CANCEL_AT_PERIOD_END'
+  | 'SUBSCRIPTION_CANCELED'
+  | 'SUBSCRIPTION_EXPIRED'
+  | 'SUBSCRIPTION_REFUNDED'
+  | 'SUBSCRIPTION_SUSPENDED'
+  | 'SUBSCRIPTION_RESTORED';
+
+const subscriptionTransitions: Record<SubscriptionState, Partial<Record<SubscriptionTransitionEvent, SubscriptionState>>> = {
+  REGISTERED: { TRIAL_STARTED: 'TRIAL_ACTIVE', PAYMENT_REQUESTED: 'PAYMENT_PENDING' },
+  TRIAL_ACTIVE: { TRIAL_ENDING: 'TRIAL_ENDING', TRIAL_EXPIRED: 'TRIAL_EXPIRED', PAYMENT_REQUESTED: 'PAYMENT_PENDING' },
+  TRIAL_ENDING: { TRIAL_EXPIRED: 'TRIAL_EXPIRED', PAYMENT_REQUESTED: 'PAYMENT_PENDING' },
+  PAYMENT_PENDING: { PAYMENT_SUCCEEDED: 'PREMIUM_ACTIVE', PAYMENT_FAILED: 'PAYMENT_FAILED' },
+  PREMIUM_ACTIVE: { SUBSCRIPTION_PAST_DUE: 'PAST_DUE', CANCEL_AT_PERIOD_END: 'CANCEL_AT_PERIOD_END', SUBSCRIPTION_REFUNDED: 'REFUNDED', SUBSCRIPTION_SUSPENDED: 'SUSPENDED' },
+  PAYMENT_FAILED: { PAYMENT_REQUESTED: 'PAYMENT_PENDING', SUBSCRIPTION_GRACE: 'SUBSCRIPTION_GRACE', SUBSCRIPTION_EXPIRED: 'EXPIRED' },
+  PAST_DUE: { PAYMENT_SUCCEEDED: 'PREMIUM_ACTIVE', SUBSCRIPTION_GRACE: 'SUBSCRIPTION_GRACE', SUBSCRIPTION_EXPIRED: 'EXPIRED' },
+  SUBSCRIPTION_GRACE: { PAYMENT_SUCCEEDED: 'PREMIUM_ACTIVE', SUBSCRIPTION_EXPIRED: 'EXPIRED', SUBSCRIPTION_SUSPENDED: 'SUSPENDED' },
+  CANCEL_AT_PERIOD_END: { SUBSCRIPTION_RESTORED: 'PREMIUM_ACTIVE', SUBSCRIPTION_EXPIRED: 'EXPIRED', SUBSCRIPTION_CANCELED: 'CANCELED' },
+  CANCELED: { PAYMENT_REQUESTED: 'PAYMENT_PENDING', TRIAL_STARTED: 'TRIAL_ACTIVE' },
+  EXPIRED: { PAYMENT_REQUESTED: 'PAYMENT_PENDING', TRIAL_STARTED: 'TRIAL_ACTIVE' },
+  SUSPENDED: { PAYMENT_REQUESTED: 'PAYMENT_PENDING', SUBSCRIPTION_RESTORED: 'PREMIUM_ACTIVE', SUBSCRIPTION_EXPIRED: 'EXPIRED' },
+  REFUNDED: { PAYMENT_REQUESTED: 'PAYMENT_PENDING' },
+  TRIAL_EXPIRED: { PAYMENT_REQUESTED: 'PAYMENT_PENDING', SUBSCRIPTION_EXPIRED: 'EXPIRED' }
+};
+
+export function transitionSubscriptionState(current: SubscriptionState, event: SubscriptionTransitionEvent): SubscriptionState {
+  const next = subscriptionTransitions[current]?.[event];
+  if (!next) throw new Error('INVALID_SUBSCRIPTION_TRANSITION');
+  return next;
+}
+
+export interface BillingAgreement {
+  provider: 'WEB' | 'APPLE' | 'GOOGLE';
+  consentedAt?: string;
+  active: boolean;
+}
+
+export function canStartAutomaticBilling(agreement: BillingAgreement | undefined): boolean {
+  if (!agreement || !agreement.active || !agreement.consentedAt) return false;
+  return Number.isFinite(new Date(agreement.consentedAt).getTime());
+}
+
+export function transitionAfterTrial(trial: Trial, at: string, agreement?: BillingAgreement): SubscriptionState {
+  if (trialStatus(trial, at) === 'TRIAL_ACTIVE') return 'TRIAL_ACTIVE';
+  return canStartAutomaticBilling(agreement) ? 'PAYMENT_PENDING' : 'TRIAL_EXPIRED';
+}
+
 export function addCalendarDays(iso: string, days: number): string {
   const date = new Date(iso);
   if (!Number.isFinite(date.getTime()) || !Number.isInteger(days)) throw new Error('INVALID_DATE');
@@ -76,7 +133,7 @@ export function addCalendarDays(iso: string, days: number): string {
 }
 
 export function startTrial(userId: string, startedAt: string, trialDays = 30): Trial {
-  if (!userId || !Number.isInteger(trialDays) || trialDays < 0) throw new Error('INVALID_TRIAL_POLICY');
+  if (!userId || !Number.isInteger(trialDays) || trialDays <= 0) throw new Error('INVALID_TRIAL_POLICY');
   return { userId, startedAt, endsAt: addCalendarDays(startedAt, trialDays), trialDays, status: 'TRIAL_ACTIVE' };
 }
 
@@ -296,6 +353,7 @@ export interface QualifiedPayment {
   id: string;
   userId: string;
   payment: QualifiedPaymentInput;
+  subscriptionState: SubscriptionState;
   qcbPolicy: QcbPolicy;
   attribution: Attribution;
   directPartnerRank: RankRule;
@@ -310,6 +368,7 @@ export interface QualifiedPayment {
 
 export function qualifyPayment(input: QualifiedPayment): { qualified: boolean; reason: string; qcb: Money } {
   if (input.userId !== input.attribution.userId) return { qualified: false, reason: 'ATTRIBUTION_USER_MISMATCH', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
+  if (!canQualifySubscription(input.subscriptionState)) return { qualified: false, reason: 'SUBSCRIPTION_NOT_QUALIFIED', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
   if (input.isTestPayment) return { qualified: false, reason: 'TEST_PAYMENT', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
   if (input.fraudStatus && input.fraudStatus !== 'OK') return { qualified: false, reason: 'FRAUD_REVIEW', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
   if (input.attribution.status === 'REJECTED') return { qualified: false, reason: 'REJECTED_ATTRIBUTION', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
@@ -589,6 +648,7 @@ function moneyFingerprint(value: Money | undefined): string {
 function paymentFingerprint(input: {
   userId: string;
   payment: QualifiedPaymentInput;
+  subscriptionState: SubscriptionState;
   attribution: Attribution;
   createdAt: string;
   ruleVersion: string;
@@ -601,6 +661,7 @@ function paymentFingerprint(input: {
     input.userId,
     input.createdAt,
     input.ruleVersion,
+    input.subscriptionState,
     input.maxAllocationBps ?? 5000,
     input.isTestPayment === true,
     input.fraudStatus ?? null,
@@ -701,6 +762,7 @@ export class InMemoryPartnerPlatform {
     id: string;
     userId: string;
     payment: QualifiedPaymentInput;
+    subscriptionState: SubscriptionState;
     attribution: Attribution;
     createdAt: string;
     ruleVersion: string;
@@ -716,6 +778,7 @@ export class InMemoryPartnerPlatform {
     }
     if (input.userId !== input.attribution.userId) return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'ATTRIBUTION_USER_MISMATCH', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] }, fingerprint);
     if (input.attribution.status === 'REJECTED') return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'REJECTED_ATTRIBUTION', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] }, fingerprint);
+    if (!canQualifySubscription(input.subscriptionState)) return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'SUBSCRIPTION_NOT_QUALIFIED', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] }, fingerprint);
     if (isSelfReferral(input.attribution)) return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'SELF_REFERRAL', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] }, fingerprint);
     const qcb = calculateQcb(input.payment, this.qcbPolicy);
     if (input.isTestPayment || (input.fraudStatus && input.fraudStatus !== 'OK') || qcb.amountMinor === 0n) {
@@ -736,6 +799,7 @@ export class InMemoryPartnerPlatform {
       userId: input.userId,
       attribution: { ...input.attribution, status: 'LOCKED', qualifiedAt: input.createdAt },
       payment: input.payment,
+      subscriptionState: input.subscriptionState,
       qcbPolicy: this.qcbPolicy,
       directPartnerRank: directRule,
       secondLevelPartnerRank: secondRule,
@@ -797,6 +861,43 @@ export class WebhookInbox {
 
   accept(provider: string, eventId: string): boolean {
     const key = `${provider}:${eventId}`;
+    if (this.eventIds.has(key)) return false;
+    this.eventIds.add(key);
+    return true;
+  }
+}
+
+export interface SignedWebhookInput {
+  provider: string;
+  eventId: string;
+  rawBody: string;
+  signature: string;
+  timestamp: string;
+  secret: string;
+}
+
+/**
+ * Verifies an HMAC webhook envelope before an event is admitted to the
+ * idempotency inbox. The signed payload is deliberately explicit so an
+ * adapter cannot accidentally verify a parsed/re-serialized JSON object.
+ */
+export function verifyWebhookSignature(input: SignedWebhookInput, now = Date.now(), toleranceSeconds = 300): void {
+  if (!input || !input.provider || !input.eventId || typeof input.rawBody !== 'string' || !input.secret
+    || !/^\d+$/.test(input.timestamp) || !/^[a-f0-9]{64}$/i.test(input.signature)
+    || !Number.isInteger(toleranceSeconds) || toleranceSeconds < 0) throw new Error('INVALID_WEBHOOK_SIGNATURE');
+  const timestampSeconds = Number(input.timestamp);
+  if (!Number.isSafeInteger(timestampSeconds) || Math.abs(now - timestampSeconds * 1000) > toleranceSeconds * 1000) throw new Error('WEBHOOK_TIMESTAMP_OUT_OF_RANGE');
+  const expected = createHmac('sha256', input.secret).update(`${input.timestamp}.${input.rawBody}`).digest();
+  const supplied = Buffer.from(input.signature, 'hex');
+  if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) throw new Error('WEBHOOK_SIGNATURE_INVALID');
+}
+
+export class SecureWebhookInbox {
+  private readonly eventIds = new Set<string>();
+
+  accept(input: SignedWebhookInput, now = Date.now(), toleranceSeconds = 300): boolean {
+    verifyWebhookSignature(input, now, toleranceSeconds);
+    const key = `${input.provider}:${input.eventId}`;
     if (this.eventIds.has(key)) return false;
     this.eventIds.add(key);
     return true;
@@ -915,6 +1016,162 @@ export class NotConnectedPayoutProvider implements PayoutProvider {
   async reconcile(): Promise<never> { throw new Error('PAYOUT_PROVIDER_NOT_CONNECTED'); }
 }
 
+export type PayoutExecutionState = 'REQUESTED' | 'VALIDATING' | 'PAYOUT_HELD' | 'PROCESSING' | 'PAID' | 'FAILED' | 'REJECTED';
+
+export interface PayoutExecution {
+  id: string;
+  idempotencyKey: string;
+  partnerId: string;
+  requested: Money;
+  providerFee: Money;
+  state: PayoutExecutionState;
+  providerPayoutId?: string;
+  failureReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PayoutExecutionInput extends PayoutEligibilityInput {
+  id: string;
+  idempotencyKey: string;
+  partnerId: string;
+  destination: string;
+  createdAt: string;
+}
+
+export interface PayoutExecutionResult {
+  payout: PayoutExecution;
+  eligibility: PayoutCheck;
+}
+
+function payoutExecutionFingerprint(input: PayoutExecutionInput): string {
+  return JSON.stringify([
+    input.id,
+    input.idempotencyKey,
+    input.partnerId,
+    input.destination,
+    input.createdAt,
+    input.requested.currency,
+    input.requested.amountMinor.toString(),
+    input.available.currency,
+    input.available.amountMinor.toString(),
+    input.fx.baseCurrency,
+    input.fx.payoutCurrency,
+    input.fx.rateNumerator.toString(),
+    input.fx.rateDenominator.toString(),
+    input.fx.version,
+    input.policy.minimumBase.currency,
+    input.policy.minimumBase.amountMinor.toString(),
+    input.policy.requestedGrossMinimum,
+    input.kyc,
+    input.compliance,
+    input.fraud,
+    input.payoutMethod,
+    input.asOf ?? null
+  ]);
+}
+
+/**
+ * Coordinates the money-moving boundary without making a provider optional.
+ * Available funds are locked in the immutable ledger before dispatch. If a
+ * connected provider returns an uncertain error, funds remain locked until a
+ * signed webhook or reconciliation resolves the state; they are never
+ * silently returned to AVAILABLE.
+ */
+export class PayoutOrchestrator {
+  private readonly payouts = new Map<string, PayoutExecution>();
+  private readonly fingerprints = new Map<string, string>();
+  private readonly payoutIds = new Map<string, string>();
+
+  constructor(private readonly ledger: ImmutableLedger, private readonly provider: PayoutProvider) {}
+
+  get(id: string): PayoutExecution | undefined { return this.payouts.get(id); }
+
+  async request(input: PayoutExecutionInput): Promise<PayoutExecutionResult> {
+    if (!input.id || !input.idempotencyKey || !input.partnerId || !input.destination || !input.createdAt) throw new Error('INVALID_PAYOUT_REQUEST');
+    assertMoney(input.requested);
+    assertMoney(input.available);
+    const fingerprint = payoutExecutionFingerprint(input);
+    const existingKeyForId = this.payoutIds.get(input.id);
+    if (existingKeyForId && existingKeyForId !== input.idempotencyKey) throw new Error('PAYOUT_IDEMPOTENCY_CONFLICT');
+    const existing = this.payouts.get(input.idempotencyKey);
+    if (existing) {
+      if (this.fingerprints.get(input.idempotencyKey) !== fingerprint) throw new Error('PAYOUT_IDEMPOTENCY_CONFLICT');
+      return { payout: existing, eligibility: { allowed: existing.state !== 'REJECTED', code: existing.state === 'REJECTED' ? 'PAYOUT_REJECTED' : 'PAYOUT_ALREADY_ACCEPTED', minimumPayout: null } };
+    }
+    if (!this.provider.connected) throw new Error('PAYOUT_PROVIDER_NOT_CONNECTED');
+
+    const providerFee = await this.provider.calculateFee(input.requested);
+    assertMoney(providerFee);
+    if (providerFee.currency !== input.requested.currency) throw new Error('CURRENCY_MISMATCH');
+    const eligibility = checkPayoutEligibility({ ...input, feeQuote: { ...input.feeQuote, providerFee } });
+    const basePayout: PayoutExecution = {
+      id: input.id,
+      idempotencyKey: input.idempotencyKey,
+      partnerId: input.partnerId,
+      requested: input.requested,
+      providerFee,
+      state: eligibility.allowed ? 'VALIDATING' : 'REJECTED',
+      failureReason: eligibility.allowed ? undefined : eligibility.code,
+      createdAt: input.createdAt,
+      updatedAt: input.createdAt
+    };
+    this.payouts.set(input.idempotencyKey, basePayout);
+    this.fingerprints.set(input.idempotencyKey, fingerprint);
+    this.payoutIds.set(input.id, input.idempotencyKey);
+    if (!eligibility.allowed) return { payout: basePayout, eligibility };
+
+    this.ledger.moveBucket({
+      id: `${input.id}-lock`, partnerId: input.partnerId, from: 'AVAILABLE', to: 'LOCKED_FOR_PAYOUT',
+      amountMinor: input.requested.amountMinor, currency: input.requested.currency,
+      source: 'PAYOUT_REQUESTED', idempotencyKey: `payout-lock:${input.idempotencyKey}`, createdAt: input.createdAt
+    });
+    basePayout.state = 'PAYOUT_HELD';
+    basePayout.updatedAt = input.createdAt;
+
+    try {
+      const dispatched = await this.provider.createPayout({ idempotencyKey: input.idempotencyKey, requested: input.requested, destination: input.destination });
+      basePayout.providerPayoutId = dispatched.providerPayoutId;
+      basePayout.state = 'PROCESSING';
+      basePayout.updatedAt = input.createdAt;
+      if (dispatched.status === 'PAID') this.settle(input.idempotencyKey, 'PAID', input.createdAt, dispatched.providerPayoutId);
+    } catch {
+      // A connected provider may have accepted the request before the client
+      // lost the response. Keep the lock and require webhook/reconciliation.
+      basePayout.state = 'PROCESSING';
+      basePayout.failureReason = 'PROVIDER_RESPONSE_UNCERTAIN';
+      basePayout.updatedAt = input.createdAt;
+    }
+    return { payout: basePayout, eligibility };
+  }
+
+  settle(idempotencyKey: string, status: 'PAID' | 'FAILED', at: string, providerPayoutId?: string): PayoutExecution {
+    const payout = this.payouts.get(idempotencyKey);
+    if (!payout) throw new Error('PAYOUT_NOT_FOUND');
+    if (providerPayoutId && payout.providerPayoutId && providerPayoutId !== payout.providerPayoutId) throw new Error('PAYOUT_PROVIDER_ID_CONFLICT');
+    if ((payout.state === 'PAID' && status === 'PAID') || (payout.state === 'FAILED' && status === 'FAILED')) return payout;
+    if (payout.state === 'PAID' || payout.state === 'FAILED' || payout.state === 'REJECTED') throw new Error('PAYOUT_STATE_CONFLICT');
+    if (providerPayoutId) payout.providerPayoutId = providerPayoutId;
+    const providerId = payout.providerPayoutId ?? payout.id;
+    this.ledger.moveBucket({
+      id: `${payout.id}-${status.toLowerCase()}`,
+      partnerId: payout.partnerId,
+      from: 'LOCKED_FOR_PAYOUT',
+      to: status === 'PAID' ? 'PAID' : 'AVAILABLE',
+      amountMinor: payout.requested.amountMinor,
+      currency: payout.requested.currency,
+      source: status === 'PAID' ? 'PAYOUT_PAID' : 'PAYOUT_FAILED',
+      idempotencyKey: `payout-settle:${idempotencyKey}:${status}`,
+      createdAt: at
+    });
+    payout.state = status;
+    payout.failureReason = status === 'FAILED' ? 'PROVIDER_FAILED' : undefined;
+    payout.updatedAt = at;
+    payout.providerPayoutId = providerId;
+    return payout;
+  }
+}
+
 export interface AutoPayoutPolicy {
   enabled: boolean;
   threshold: Money;
@@ -989,8 +1246,16 @@ export interface VersionedRule<T> {
   reason: string;
 }
 
+export function canTransitionRule(from: RuleLifecycle, to: RuleLifecycle): boolean {
+  const order: RuleLifecycle[] = ['DRAFT', 'VALIDATED', 'APPROVED', 'SCHEDULED', 'ACTIVE'];
+  const fromIndex = order.indexOf(from);
+  const toIndex = order.indexOf(to);
+  return fromIndex >= 0 && toIndex === fromIndex + 1;
+}
+
 export function canActivateRule<T>(rule: VersionedRule<T>): boolean {
-  return rule.state === 'SCHEDULED' && Boolean(rule.approvedBy) && Boolean(rule.effectiveFrom);
+  if (rule.state !== 'SCHEDULED' || !rule.version || !rule.reason || !rule.createdBy || !rule.approvedBy || rule.createdBy === rule.approvedBy || !rule.effectiveFrom) return false;
+  return Number.isFinite(new Date(rule.effectiveFrom).getTime());
 }
 
 export interface FraudAssessment {

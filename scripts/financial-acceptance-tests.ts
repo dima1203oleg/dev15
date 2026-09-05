@@ -1,13 +1,19 @@
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 import {
   DEFAULT_RANK_RULES,
   InMemoryPartnerPlatform,
   ImmutableLedger,
   NotConnectedPayoutProvider,
+  PayoutOrchestrator,
+  SecureWebhookInbox,
   WebhookInbox,
   ambassadorTierForQualifiedL1,
   calculateCommissions,
   calculateQcb,
+  canActivateRule,
+  canStartAutomaticBilling,
+  canTransitionRule,
   qualifyPayment,
   assessFraud,
   canQualifySubscription,
@@ -20,9 +26,12 @@ import {
   startTrial,
   shouldRunAutoPayout,
   trialReminderSchedule,
+  transitionAfterTrial,
+  transitionSubscriptionState,
   topLeaderboard,
   validateAllocationCap,
   validateRankRules,
+  type PayoutProvider,
   type FxSnapshot
 } from '../src/domain/partnerPlatform';
 
@@ -33,16 +42,29 @@ const uah = (amountMinor: bigint) => ({ amountMinor, currency: 'UAH' as const })
 const trial = startTrial('user-1', '2026-09-01T00:00:00.000Z', 30);
 assert.equal(trial.endsAt, '2026-10-01T00:00:00.000Z');
 assert.equal(trialReminderSchedule(trial).length, 3);
+assert.equal(transitionAfterTrial(trial, '2026-09-30T23:59:59.000Z'), 'TRIAL_ACTIVE');
+assert.equal(transitionAfterTrial(trial, trial.endsAt), 'TRIAL_EXPIRED');
+assert.equal(transitionAfterTrial(trial, trial.endsAt, { provider: 'WEB', active: true, consentedAt: trial.startedAt }), 'PAYMENT_PENDING');
+assert.equal(canStartAutomaticBilling({ provider: 'WEB', active: true, consentedAt: trial.startedAt }), true);
+assert.equal(canStartAutomaticBilling({ provider: 'WEB', active: true }), false);
+assert.equal(transitionSubscriptionState('PAYMENT_PENDING', 'PAYMENT_SUCCEEDED'), 'PREMIUM_ACTIVE');
+assert.throws(() => transitionSubscriptionState('TRIAL_ACTIVE', 'PAYMENT_SUCCEEDED'), /INVALID_SUBSCRIPTION_TRANSITION/);
 assert.throws(() => trialReminderSchedule(trial, [7, 7]), /INVALID_NOTIFICATION_SCHEDULE/);
 assert.throws(() => trialReminderSchedule(trial, [31]), /INVALID_NOTIFICATION_SCHEDULE/);
 assert.throws(() => startTrial('user-1', '2026-09-01T00:00:00.000Z', 1.5), /INVALID_TRIAL_POLICY/);
+assert.throws(() => startTrial('user-1', '2026-09-01T00:00:00.000Z', 0), /INVALID_TRIAL_POLICY/);
 assert.equal(canQualifySubscription('TRIAL_ACTIVE'), false);
 assert.equal(canQualifySubscription('PREMIUM_ACTIVE'), true);
 assert.equal(qualifyPayment({
-  id: 'mismatch', userId: 'user-a', attribution: { userId: 'user-b', id: 'attr-mismatch', directPartnerId: 'p1', status: 'ATTRIBUTED', sourceChannel: 'DIRECT' as const, attributedAt: trial.startedAt },
+  id: 'mismatch', userId: 'user-a', subscriptionState: 'PREMIUM_ACTIVE', attribution: { userId: 'user-b', id: 'attr-mismatch', directPartnerId: 'p1', status: 'ATTRIBUTED', sourceChannel: 'DIRECT' as const, attributedAt: trial.startedAt },
   payment: { gross: usd(100n) }, qcbPolicy: { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true },
   directPartnerRank: DEFAULT_RANK_RULES[0], ruleVersion: 'comp-v1', createdAt: trial.startedAt
 }).reason, 'ATTRIBUTION_USER_MISMATCH');
+assert.equal(qualifyPayment({
+  id: 'trial-not-qualified', userId: 'user-1', subscriptionState: 'TRIAL_ACTIVE', attribution: { userId: 'user-1', id: 'attr-trial', directPartnerId: 'p1', status: 'LOCKED', sourceChannel: 'DIRECT', attributedAt: trial.startedAt },
+  payment: { gross: usd(100n) }, qcbPolicy: { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true },
+  directPartnerRank: DEFAULT_RANK_RULES[0], ruleVersion: 'comp-v1', createdAt: trial.startedAt
+}).reason, 'SUBSCRIPTION_NOT_QUALIFIED');
 
 // QCB is calculated from the qualified transaction, never from the plan label.
 const qcb = calculateQcb({ gross: usd(100n), storeCosts: usd(15n), processingCosts: usd(5n) }, {
@@ -90,7 +112,7 @@ const attribution = {
   sourceChannel: 'DIRECT', attributedAt: trial.startedAt, qualifiedAt: trial.endsAt
 };
 const snapshots = createCommissionSnapshots({
-  id: 'payment-1', userId: 'user-1', attribution,
+  id: 'payment-1', userId: 'user-1', subscriptionState: 'PREMIUM_ACTIVE', attribution,
   payment: { gross: usd(100n) }, qcbPolicy: { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true },
   directPartnerRank: DEFAULT_RANK_RULES[4], secondLevelPartnerRank: DEFAULT_RANK_RULES[4], ruleVersion: 'comp-v1', createdAt: trial.endsAt
 }, true);
@@ -98,7 +120,7 @@ assert.equal(snapshots.length, 2);
 assert.equal(snapshots[0].state, 'HELD');
 assert.equal(snapshots[0].qcb.amountMinor, 100n);
 const samePartnerSnapshots = createCommissionSnapshots({
-  id: 'same-partner-payment', userId: 'user-1',
+  id: 'same-partner-payment', userId: 'user-1', subscriptionState: 'PREMIUM_ACTIVE',
   attribution: { ...attribution, secondLevelPartnerId: 'p1' },
   payment: { gross: usd(100n) },
   qcbPolicy: { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true },
@@ -107,7 +129,7 @@ const samePartnerSnapshots = createCommissionSnapshots({
 }, true);
 assert.equal(samePartnerSnapshots.length, 1, 'one partner cannot receive both L1 and L2 for one payment');
 const selfReferralSnapshots = createCommissionSnapshots({
-  id: 'self-referral-payment', userId: 'p1',
+  id: 'self-referral-payment', userId: 'p1', subscriptionState: 'PREMIUM_ACTIVE',
   attribution: { ...attribution, userId: 'p1', status: 'LOCKED' },
   payment: { gross: usd(100n) },
   qcbPolicy: { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true },
@@ -116,7 +138,7 @@ const selfReferralSnapshots = createCommissionSnapshots({
 }, true);
 assert.equal(selfReferralSnapshots.length, 0, 'self-referrals cannot create commissions even if attribution is marked locked');
 const customCapSnapshots = createCommissionSnapshots({
-  id: 'custom-cap-payment', userId: 'user-1', attribution,
+  id: 'custom-cap-payment', userId: 'user-1', subscriptionState: 'PREMIUM_ACTIVE', attribution,
   payment: { gross: usd(100n) },
   qcbPolicy: { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true },
   directPartnerRank: DEFAULT_RANK_RULES[4], secondLevelPartnerRank: DEFAULT_RANK_RULES[4],
@@ -131,14 +153,14 @@ assert.throws(() => assessFraud([{ name: 'negative-weight', weight: -1, present:
 const platform = new InMemoryPartnerPlatform(new ImmutableLedger(), { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true }, true);
 platform.addPartner({ id: 'p1', qualifiedActivePaidL1: 0, rank: 'STARTER', rankState: 'ACTIVE' });
 platform.addPartner({ id: 'p2', qualifiedActivePaidL1: 0, rank: 'STARTER', rankState: 'ACTIVE' });
-const trialResult = platform.processPaidPayment({ id: 'trial-payment', userId: 'trial-user', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'trial-user' }, createdAt: trial.startedAt, ruleVersion: 'comp-v1', isTestPayment: true, fraudStatus: 'OK' });
+const trialResult = platform.processPaidPayment({ id: 'trial-payment', userId: 'trial-user', subscriptionState: 'TRIAL_ACTIVE', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'trial-user' }, createdAt: trial.startedAt, ruleVersion: 'comp-v1', isTestPayment: true, fraudStatus: 'OK' });
 assert.equal(trialResult.status, 'NOT_QUALIFIED');
 assert.equal(platform.getPartner('p1')?.qualifiedActivePaidL1, 0);
-const paidResult = platform.processPaidPayment({ id: 'paid-payment', userId: 'paid-user', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'paid-user' }, createdAt: trial.endsAt, ruleVersion: 'comp-v1', fraudStatus: 'OK' });
+const paidResult = platform.processPaidPayment({ id: 'paid-payment', userId: 'paid-user', subscriptionState: 'PREMIUM_ACTIVE', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'paid-user' }, createdAt: trial.endsAt, ruleVersion: 'comp-v1', fraudStatus: 'OK' });
 assert.equal(paidResult.status, 'QUALIFIED');
 assert.equal(platform.getPartner('p1')?.qualifiedActivePaidL1, 1);
-assert.equal(platform.processPaidPayment({ id: 'paid-payment', userId: 'paid-user', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'paid-user' }, createdAt: trial.endsAt, ruleVersion: 'comp-v1', fraudStatus: 'OK' }).status, 'DUPLICATE');
-assert.throws(() => platform.processPaidPayment({ id: 'paid-payment', userId: 'paid-user', payment: { gross: usd(101n) }, attribution: { ...attribution, userId: 'paid-user' }, createdAt: trial.endsAt, ruleVersion: 'comp-v1', fraudStatus: 'OK' }), /PAYMENT_IDEMPOTENCY_CONFLICT/);
+assert.equal(platform.processPaidPayment({ id: 'paid-payment', userId: 'paid-user', subscriptionState: 'PREMIUM_ACTIVE', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'paid-user' }, createdAt: trial.endsAt, ruleVersion: 'comp-v1', fraudStatus: 'OK' }).status, 'DUPLICATE');
+assert.throws(() => platform.processPaidPayment({ id: 'paid-payment', userId: 'paid-user', subscriptionState: 'PREMIUM_ACTIVE', payment: { gross: usd(101n) }, attribution: { ...attribution, userId: 'paid-user' }, createdAt: trial.endsAt, ruleVersion: 'comp-v1', fraudStatus: 'OK' }), /PAYMENT_IDEMPOTENCY_CONFLICT/);
 platform.releaseHold(paidResult.commissions[0].id, '2026-10-02T00:00:00.000Z');
 assert.equal(platform.getCommission(paidResult.commissions[0].id)?.state, 'AVAILABLE');
 platform.reversePayment('paid-payment', 'REFUND', '2026-10-03T00:00:00.000Z');
@@ -226,19 +248,69 @@ assert.equal(shouldRunAutoPayout({ enabled: true, threshold: uah(42000n), cadenc
 assert.equal(shouldRunAutoPayout({ enabled: true, threshold: uah(42000n), cadence: 'MONTHLY' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' }, { cadenceDue: true }), true);
 assert.throws(() => shouldRunAutoPayout({ enabled: true, threshold: { amountMinor: -1n, currency: 'UAH' }, cadence: 'THRESHOLD' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' }), /INVALID_MONEY/);
 assert.throws(() => validateRankRules([{ rank: 'GOLD', minQualifiedActivePaidL1: 1, rateBps: 2000 }, { rank: 'GOLD', minQualifiedActivePaidL1: 75, rateBps: 2000 }]), /INVALID_RANK_RULES/);
+assert.equal(canTransitionRule('DRAFT', 'VALIDATED'), true);
+assert.equal(canTransitionRule('DRAFT', 'APPROVED'), false);
+assert.equal(canActivateRule({ version: 'rates-v2', state: 'SCHEDULED', value: { rateBps: 2500 }, createdBy: 'admin-a', approvedBy: 'admin-b', effectiveFrom: '2026-10-01T00:00:00.000Z', reason: 'approved change' }), true);
+assert.equal(canActivateRule({ version: 'rates-v2', state: 'SCHEDULED', value: { rateBps: 2500 }, createdBy: 'admin-a', approvedBy: 'admin-a', effectiveFrom: '2026-10-01T00:00:00.000Z', reason: 'self approved' }), false);
+assert.equal(canActivateRule({ version: 'rates-v2', state: 'SCHEDULED', value: { rateBps: 2500 }, createdBy: 'admin-a', approvedBy: 'admin-b', effectiveFrom: 'not-a-date', reason: 'invalid date' }), false);
 const customRankRules = [{ rank: 'STARTER' as const, minQualifiedActivePaidL1: 1, rateBps: 700 }];
 const customRankPlatform = new InMemoryPartnerPlatform(new ImmutableLedger(), { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true }, true, customRankRules);
 customRankPlatform.addPartner({ id: 'custom-p1', qualifiedActivePaidL1: 0, rank: 'STARTER', rankState: 'ACTIVE' });
-const customRankResult = customRankPlatform.processPaidPayment({ id: 'custom-rank-payment', userId: 'custom-user', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'custom-user', directPartnerId: 'custom-p1', secondLevelPartnerId: undefined }, createdAt: trial.endsAt, ruleVersion: 'comp-custom-v1', fraudStatus: 'OK' });
+const customRankResult = customRankPlatform.processPaidPayment({ id: 'custom-rank-payment', userId: 'custom-user', subscriptionState: 'PREMIUM_ACTIVE', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'custom-user', directPartnerId: 'custom-p1', secondLevelPartnerId: undefined }, createdAt: trial.endsAt, ruleVersion: 'comp-custom-v1', fraudStatus: 'OK' });
 assert.equal(customRankResult.commissions[0]?.rateBps, 700);
 const rollbackPlatform = new InMemoryPartnerPlatform(new ImmutableLedger(), { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true }, true);
 rollbackPlatform.addPartner({ id: 'rollback-p1', qualifiedActivePaidL1: 74, rank: 'SILVER', rankState: 'ACTIVE' });
-const rollbackResult = rollbackPlatform.processPaidPayment({ id: 'rollback-payment', userId: 'rollback-user', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'rollback-user', directPartnerId: 'rollback-p1', secondLevelPartnerId: undefined }, createdAt: trial.endsAt, ruleVersion: 'comp-rollback-v1', maxAllocationBps: 1000, fraudStatus: 'OK' });
+const rollbackResult = rollbackPlatform.processPaidPayment({ id: 'rollback-payment', userId: 'rollback-user', subscriptionState: 'PREMIUM_ACTIVE', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'rollback-user', directPartnerId: 'rollback-p1', secondLevelPartnerId: undefined }, createdAt: trial.endsAt, ruleVersion: 'comp-rollback-v1', maxAllocationBps: 1000, fraudStatus: 'OK' });
 assert.equal(rollbackResult.status, 'CAP_VALIDATION_FAILED');
 assert.deepEqual(rollbackPlatform.getPartner('rollback-p1'), { id: 'rollback-p1', qualifiedActivePaidL1: 74, rank: 'SILVER', rankState: 'ACTIVE' }, 'failed payment must not leave an upgraded rank behind');
 const disconnectedPayoutProvider = new NotConnectedPayoutProvider();
 assert.equal(disconnectedPayoutProvider.connected, false);
 await assert.rejects(() => disconnectedPayoutProvider.calculateFee(uah(42000n)), /PAYOUT_PROVIDER_NOT_CONNECTED/);
+
+// Signed webhook admission and provider orchestration keep the immutable
+// ledger as the source of truth for lock/settlement transitions.
+const webhookInbox = new SecureWebhookInbox();
+const webhookRawBody = '{"event":"payout.paid"}';
+const webhookTimestamp = '1700000000';
+const webhookSecret = 'test-webhook-secret';
+const webhookSignature = createHmac('sha256', webhookSecret).update(`${webhookTimestamp}.${webhookRawBody}`).digest('hex');
+const signedWebhook = { provider: 'test-provider', eventId: 'evt-payout-1', rawBody: webhookRawBody, signature: webhookSignature, timestamp: webhookTimestamp, secret: webhookSecret };
+assert.equal(webhookInbox.accept(signedWebhook, 1700000000000), true);
+assert.equal(webhookInbox.accept(signedWebhook, 1700000000000), false);
+assert.throws(() => webhookInbox.accept({ ...signedWebhook, signature: '0'.repeat(64), eventId: 'evt-payout-2' }, 1700000000000), /WEBHOOK_SIGNATURE_INVALID/);
+assert.throws(() => webhookInbox.accept({ ...signedWebhook, eventId: 'evt-payout-3', timestamp: '1700001000' }, 1700000000000), /WEBHOOK_TIMESTAMP_OUT_OF_RANGE/);
+
+const payoutProvider: PayoutProvider = {
+  connected: true,
+  async createRecipient() { return { providerRecipientId: 'recipient-1', status: 'VERIFIED' }; },
+  async verifyRecipient() { return { status: 'VERIFIED' }; },
+  async calculateFee() { return uah(100n); },
+  async createPayout() { return { providerPayoutId: 'provider-payout-1', status: 'PROCESSING' }; },
+  async getPayout() { return { status: 'PROCESSING' }; },
+  async cancelPayout() { return { status: 'CANCELED' }; },
+  async handleWebhook() { return { accepted: true, eventType: 'PAYOUT_PAID' }; },
+  async reconcile() { return { checked: 1, mismatches: 0 }; }
+};
+const payoutLedger = new ImmutableLedger();
+payoutLedger.commission({ id: 'payout-source', partnerId: 'payout-partner', amountMinor: 50000n, currency: 'UAH', hold: false, source: 'PAYMENT_PAYOUT', idempotencyKey: 'payout-source:commission', createdAt: trial.endsAt, ruleVersion: 'comp-v1' });
+const payoutOrchestrator = new PayoutOrchestrator(payoutLedger, payoutProvider);
+const payoutInput = {
+  id: 'payout-1', idempotencyKey: 'payout-request-1', partnerId: 'payout-partner', destination: 'UA••••6789',
+  requested: uah(42000n), available: uah(50000n), fx,
+  policy: { minimumBase: usd(1000n), requestedGrossMinimum: true },
+  kyc: 'VERIFIED' as const, compliance: 'OK' as const, fraud: 'OK' as const, payoutMethod: 'VERIFIED' as const,
+  createdAt: trial.endsAt, asOf: trial.endsAt
+};
+const payoutExecution = await payoutOrchestrator.request(payoutInput);
+assert.equal(payoutExecution.eligibility.allowed, true);
+assert.equal(payoutExecution.payout.state, 'PROCESSING');
+assert.deepEqual(payoutLedger.project('payout-partner', 'UAH'), { pending: 0n, held: 0n, available: 8000n, lockedForPayout: 42000n, paid: 0n, reversed: 0n, debt: 0n });
+assert.equal((await payoutOrchestrator.request(payoutInput)).payout.state, 'PROCESSING');
+await assert.rejects(() => payoutOrchestrator.request({ ...payoutInput, idempotencyKey: 'payout-request-2' }), /PAYOUT_IDEMPOTENCY_CONFLICT/);
+assert.equal(payoutOrchestrator.settle('payout-request-1', 'PAID', '2026-10-01T00:01:00.000Z', 'provider-payout-1').state, 'PAID');
+assert.equal(payoutOrchestrator.settle('payout-request-1', 'PAID', '2026-10-01T00:02:00.000Z', 'provider-payout-1').state, 'PAID');
+assert.deepEqual(payoutLedger.project('payout-partner', 'UAH'), { pending: 0n, held: 0n, available: 8000n, lockedForPayout: 0n, paid: 42000n, reversed: 0n, debt: 0n });
+assert.throws(() => payoutOrchestrator.settle('payout-request-1', 'FAILED', '2026-10-01T00:03:00.000Z'), /PAYOUT_STATE_CONFLICT/);
 
 assert.deepEqual(newlyUnlockedAchievements(99, 100), [100]);
 assert.equal(ambassadorTierForQualifiedL1(500, false), 'CANDIDATE');
