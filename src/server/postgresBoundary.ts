@@ -1,10 +1,12 @@
-import { Pool } from 'pg';
+import { Pool, type PoolClient, type QueryResult, type QueryResultRow } from 'pg';
 
 export type DatabaseRuntimeStatus = 'NOT_CONFIGURED' | 'CONNECTING' | 'CONNECTED' | 'ERROR';
 
 export interface PostgresBoundary {
   readonly configured: boolean;
   readonly status: () => DatabaseRuntimeStatus;
+  query<T extends QueryResultRow = QueryResultRow>(text: string, values?: unknown[]): Promise<QueryResult<T>>;
+  withTransaction<T>(work: (client: PoolClient) => Promise<T>): Promise<T>;
   probe(): Promise<DatabaseRuntimeStatus>;
   close(): Promise<void>;
 }
@@ -17,9 +19,14 @@ export interface PostgresBoundary {
 export function createPostgresBoundary(environment: NodeJS.ProcessEnv = process.env): PostgresBoundary {
   const connectionString = (environment.DATABASE_URL ?? '').trim();
   if (!connectionString) {
+    const unavailable = async () => {
+      throw new Error('DATABASE_NOT_CONFIGURED');
+    };
     return {
       configured: false,
       status: () => 'NOT_CONFIGURED',
+      query: unavailable,
+      withTransaction: unavailable,
       async probe() { return 'NOT_CONFIGURED'; },
       async close() {}
     };
@@ -37,6 +44,23 @@ export function createPostgresBoundary(environment: NodeJS.ProcessEnv = process.
   return {
     configured: true,
     status: () => currentStatus,
+    query<T extends QueryResultRow = QueryResultRow>(text: string, values?: unknown[]) {
+      return pool.query<T>(text, values);
+    },
+    async withTransaction<T>(work: (client: PoolClient) => Promise<T>) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const result = await work(client);
+        await client.query('COMMIT');
+        return result;
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
     async probe() {
       currentStatus = 'CONNECTING';
       try {

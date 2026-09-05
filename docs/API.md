@@ -14,6 +14,8 @@ Referral links use `GET /r/:referralCode`. In the development financial demo thi
 
 `GET /api/partner/network?limit=20&offset=0` returns aggregate counts plus bounded, privacy-safe L1/L2 pages. `limit` is capped server-side at 50; the browser never needs to receive an unbounded referral tree. `hasMore` indicates whether another page is available.
 
+The durable read model is implemented in `src/server/postgresPartnerRepository.ts` and reads wallet balances only from `wallet_projections`; it is not yet exposed by the HTTP routes because an authenticated identity/RBAC adapter is still required.
+
 `GET /api/partner/payouts` returns payout history with masked destinations only (for example `•••• 6789`); full payout instruments must remain server-side and provider-scoped.
 
 The built-server demo contract is covered by `npm run test:demo-api`: it checks the referral URL, bounded network response, privacy stripping and attribution cookie/redirect.
