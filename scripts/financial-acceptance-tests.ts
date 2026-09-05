@@ -3,11 +3,14 @@ import {
   DEFAULT_RANK_RULES,
   InMemoryPartnerPlatform,
   ImmutableLedger,
+  NotConnectedPayoutProvider,
   WebhookInbox,
   ambassadorTierForQualifiedL1,
   calculateCommissions,
   calculateQcb,
+  assessFraud,
   canQualifySubscription,
+  convertWithFx,
   checkPayoutEligibility,
   createCommissionSnapshots,
   newlyUnlockedAchievements,
@@ -85,6 +88,18 @@ const samePartnerSnapshots = createCommissionSnapshots({
   ruleVersion: 'comp-v1', createdAt: trial.endsAt
 }, true);
 assert.equal(samePartnerSnapshots.length, 1, 'one partner cannot receive both L1 and L2 for one payment');
+const selfReferralSnapshots = createCommissionSnapshots({
+  id: 'self-referral-payment', userId: 'p1',
+  attribution: { ...attribution, userId: 'p1', status: 'LOCKED' },
+  payment: { gross: usd(100n) },
+  qcbPolicy: { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true },
+  directPartnerRank: DEFAULT_RANK_RULES[4], secondLevelPartnerRank: DEFAULT_RANK_RULES[4],
+  ruleVersion: 'comp-v1', createdAt: trial.endsAt
+}, true);
+assert.equal(selfReferralSnapshots.length, 0, 'self-referrals cannot create commissions even if attribution is marked locked');
+assert.equal(validateAllocationCap([], 10001).passed, false);
+assert.throws(() => calculateCommissions({ amountMinor: -1n, currency: 'USD' }, []), /INVALID_MONEY/);
+assert.throws(() => assessFraud([{ name: 'negative-weight', weight: -1, present: true }]), /INVALID_FRAUD_SIGNAL/);
 
 // The orchestration boundary increments rank only for a real qualified paid payment.
 const platform = new InMemoryPartnerPlatform(new ImmutableLedger(), { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true }, true);
@@ -127,23 +142,53 @@ ledger.moveBucket({ id: 'paid-1', partnerId: 'p1', from: 'LOCKED_FOR_PAYOUT', to
 const wallet = ledger.project('p1', 'USD');
 assert.deepEqual(wallet, { pending: 0n, held: 0n, available: 0n, lockedForPayout: 0n, paid: 25n, reversed: 0n, debt: 0n });
 
+// Batch append and bucket moves are atomic: a later invalid item cannot leave
+// an earlier valid transaction or wallet transition committed.
+const atomicLedger = new ImmutableLedger();
+const validBatchEntry = atomicLedger.commissionTransaction({ id: 'atomic-valid', partnerId: 'p1', amountMinor: 10n, currency: 'USD', hold: true, source: 'PAYMENT_ATOMIC', idempotencyKey: 'atomic:valid', createdAt: trial.endsAt, ruleVersion: 'comp-v1' });
+const invalidBatchEntry = { ...validBatchEntry, id: 'atomic-invalid', idempotencyKey: 'atomic:invalid', lines: [{ ...validBatchEntry.lines[0], amountMinor: 11n }, validBatchEntry.lines[1]] };
+assert.throws(() => atomicLedger.appendBatch([validBatchEntry, invalidBatchEntry]), /LEDGER_NOT_BALANCED/);
+assert.equal(atomicLedger.all.length, 0);
+assert.throws(() => atomicLedger.appendBatch([
+  validBatchEntry,
+  { ...validBatchEntry, idempotencyKey: 'ledger-id-duplicate', lines: validBatchEntry.lines.map((line) => ({ ...line })) }
+]), /TRANSACTION_ID_CONFLICT/);
+assert.equal(atomicLedger.all.length, 0);
+atomicLedger.append(validBatchEntry);
+assert.throws(() => atomicLedger.moveBuckets([
+  { id: 'atomic-vest', partnerId: 'p1', from: 'HELD', to: 'AVAILABLE', amountMinor: 10n, currency: 'USD', source: 'HOLD_EXPIRED', idempotencyKey: 'atomic:vest', createdAt: trial.endsAt },
+  { id: 'atomic-overdraw', partnerId: 'p1', from: 'HELD', to: 'AVAILABLE', amountMinor: 1n, currency: 'USD', source: 'HOLD_EXPIRED', idempotencyKey: 'atomic:overdraw', createdAt: trial.endsAt }
+]), /INSUFFICIENT_LEDGER_BUCKET/);
+assert.deepEqual(atomicLedger.project('p1', 'USD'), { pending: 0n, held: 10n, available: 0n, lockedForPayout: 0n, paid: 0n, reversed: 0n, debt: 0n });
+
 const fx: FxSnapshot = { baseCurrency: 'USD', payoutCurrency: 'UAH', rateNumerator: 4200n, rateDenominator: 100n, provider: 'configured-test-fx', quotedAt: trial.endsAt, expiresAt: '2026-10-02T00:00:00.000Z', version: 'fx-v1' };
 const belowMinimum = checkPayoutEligibility({ requested: uah(41999n), available: uah(100000n), fx, policy: { minimumBase: usd(1000n), requestedGrossMinimum: true }, kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' });
 assert.equal(belowMinimum.allowed, false);
 assert.equal(belowMinimum.code, 'BELOW_MINIMUM_PAYOUT');
 const allowed = checkPayoutEligibility({ requested: uah(42000n), available: uah(100000n), fx, policy: { minimumBase: usd(1000n), requestedGrossMinimum: true }, kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' });
 assert.equal(allowed.allowed, true);
+const expiredFx = { ...fx, quotedAt: '2026-09-01T00:00:00.000Z', expiresAt: '2026-09-02T00:00:00.000Z' };
+const expiredCheck = checkPayoutEligibility({ requested: uah(42000n), available: uah(100000n), fx: expiredFx, asOf: '2026-09-03T00:00:00.000Z', policy: { minimumBase: usd(1000n), requestedGrossMinimum: true }, kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' });
+assert.equal(expiredCheck.allowed, false);
+assert.equal(expiredCheck.code, 'FX_SNAPSHOT_EXPIRED');
+assert.equal(expiredCheck.minimumPayout, null);
+assert.throws(() => convertWithFx(usd(1000n), 'UAH', expiredFx, '2026-09-03T00:00:00.000Z'), /FX_SNAPSHOT_EXPIRED/);
 
 assert.equal(shouldRunAutoPayout({ enabled: true, threshold: uah(42000n), cadence: 'THRESHOLD' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' }), true);
 assert.equal(shouldRunAutoPayout({ enabled: true, threshold: uah(42000n), cadence: 'THRESHOLD' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'REVIEW', payoutMethod: 'VERIFIED' }), false);
+const disconnectedPayoutProvider = new NotConnectedPayoutProvider();
+assert.equal(disconnectedPayoutProvider.connected, false);
+await assert.rejects(() => disconnectedPayoutProvider.calculateFee(uah(42000n)), /PAYOUT_PROVIDER_NOT_CONNECTED/);
 
 assert.deepEqual(newlyUnlockedAchievements(99, 100), [100]);
 assert.equal(ambassadorTierForQualifiedL1(500, false), 'CANDIDATE');
 assert.equal(ambassadorTierForQualifiedL1(1000, true), 'ELITE');
-assert.deepEqual(topLeaderboard([
+const leaderboardInput = [
   { partnerId: 'private', score: 999n, publicProfileOptIn: false },
   { partnerId: 'public-b', score: 20n, publicProfileOptIn: true },
   { partnerId: 'public-a', score: 20n, publicProfileOptIn: true }
-], 'MONTHLY').map((entry) => entry.partnerId), ['public-a', 'public-b']);
+];
+assert.deepEqual(topLeaderboard(leaderboardInput, 'MONTHLY').map((entry) => entry.partnerId), ['public-a', 'public-b']);
+assert.deepEqual(leaderboardInput.map((entry) => entry.partnerId), ['private', 'public-b', 'public-a']);
 
 console.log('Financial acceptance tests: PASS');

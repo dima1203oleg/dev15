@@ -14,7 +14,7 @@ Date: 2026-09-05
 - CI/CD, migrations, observability and external payment provider: missing/unverified.
 - Partner Platform 4.0: exact minor-unit/QCB/cap/rank/ledger/FX/payout-gate primitives and acceptance suite exist; database, billing, KYC/AML, FX and payout adapters remain unconnected.
 - Production data guard: enabled. Bundled fixtures are only served in development or with explicit `SIREN_DATA_MODE=DEMO`.
-- Browser safety gate: Playwright covers 9 production-boundary tests, including mobile/desktop interaction flows, four device-shell axe scans, golden screenshots, and critical-content timing in explicit `NOT_CONNECTED` mode.
+- Browser safety gate: Playwright covers 11 production-boundary tests, including mobile/desktop interaction flows, public partner/admin dialogs, nine public-route axe scans, golden screenshots, stale-feed clearing, and critical-content timing in explicit `NOT_CONNECTED` mode.
 - Performance gate: production main bundle is 399.2 KiB JavaScript and 173.6 KiB CSS, within the 450/200 KiB budgets; spatial routes are split into lazy chunks.
 - Dependency security: `npm audit --omit=dev` passes with zero reported vulnerabilities after the Express 5 upgrade.
 
@@ -23,7 +23,7 @@ Date: 2026-09-05
 - `npm run build`: PASS.
 - `npm run lint`: PASS.
 - `npm run test:financial`: PASS.
-- `npm run test:e2e`: PASS (9 tests).
+- `npm run test:e2e`: PASS (11 tests).
 - `npm run test:performance`: PASS.
 - `npm audit --omit=dev`: PASS.
 - Production HTTP smoke: PASS locally.

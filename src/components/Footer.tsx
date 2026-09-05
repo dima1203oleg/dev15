@@ -21,7 +21,7 @@ export const Footer: React.FC = () => {
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
               Центральна вебплатформа ситуаційної обізнаності повітряної безпеки та офіційна партнерська програма 5–25% на 2 рівні.
             </p>
-            <div className="text-[11px] text-slate-500 font-mono">
+            <div className="text-[11px] text-slate-400 font-mono">
               Atlas Trinity Ecosystem © 2026. Всі права захищено.
             </div>
           </div>
@@ -79,7 +79,7 @@ export const Footer: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4 shrink-0">
-            <span className="text-slate-500">Made with Ukrainian Resilience 🇺🇦</span>
+            <span className="text-slate-400">Made with Ukrainian Resilience 🇺🇦</span>
           </div>
         </div>
 

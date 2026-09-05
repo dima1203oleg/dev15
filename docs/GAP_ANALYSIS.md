@@ -15,7 +15,7 @@
 - Real attribution, fraud, KYC/AML and payment provider integrations.
 - Immutable durable ledger with transactional double-entry guarantees.
 - Idempotent payout provider webhooks and reconciliation jobs.
-- Automated unit/integration/E2E/security/performance test suites.
+- Staging-backed integration/security and provider contract suites; local unit/financial/E2E/accessibility/performance gates now exist.
 - CI/CD, staging environment, secrets management and observability.
 
 ## Risks

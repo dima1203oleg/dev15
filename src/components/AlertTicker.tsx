@@ -13,7 +13,7 @@ export const AlertTicker: React.FC<AlertTickerProps> = ({ threats, isThreatServe
   const latestThreat = threats[0];
 
   return (
-    <div className="w-full bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-b border-slate-800/80 text-xs">
+    <aside aria-label="Офіційні сповіщення" className="w-full bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-b border-slate-800/80 text-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
         
         {/* Left: Official Safety Protocol Notice */}
@@ -51,6 +51,6 @@ export const AlertTicker: React.FC<AlertTickerProps> = ({ threats, isThreatServe
         </div>
 
       </div>
-    </div>
+    </aside>
   );
 };

@@ -31,6 +31,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
   const [testL2Rate, setTestL2Rate] = useState<number>(2500); // 25%
   const [testCampaignBonus, setTestCampaignBonus] = useState<number>(0);
   const [capResult, setCapResult] = useState<CapValidationResult | null>(null);
+  const [capError, setCapError] = useState<{ error?: string; message?: string; status?: string } | null>(null);
 
   // Overview stats fetched from backend
   const [overviewStats, setOverviewStats] = useState<any>(null);
@@ -57,8 +58,16 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
         })
       });
       const data = await res.json();
+      if (!res.ok || data.error) {
+        setCapResult(null);
+        setCapError(data);
+        return;
+      }
+      setCapError(null);
       setCapResult(data);
     } catch (e) {
+      setCapResult(null);
+      setCapError({ error: 'NETWORK_ERROR', message: 'Не вдалося перевірити правило cap. Перевірте з’єднання.' });
       console.error(e);
     }
   };
@@ -256,6 +265,17 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                   />
                 </div>
               </div>
+
+              {capError && (
+                <div className="p-5 rounded-2xl border border-amber-500/40 bg-amber-950/30 text-amber-200">
+                  <div className="flex items-center gap-2 text-sm font-bold mb-1">
+                    <AlertTriangle className="w-5 h-5" />
+                    <span>CAP VALIDATOR · NOT CONNECTED</span>
+                  </div>
+                  <p className="font-mono text-xs">{capError.message || 'Фінансовий backend не підключений.'}</p>
+                  <div className="mt-2 text-[11px] text-slate-400">Перевірка правил доступна після підключення авторизованого financial backend.</div>
+                </div>
+              )}
 
               {capResult && (
                 <div className={`p-5 rounded-2xl border ${capResult.passed ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300' : 'bg-rose-950/40 border-rose-500/40 text-rose-300'}`}>

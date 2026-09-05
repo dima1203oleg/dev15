@@ -109,8 +109,22 @@ test.describe('SIREN UA production boundary', () => {
     await expect(page.getByText('2D FALLBACK · spatial canvas вимкнено')).toBeVisible();
   });
 
+  test('partner and admin dialogs expose unavailable financial capabilities clearly', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    await page.locator('#open-partner-cabinet-btn').click();
+    await expect(page.getByText('Фінансові дані недоступні', { exact: true })).toBeVisible();
+    await expect(page.getByText('STATUS: NOT_CONNECTED', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Закрити' }).click();
+
+    await page.locator('#open-admin-btn').click();
+    await page.getByRole('button', { name: '50% Hard Cap Валідатор' }).click();
+    await expect(page.getByText('CAP VALIDATOR · NOT CONNECTED', { exact: true })).toBeVisible();
+    await expect(page.getByText('undefined / 50%', { exact: true })).toHaveCount(0);
+  });
+
   test('dedicated safety surfaces have no critical axe violations', async ({ page }) => {
-    for (const route of ['/mobile', '/tablet', '/desktop', '/tv']) {
+    for (const route of ['/', '/app', '/partner', '/display', '/kiosk', '/mobile', '/tablet', '/desktop', '/tv']) {
       await page.goto(route, { waitUntil: 'domcontentloaded' });
       const results = await new AxeBuilder({ page }).analyze();
       expect(results.violations, route).toEqual([]);
@@ -149,5 +163,19 @@ test.describe('SIREN UA production boundary', () => {
     });
     expect(timing).not.toBeNull();
     expect(timing?.domContentLoaded).toBeLessThan(5_000);
+  });
+
+  test('clears previously rendered threat data when a later critical feed fails', async ({ page }) => {
+    await page.route('**/api/threats/live', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'UPSTREAM_UNAVAILABLE' }),
+      });
+    });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('NOT CONNECTED', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('DEMO DATA', { exact: true })).toHaveCount(0);
+    await expect(page.getByText(/ПІДКЛЮЧЕННЯ ОЧІКУЄТЬСЯ/)).toBeVisible();
   });
 });

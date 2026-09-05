@@ -45,23 +45,61 @@ export default function App() {
   const [currentRole, setCurrentRole] = useState<string>('USER');
   const [currentRank, setCurrentRank] = useState<string>('—');
 
+  const clearThreatState = () => {
+    setIsThreatServerOnline(false);
+    setThreatDataMode('NOT_CONNECTED');
+    setLastSyncAt(null);
+    setThreats([]);
+    setRegions([]);
+    setShelters([]);
+  };
+
+  const readJson = async (url: string): Promise<{ response: Response; body: any }> => {
+    const response = await fetch(url);
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.includes('application/json')) throw new Error(`NON_JSON_RESPONSE:${url}`);
+    const body = await response.json();
+    return { response, body };
+  };
+
   // Fetch threat feed on mount and on periodic sync
   const fetchThreatData = async () => {
     try {
-      const [statusRes, threatsRes, regionsRes, sheltersRes] = await Promise.all([
-        fetch('/api/threats/status').then(r => r.json()).catch(() => ({ connected: false })),
-        fetch('/api/threats/live').then(r => r.json()).catch(() => ({ threats: [] })),
-        fetch('/api/threats/regions').then(r => r.json()).catch(() => ({ regions: [] })),
-        fetch('/api/threats/shelters').then(r => r.json()).catch(() => ({ shelters: [] }))
-      ]);
+      const statusResult = await readJson('/api/threats/status');
+      const statusRes = statusResult.body;
 
-      setIsThreatServerOnline(statusRes.connected === true);
-      setThreatDataMode(statusRes.mode ?? (statusRes.connected ? 'LIVE' : 'NOT_CONNECTED'));
-      setLastSyncAt(statusRes.lastSyncAt ?? null);
-      setThreats(Array.isArray(threatsRes.threats) ? threatsRes.threats : []);
-      setRegions(Array.isArray(regionsRes.regions) ? regionsRes.regions : []);
-      setShelters(Array.isArray(sheltersRes.shelters) ? sheltersRes.shelters : []);
+      // A disconnected status is a valid, explicit boundary. Do not request
+      // or retain any cached-looking payloads after it is reported.
+      if (statusResult.response.status !== 200 || statusRes.connected !== true) {
+        clearThreatState();
+        return;
+      }
+
+      const [threatsResult, regionsResult, sheltersResult] = await Promise.all([
+        readJson('/api/threats/live'),
+        readJson('/api/threats/regions'),
+        readJson('/api/threats/shelters')
+      ]);
+      if (!threatsResult.response.ok || !regionsResult.response.ok || !sheltersResult.response.ok) {
+        throw new Error('INCOMPLETE_THREAT_PAYLOAD');
+      }
+
+      const threatsRes = threatsResult.body;
+      const regionsRes = regionsResult.body;
+      const sheltersRes = sheltersResult.body;
+      if (!Array.isArray(threatsRes.threats) || !Array.isArray(regionsRes.regions) || !Array.isArray(sheltersRes.shelters)) {
+        throw new Error('INVALID_THREAT_PAYLOAD');
+      }
+
+      setIsThreatServerOnline(true);
+      setThreatDataMode(statusRes.mode === 'DEMO_DATA' ? 'DEMO_DATA' : 'LIVE');
+      setLastSyncAt(typeof statusRes.lastSyncAt === 'string' ? statusRes.lastSyncAt : null);
+      setThreats(threatsRes.threats);
+      setRegions(regionsRes.regions);
+      setShelters(sheltersRes.shelters);
     } catch (err) {
+      // Never leave the previous feed rendered as if it were still current.
+      clearThreatState();
       console.error('Error fetching situational data:', err);
     }
   };
@@ -101,11 +139,12 @@ export default function App() {
   // Switch demo role
   const handleSwitchRole = async (role: string, rank?: string) => {
     try {
-      await fetch('/api/auth/switch-role', {
+      const response = await fetch('/api/auth/switch-role', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role, rank })
       });
+      if (!response.ok) return;
       setCurrentRole(role);
       if (rank) setCurrentRank(rank);
     } catch (e) {

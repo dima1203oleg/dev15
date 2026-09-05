@@ -239,6 +239,7 @@ export const PartnerLandingSection: React.FC<PartnerLandingSectionProps> = ({ on
                   min="1"
                   max="300"
                   value={calcL1Count}
+                  aria-label="Кількість особисто залучених користувачів L1"
                   onChange={(e) => setCalcL1Count(Number(e.target.value))}
                   className="w-full accent-amber-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
                 />
@@ -260,6 +261,7 @@ export const PartnerLandingSection: React.FC<PartnerLandingSectionProps> = ({ on
                   min="0"
                   max="500"
                   value={calcL2Count}
+                  aria-label="Кількість користувачів другого рівня L2"
                   onChange={(e) => setCalcL2Count(Number(e.target.value))}
                   className="w-full accent-amber-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
                 />
@@ -285,7 +287,7 @@ export const PartnerLandingSection: React.FC<PartnerLandingSectionProps> = ({ on
                 <div className="text-3xl sm:text-4xl font-extrabold text-white font-['Plus_Jakarta_Sans']">
                   {totalMonthlyEarnings.toLocaleString('uk-UA')} <span className="text-amber-400 text-2xl font-bold">грн/міс</span>
                 </div>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-400">
                   L1: {Math.round(l1MonthlyRevenue)} грн + L2: {Math.round(l2MonthlyRevenue)} грн
                 </p>
               </div>

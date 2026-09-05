@@ -17,7 +17,7 @@ was not modified or integrated.
 
 ## 2. Technology Stack & Runtime Profile
 - **Frontend**: React 19, TypeScript 5.8, Tailwind CSS v4, Motion (v12), Lucide Icons.
-- **Backend/BFF**: Node.js ES2022 / Express 4.21 with TypeScript runtime (`tsx`) and bundled CJS production output (`esbuild`).
+- **Backend/BFF**: Node.js ES2022 / Express 5 with TypeScript runtime (`tsx`) and bundled CJS production output (`esbuild`).
 - **Data Engine**: Double-Entry Immutable Ledger in minor currency units (cents/kopecks) with strict zero-sum projection to Wallets.
 - **Security boundary**: no production identity, JWT/session authorization or webhook provider integration is present in this checkout. Cap validation and idempotency primitives exist; auth/RBAC/HMAC enforcement remain integration work.
 

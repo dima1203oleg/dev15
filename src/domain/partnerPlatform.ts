@@ -95,13 +95,18 @@ export function lockAttribution(attribution: Attribution, qualifiedAt: string): 
 }
 
 export function resolveReferralChain(attribution: Attribution): Array<{ partnerId: string; level: ReferralLevel }> {
+  if (!attribution.userId || !attribution.directPartnerId || attribution.userId === attribution.directPartnerId) return [];
   const chain: Array<{ partnerId: string; level: ReferralLevel }> = [
     { partnerId: attribution.directPartnerId, level: 'L1' }
   ];
-  if (attribution.secondLevelPartnerId && attribution.secondLevelPartnerId !== attribution.directPartnerId) {
+  if (attribution.secondLevelPartnerId && attribution.secondLevelPartnerId !== attribution.directPartnerId && attribution.secondLevelPartnerId !== attribution.userId) {
     chain.push({ partnerId: attribution.secondLevelPartnerId, level: 'L2' });
   }
   return chain;
+}
+
+function isSelfReferral(attribution: Attribution): boolean {
+  return attribution.userId === attribution.directPartnerId || attribution.userId === attribution.secondLevelPartnerId;
 }
 
 export function resolveRank(qualifiedActivePaidL1: number, rules: readonly RankRule[] = DEFAULT_RANK_RULES): RankRule | null {
@@ -211,7 +216,7 @@ export interface CapResult {
 
 export function validateAllocationCap(allocations: readonly CommissionAllocation[], maxCapBps = 5000): CapResult {
   const totalAllocationBps = allocations.reduce((sum, item) => sum + item.rateBps, 0);
-  const validRates = Number.isInteger(maxCapBps) && maxCapBps >= 0 && allocations.every((item) => Number.isInteger(item.rateBps) && item.rateBps >= 0 && item.rateBps <= 10000);
+  const validRates = Number.isInteger(maxCapBps) && maxCapBps >= 0 && maxCapBps <= 10000 && allocations.every((item) => Number.isInteger(item.rateBps) && item.rateBps >= 0 && item.rateBps <= 10000);
   const passed = validRates && totalAllocationBps <= maxCapBps;
   return {
     passed,
@@ -231,6 +236,7 @@ export function calculateCommissions(qcb: Money, allocations: readonly Commissio
   commissions: CommissionResult[];
   cappedAmountMinor: bigint;
 } {
+  assertMoney(qcb);
   const cap = validateAllocationCap(allocations, maxCapBps);
   if (!cap.passed) return { cap, commissions: [], cappedAmountMinor: 0n };
   const roundedCap = percentHalfUp(qcb.amountMinor, maxCapBps);
@@ -283,6 +289,7 @@ export function qualifyPayment(input: QualifiedPayment): { qualified: boolean; r
   if (input.isTestPayment) return { qualified: false, reason: 'TEST_PAYMENT', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
   if (input.fraudStatus && input.fraudStatus !== 'OK') return { qualified: false, reason: 'FRAUD_REVIEW', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
   if (input.attribution.status === 'REJECTED') return { qualified: false, reason: 'REJECTED_ATTRIBUTION', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
+  if (isSelfReferral(input.attribution) || !resolveReferralChain(input.attribution).length) return { qualified: false, reason: 'SELF_REFERRAL', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
   const qcb = calculateQcb(input.payment, input.qcbPolicy);
   return qcb.amountMinor > 0n ? { qualified: true, reason: 'QUALIFIED', qcb } : { qualified: false, reason: 'ZERO_QCB', qcb };
 }
@@ -338,6 +345,18 @@ export interface LedgerTransaction {
   lines: LedgerLine[];
 }
 
+export interface BucketMove {
+  id: string;
+  partnerId: string;
+  from: WalletBucket;
+  to: WalletBucket;
+  amountMinor: bigint;
+  currency: Currency;
+  source: string;
+  idempotencyKey: string;
+  createdAt: string;
+}
+
 const bucketAccount: Record<WalletBucket, LedgerAccount> = {
   PENDING: 'PARTNER_PENDING',
   HELD: 'PARTNER_HELD',
@@ -346,6 +365,16 @@ const bucketAccount: Record<WalletBucket, LedgerAccount> = {
   PAID: 'PARTNER_PAID',
   REVERSED: 'PARTNER_REVERSED',
   DEBT: 'PARTNER_DEBT'
+};
+
+const bucketProjection: Record<WalletBucket, keyof WalletProjection> = {
+  PENDING: 'pending',
+  HELD: 'held',
+  AVAILABLE: 'available',
+  LOCKED_FOR_PAYOUT: 'lockedForPayout',
+  PAID: 'paid',
+  REVERSED: 'reversed',
+  DEBT: 'debt'
 };
 
 export interface WalletProjection {
@@ -358,42 +387,84 @@ export interface WalletProjection {
   debt: bigint;
 }
 
+function sameLedgerTransaction(left: LedgerTransaction, right: LedgerTransaction): boolean {
+  return left.id === right.id
+    && left.source === right.source
+    && left.idempotencyKey === right.idempotencyKey
+    && left.ruleVersion === right.ruleVersion
+    && left.createdAt === right.createdAt
+    && left.lines.length === right.lines.length
+    && left.lines.every((line, index) => {
+      const candidate = right.lines[index];
+      return line.account === candidate.account
+        && line.direction === candidate.direction
+        && line.amountMinor === candidate.amountMinor
+        && line.currency === candidate.currency
+        && line.partnerId === candidate.partnerId;
+    });
+}
+
+function validateLedgerTransaction(transaction: LedgerTransaction): void {
+  if (!transaction.id || !transaction.source || !transaction.idempotencyKey || !transaction.createdAt) throw new Error('INVALID_LEDGER_TRANSACTION');
+  if (!transaction.lines.length || transaction.lines.some((line) => line.amountMinor <= 0n)) throw new Error('INVALID_LEDGER_LINES');
+  if (new Set(transaction.lines.map((line) => line.currency)).size !== 1) throw new Error('MULTI_CURRENCY_TRANSACTION');
+  const debit = transaction.lines.filter((line) => line.direction === 'DEBIT').reduce((sum, line) => sum + line.amountMinor, 0n);
+  const credit = transaction.lines.filter((line) => line.direction === 'CREDIT').reduce((sum, line) => sum + line.amountMinor, 0n);
+  if (debit !== credit) throw new Error('LEDGER_NOT_BALANCED');
+}
+
 export class ImmutableLedger {
   private readonly transactions: LedgerTransaction[] = [];
   private readonly idempotency = new Map<string, LedgerTransaction>();
+  private readonly transactionIds = new Map<string, LedgerTransaction>();
 
   get all(): readonly LedgerTransaction[] { return this.transactions; }
 
   append(transaction: LedgerTransaction): LedgerTransaction {
-    const existing = this.idempotency.get(transaction.idempotencyKey);
-    if (existing) {
-      const sameLines = existing.lines.length === transaction.lines.length
-        && existing.lines.every((line, index) => {
-          const candidate = transaction.lines[index];
-          return line.account === candidate.account
-            && line.direction === candidate.direction
-            && line.amountMinor === candidate.amountMinor
-            && line.currency === candidate.currency
-            && line.partnerId === candidate.partnerId;
-        });
-      if (existing.id !== transaction.id || existing.source !== transaction.source || existing.ruleVersion !== transaction.ruleVersion || !sameLines) {
-        throw new Error('IDEMPOTENCY_CONFLICT');
-      }
-      return existing;
-    }
-    if (!transaction.lines.length || transaction.lines.some((line) => line.amountMinor <= 0n)) throw new Error('INVALID_LEDGER_LINES');
-    if (new Set(transaction.lines.map((line) => line.currency)).size !== 1) throw new Error('MULTI_CURRENCY_TRANSACTION');
-    const debit = transaction.lines.filter((line) => line.direction === 'DEBIT').reduce((sum, line) => sum + line.amountMinor, 0n);
-    const credit = transaction.lines.filter((line) => line.direction === 'CREDIT').reduce((sum, line) => sum + line.amountMinor, 0n);
-    if (debit !== credit) throw new Error('LEDGER_NOT_BALANCED');
-    this.transactions.push(transaction);
-    this.idempotency.set(transaction.idempotencyKey, transaction);
-    return transaction;
+    return this.appendBatch([transaction])[0];
   }
 
-  commission(args: { id: string; partnerId: string; amountMinor: bigint; currency: Currency; hold: boolean; source: string; idempotencyKey: string; createdAt: string; ruleVersion: string }): LedgerTransaction {
+  /**
+   * Validate the complete batch before mutating any ledger collection. This
+   * is the transaction boundary used by payment, reversal and payout flows.
+   * A failed line or idempotency conflict therefore cannot leave half a
+   * commission set or half a wallet move persisted.
+   */
+  appendBatch(transactions: readonly LedgerTransaction[]): LedgerTransaction[] {
+    if (!transactions.length) throw new Error('EMPTY_LEDGER_BATCH');
+    const pendingByKey = new Map<string, LedgerTransaction>();
+    const pendingById = new Map<string, LedgerTransaction>();
+    const toAppend: LedgerTransaction[] = [];
+    const result: LedgerTransaction[] = [];
+
+    for (const transaction of transactions) {
+      const existing = this.idempotency.get(transaction.idempotencyKey) ?? pendingByKey.get(transaction.idempotencyKey);
+      if (existing) {
+        if (!sameLedgerTransaction(existing, transaction)) throw new Error('IDEMPOTENCY_CONFLICT');
+        result.push(existing);
+        continue;
+      }
+
+      const existingId = this.transactionIds.get(transaction.id) ?? pendingById.get(transaction.id);
+      if (existingId && !sameLedgerTransaction(existingId, transaction)) throw new Error('TRANSACTION_ID_CONFLICT');
+      validateLedgerTransaction(transaction);
+      pendingByKey.set(transaction.idempotencyKey, transaction);
+      pendingById.set(transaction.id, transaction);
+      toAppend.push(transaction);
+      result.push(transaction);
+    }
+
+    for (const transaction of toAppend) {
+      this.transactions.push(transaction);
+      this.idempotency.set(transaction.idempotencyKey, transaction);
+      this.transactionIds.set(transaction.id, transaction);
+    }
+    return result;
+  }
+
+  private buildCommissionTransaction(args: { id: string; partnerId: string; amountMinor: bigint; currency: Currency; hold: boolean; source: string; idempotencyKey: string; createdAt: string; ruleVersion: string }): LedgerTransaction {
     const bucket: WalletBucket = args.hold ? 'HELD' : 'AVAILABLE';
-    return this.append({
+    return {
       id: args.id,
       source: args.source,
       idempotencyKey: args.idempotencyKey,
@@ -403,16 +474,19 @@ export class ImmutableLedger {
         { account: 'PLATFORM_REVENUE', direction: 'DEBIT', amountMinor: args.amountMinor, currency: args.currency },
         { account: bucketAccount[bucket], direction: 'CREDIT', amountMinor: args.amountMinor, currency: args.currency, partnerId: args.partnerId }
       ]
-    });
+    };
   }
 
-  moveBucket(args: { id: string; partnerId: string; from: WalletBucket; to: WalletBucket; amountMinor: bigint; currency: Currency; source: string; idempotencyKey: string; createdAt: string }): LedgerTransaction {
-    const bucketProjection: Record<WalletBucket, keyof WalletProjection> = {
-      PENDING: 'pending', HELD: 'held', AVAILABLE: 'available', LOCKED_FOR_PAYOUT: 'lockedForPayout',
-      PAID: 'paid', REVERSED: 'reversed', DEBT: 'debt'
-    };
-    if (args.amountMinor <= 0n) throw new Error('INVALID_LEDGER_LINES');
-    const transaction: LedgerTransaction = {
+  commissionTransaction(args: { id: string; partnerId: string; amountMinor: bigint; currency: Currency; hold: boolean; source: string; idempotencyKey: string; createdAt: string; ruleVersion: string }): LedgerTransaction {
+    return this.buildCommissionTransaction(args);
+  }
+
+  commission(args: { id: string; partnerId: string; amountMinor: bigint; currency: Currency; hold: boolean; source: string; idempotencyKey: string; createdAt: string; ruleVersion: string }): LedgerTransaction {
+    return this.append(this.buildCommissionTransaction(args));
+  }
+
+  private buildBucketMoveTransaction(args: BucketMove): LedgerTransaction {
+    return {
       id: args.id,
       source: args.source,
       idempotencyKey: args.idempotencyKey,
@@ -422,11 +496,30 @@ export class ImmutableLedger {
         { account: bucketAccount[args.to], direction: 'CREDIT', amountMinor: args.amountMinor, currency: args.currency, partnerId: args.partnerId }
       ]
     };
-    // Idempotent retries must resolve before checking the now-consumed source
-    // bucket. A changed payload still fails closed inside append().
-    if (this.idempotency.has(args.idempotencyKey)) return this.append(transaction);
-    if (this.project(args.partnerId, args.currency)[bucketProjection[args.from]] < args.amountMinor) throw new Error('INSUFFICIENT_LEDGER_BUCKET');
-    return this.append(transaction);
+  }
+
+  moveBuckets(args: readonly BucketMove[]): LedgerTransaction[] {
+    if (!args.length) throw new Error('EMPTY_LEDGER_BATCH');
+    const working = new Map<string, bigint>();
+    const appliedKeys = new Set<string>();
+    const transactions = args.map((move) => {
+      if (move.amountMinor <= 0n) throw new Error('INVALID_LEDGER_LINES');
+      const transaction = this.buildBucketMoveTransaction(move);
+      if (this.idempotency.has(move.idempotencyKey) || appliedKeys.has(move.idempotencyKey)) return transaction;
+      appliedKeys.add(move.idempotencyKey);
+      const fromKey = `${move.partnerId}:${move.currency}:${move.from}`;
+      const toKey = `${move.partnerId}:${move.currency}:${move.to}`;
+      const fromBalance = working.get(fromKey) ?? this.project(move.partnerId, move.currency)[bucketProjection[move.from]];
+      if (fromBalance < move.amountMinor) throw new Error('INSUFFICIENT_LEDGER_BUCKET');
+      working.set(fromKey, fromBalance - move.amountMinor);
+      working.set(toKey, (working.get(toKey) ?? this.project(move.partnerId, move.currency)[bucketProjection[move.to]]) + move.amountMinor);
+      return transaction;
+    });
+    return this.appendBatch(transactions);
+  }
+
+  moveBucket(args: BucketMove): LedgerTransaction {
+    return this.moveBuckets([args])[0];
   }
 
   project(partnerId: string, currency: Currency): WalletProjection {
@@ -501,16 +594,21 @@ export class InMemoryPartnerPlatform {
   reversePayment(paymentId: string, kind: 'REFUND' | 'CHARGEBACK', reversedAt: string): CommissionSnapshot[] {
     const result = this.payments.get(paymentId);
     if (!result) throw new Error('PAYMENT_NOT_FOUND');
-    const reversed: CommissionSnapshot[] = [];
+    const moves: BucketMove[] = [];
+    const reversible: Array<{ commission: CommissionSnapshot; from: WalletBucket }> = [];
     for (const commission of result.commissions) {
       const from: WalletBucket | null = commission.state === 'HELD' ? 'HELD' : commission.state === 'AVAILABLE' ? 'AVAILABLE' : commission.state === 'PAID' ? 'PAID' : null;
       if (!from) continue;
       const to: WalletBucket = from === 'PAID' ? 'DEBT' : 'REVERSED';
-      this.ledger.moveBucket({ id: `${commission.id}-${kind.toLowerCase()}`, partnerId: commission.partnerId, from, to, amountMinor: commission.roundedCommission.amountMinor, currency: commission.roundedCommission.currency, source: kind, idempotencyKey: `${kind}:${commission.id}`, createdAt: reversedAt });
-      commission.state = from === 'PAID' ? 'ADJUSTED' : 'REVERSED';
-      reversed.push(commission);
+      moves.push({ id: `${commission.id}-${kind.toLowerCase()}`, partnerId: commission.partnerId, from, to, amountMinor: commission.roundedCommission.amountMinor, currency: commission.roundedCommission.currency, source: kind, idempotencyKey: `${kind}:${commission.id}`, createdAt: reversedAt });
+      reversible.push({ commission, from });
     }
-    return reversed;
+    if (!moves.length) return [];
+    this.ledger.moveBuckets(moves);
+    return reversible.map(({ commission, from }) => {
+      commission.state = from === 'PAID' ? 'ADJUSTED' : 'REVERSED';
+      return commission;
+    });
   }
 
   processPaidPayment(input: {
@@ -526,6 +624,7 @@ export class InMemoryPartnerPlatform {
     const previous = this.payments.get(input.id);
     if (previous) return { ...previous, status: 'DUPLICATE' };
     if (input.attribution.status === 'REJECTED') return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'REJECTED_ATTRIBUTION', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] });
+    if (isSelfReferral(input.attribution)) return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'SELF_REFERRAL', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] });
     const qcb = calculateQcb(input.payment, this.qcbPolicy);
     if (input.isTestPayment || (input.fraudStatus && input.fraudStatus !== 'OK') || qcb.amountMinor === 0n) {
       return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: input.isTestPayment ? 'TEST_PAYMENT' : input.fraudStatus && input.fraudStatus !== 'OK' ? 'FRAUD_REVIEW' : 'ZERO_QCB', qcb, commissions: [] });
@@ -556,9 +655,7 @@ export class InMemoryPartnerPlatform {
       direct.qualifiedActivePaidL1 -= 1;
       return this.storeResult({ paymentId: input.id, status: 'CAP_VALIDATION_FAILED', reason: 'CAP_VALIDATION_FAILED', qcb, commissions: [] });
     }
-    for (const snapshot of snapshots) {
-      this.commissions.set(snapshot.id, snapshot);
-      this.ledger.commission({
+    const ledgerTransactions = snapshots.map((snapshot) => this.ledger.commissionTransaction({
         id: snapshot.id,
         partnerId: snapshot.partnerId,
         amountMinor: snapshot.roundedCommission.amountMinor,
@@ -568,7 +665,15 @@ export class InMemoryPartnerPlatform {
         idempotencyKey: `commission:${snapshot.id}`,
         createdAt: snapshot.createdAt,
         ruleVersion: snapshot.ruleVersion
-      });
+      }));
+    try {
+      this.ledger.appendBatch(ledgerTransactions);
+    } catch (error) {
+      direct.qualifiedActivePaidL1 -= 1;
+      throw error;
+    }
+    for (const snapshot of snapshots) {
+      this.commissions.set(snapshot.id, snapshot);
     }
     return this.storeResult({ paymentId: input.id, status: 'QUALIFIED', reason: 'PAYMENT_QUALIFIED', qcb, commissions: snapshots });
   }
@@ -614,9 +719,18 @@ export interface FxSnapshot {
   version: string;
 }
 
-export function convertWithFx(amount: Money, payoutCurrency: Currency, fx: FxSnapshot): Money {
+function assertUsableFxSnapshot(fx: FxSnapshot, at = new Date().toISOString()): void {
+  const now = new Date(at).getTime();
+  const quotedAt = new Date(fx.quotedAt).getTime();
+  const expiresAt = new Date(fx.expiresAt).getTime();
+  if (!Number.isFinite(now) || !Number.isFinite(quotedAt) || !Number.isFinite(expiresAt) || expiresAt <= quotedAt) throw new Error('INVALID_FX_SNAPSHOT');
+  if (now >= expiresAt) throw new Error('FX_SNAPSHOT_EXPIRED');
+}
+
+export function convertWithFx(amount: Money, payoutCurrency: Currency, fx: FxSnapshot, at?: string): Money {
   assertMoney(amount);
   if (amount.currency !== fx.baseCurrency || payoutCurrency !== fx.payoutCurrency || fx.rateNumerator <= 0n || fx.rateDenominator <= 0n) throw new Error('INVALID_FX_SNAPSHOT');
+  assertUsableFxSnapshot(fx, at);
   return { currency: payoutCurrency, amountMinor: (amount.amountMinor * fx.rateNumerator + fx.rateDenominator / 2n) / fx.rateDenominator };
 }
 
@@ -634,19 +748,26 @@ export interface PayoutEligibilityInput {
   compliance: 'OK' | 'REVIEW' | 'BLOCKED';
   fraud: 'OK' | 'REVIEW' | 'BLOCKED';
   payoutMethod: 'VERIFIED' | 'MISSING' | 'FAILED';
+  asOf?: string;
 }
 
 export interface PayoutCheck {
   allowed: boolean;
   code: string;
-  minimumPayout: Money;
+  minimumPayout: Money | null;
 }
 
 export function checkPayoutEligibility(input: PayoutEligibilityInput): PayoutCheck {
   assertMoney(input.requested);
   assertMoney(input.available);
   assertMoney(input.policy.minimumBase);
-  const minimumPayout = convertWithFx(input.policy.minimumBase, input.requested.currency, input.fx);
+  let minimumPayout: Money;
+  try {
+    minimumPayout = convertWithFx(input.policy.minimumBase, input.requested.currency, input.fx, input.asOf);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'FX_SNAPSHOT_EXPIRED') return { allowed: false, code: 'FX_SNAPSHOT_EXPIRED', minimumPayout: null };
+    throw error;
+  }
   if (input.requested.currency !== input.available.currency || input.requested.amountMinor > input.available.amountMinor) return { allowed: false, code: 'INSUFFICIENT_AVAILABLE_BALANCE', minimumPayout };
   if (input.requested.amountMinor < minimumPayout.amountMinor) return { allowed: false, code: 'BELOW_MINIMUM_PAYOUT', minimumPayout };
   if (input.kyc !== 'VERIFIED') return { allowed: false, code: 'KYC_REQUIRED', minimumPayout };
@@ -658,14 +779,26 @@ export function checkPayoutEligibility(input: PayoutEligibilityInput): PayoutChe
 
 export interface PayoutProvider {
   readonly connected: boolean;
+  createRecipient(input: { partnerId: string; destination: string }): Promise<{ providerRecipientId: string; status: 'PENDING' | 'VERIFIED' }>;
+  verifyRecipient(input: { providerRecipientId: string }): Promise<{ status: 'VERIFIED' | 'FAILED' }>;
   calculateFee(requested: Money): Promise<Money>;
   createPayout(input: { idempotencyKey: string; requested: Money; destination: string }): Promise<{ providerPayoutId: string; status: 'PROCESSING' | 'PAID' }>;
+  getPayout(providerPayoutId: string): Promise<{ status: 'PROCESSING' | 'PAID' | 'FAILED' }>;
+  cancelPayout(providerPayoutId: string): Promise<{ status: 'CANCELED' | 'FAILED' }>;
+  handleWebhook(input: { eventId: string; payload: unknown; signature: string }): Promise<{ accepted: boolean; eventType?: string }>;
+  reconcile(since: string): Promise<{ checked: number; mismatches: number }>;
 }
 
 export class NotConnectedPayoutProvider implements PayoutProvider {
   readonly connected = false;
-  async calculateFee(requested: Money): Promise<Money> { return { currency: requested.currency, amountMinor: 0n }; }
+  async createRecipient(): Promise<never> { throw new Error('PAYOUT_PROVIDER_NOT_CONNECTED'); }
+  async verifyRecipient(): Promise<never> { throw new Error('PAYOUT_PROVIDER_NOT_CONNECTED'); }
+  async calculateFee(_requested: Money): Promise<never> { throw new Error('PAYOUT_PROVIDER_NOT_CONNECTED'); }
   async createPayout(): Promise<never> { throw new Error('PAYOUT_PROVIDER_NOT_CONNECTED'); }
+  async getPayout(): Promise<never> { throw new Error('PAYOUT_PROVIDER_NOT_CONNECTED'); }
+  async cancelPayout(): Promise<never> { throw new Error('PAYOUT_PROVIDER_NOT_CONNECTED'); }
+  async handleWebhook(): Promise<never> { throw new Error('PAYOUT_PROVIDER_NOT_CONNECTED'); }
+  async reconcile(): Promise<never> { throw new Error('PAYOUT_PROVIDER_NOT_CONNECTED'); }
 }
 
 export interface AutoPayoutPolicy {
@@ -709,8 +842,10 @@ export interface LeaderboardEntry {
 }
 
 export function topLeaderboard(entries: readonly LeaderboardEntry[], metric: LeaderboardMetric, limit = 100, region?: string): LeaderboardEntry[] {
+  if (!Number.isInteger(limit) || limit < 0) throw new Error('INVALID_LEADERBOARD_LIMIT');
   return entries
     .filter((entry) => entry.publicProfileOptIn && (metric !== 'REGIONAL' || entry.region === region))
+    .slice()
     .sort((a, b) => b.score > a.score ? 1 : b.score < a.score ? -1 : a.partnerId.localeCompare(b.partnerId))
     .slice(0, limit);
 }
@@ -738,6 +873,7 @@ export interface FraudAssessment {
 }
 
 export function assessFraud(signals: Array<{ name: string; weight: number; present: boolean }>): FraudAssessment {
+  if (signals.some((signal) => !signal.name || !Number.isFinite(signal.weight) || signal.weight < 0)) throw new Error('INVALID_FRAUD_SIGNAL');
   const score = Math.min(100, Math.max(0, signals.filter((signal) => signal.present).reduce((sum, signal) => sum + signal.weight, 0)));
   return { score, status: score >= 80 ? 'BLOCKED' : score >= 50 ? 'REVIEW' : 'OK', signals: signals.filter((signal) => signal.present).map((signal) => signal.name) };
 }
