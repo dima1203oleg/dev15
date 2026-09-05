@@ -230,8 +230,11 @@ export interface CapResult {
 }
 
 export function validateAllocationCap(allocations: readonly CommissionAllocation[], maxCapBps = 5000): CapResult {
-  const totalAllocationBps = allocations.reduce((sum, item) => sum + item.rateBps, 0);
-  const validRates = Number.isInteger(maxCapBps) && maxCapBps >= 0 && maxCapBps <= 10000 && allocations.every((item) => Number.isInteger(item.rateBps) && item.rateBps >= 0 && item.rateBps <= 10000);
+  const validAllocationShape = Array.isArray(allocations) && allocations.every((item) => item && typeof item === 'object' && (item.referralLevel === 'L1' || item.referralLevel === 'L2') && typeof item.partnerId === 'string' && item.partnerId.length > 0);
+  const totalAllocationBps = Array.isArray(allocations)
+    ? allocations.reduce((sum, item) => sum + (typeof item?.rateBps === 'number' && Number.isFinite(item.rateBps) ? item.rateBps : 0), 0)
+    : 0;
+  const validRates = validAllocationShape && Number.isInteger(maxCapBps) && maxCapBps >= 0 && maxCapBps <= 10000 && allocations.every((item) => Number.isInteger(item.rateBps) && item.rateBps >= 0 && item.rateBps <= 10000);
   const passed = validRates && totalAllocationBps <= maxCapBps;
   return {
     passed,
@@ -421,8 +424,10 @@ function sameLedgerTransaction(left: LedgerTransaction, right: LedgerTransaction
 }
 
 function validateLedgerTransaction(transaction: LedgerTransaction): void {
-  if (!transaction.id || !transaction.source || !transaction.idempotencyKey || !transaction.createdAt) throw new Error('INVALID_LEDGER_TRANSACTION');
-  if (!transaction.lines.length || transaction.lines.some((line) => line.amountMinor <= 0n)) throw new Error('INVALID_LEDGER_LINES');
+  if (!transaction || typeof transaction !== 'object' || !transaction.id || !transaction.source || !transaction.idempotencyKey || !transaction.createdAt || !Array.isArray(transaction.lines)) throw new Error('INVALID_LEDGER_TRANSACTION');
+  const validAccounts = new Set<LedgerAccount>(['PLATFORM_REVENUE', 'PARTNER_PENDING', 'PARTNER_HELD', 'PARTNER_AVAILABLE', 'PARTNER_LOCKED', 'PARTNER_PAID', 'PARTNER_REVERSED', 'PARTNER_DEBT', 'PAYOUT_PROVIDER']);
+  const validDirections = new Set(['DEBIT', 'CREDIT']);
+  if (!transaction.lines.length || transaction.lines.some((line) => !line || !validAccounts.has(line.account) || !validDirections.has(line.direction) || typeof line.amountMinor !== 'bigint' || line.amountMinor <= 0n || !['USD', 'UAH', 'EUR', 'PLN'].includes(line.currency))) throw new Error('INVALID_LEDGER_LINES');
   if (new Set(transaction.lines.map((line) => line.currency)).size !== 1) throw new Error('MULTI_CURRENCY_TRANSACTION');
   const debit = transaction.lines.filter((line) => line.direction === 'DEBIT').reduce((sum, line) => sum + line.amountMinor, 0n);
   const credit = transaction.lines.filter((line) => line.direction === 'CREDIT').reduce((sum, line) => sum + line.amountMinor, 0n);

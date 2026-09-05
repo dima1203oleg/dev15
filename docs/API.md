@@ -2,6 +2,6 @@
 
 The current Express routes are prototype contracts, not a stable public API. `GET /api/health` reports the configured capability boundary; `GET /api/ready` returns `503` until all required production dependencies are connected. Threat payload routes (`live`, `regions`, `shelters`) return `503 NOT_CONNECTED` when the authoritative source is absent; they never represent unavailable data as an empty live result. Threat routes expose `DEMO_DATA` only in development and `NOT_CONNECTED` in production without a verified ThreatServer. Partner and admin routes are demo/in-memory until auth, database and authorization are implemented.
 
-All `/api/*` responses are marked `Cache-Control: no-store` because safety and financial state must not be served from an intermediary cache. Admin validation routes fail closed outside explicitly enabled demo mode until production authentication and authorization are installed.
+All `/api/*` responses are marked `Cache-Control: no-store` because safety and financial state must not be served from an intermediary cache. Every response carries a bounded `X-Request-Id`; valid caller IDs are echoed and invalid/missing IDs are replaced with a server-generated ID for log correlation. Admin validation routes fail closed outside explicitly enabled demo mode until production authentication and authorization are installed.
 
 Unknown `/api/*` routes return a JSON `404` (`API_NOT_FOUND`) instead of the SPA document. The listening port is configured with `PORT` and defaults to `3000`; invalid values fail startup.

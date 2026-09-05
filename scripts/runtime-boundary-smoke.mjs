@@ -33,6 +33,7 @@ try {
   }
 
   assert.ok(health, 'staging-like server did not start');
+  assert.match(health.response.headers.get('x-request-id') ?? '', /^[A-Za-z0-9._:-]{1,128}$/);
   assert.deepEqual(health.body, {
     status: 'ok',
     threatDataMode: 'NOT_CONNECTED',
@@ -43,6 +44,8 @@ try {
   const threats = await getJson('/api/threats/live');
   assert.equal(threats.response.status, 503);
   assert.equal(threats.body.error, 'NOT_CONNECTED');
+  const echoedRequest = await fetch(`http://127.0.0.1:${port}/api/health`, { headers: { 'x-request-id': 'boundary-smoke-1' } });
+  assert.equal(echoedRequest.headers.get('x-request-id'), 'boundary-smoke-1');
 
   const partner = await getJson('/api/partner/dashboard');
   assert.equal(partner.response.status, 503);

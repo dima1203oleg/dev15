@@ -66,6 +66,7 @@ assert.equal(validateAllocationCap([
   { partnerId: 'p2', referralLevel: 'L2', rateBps: 2500 },
   { partnerId: 'campaign', referralLevel: 'L1', rateBps: 500 }
 ]).passed, false);
+assert.equal(validateAllocationCap([{ partnerId: '', referralLevel: 'L1', rateBps: 500 }]).passed, false);
 
 // Rounding normalization is deterministic and cannot exceed the rounded cap.
 const tiny = calculateCommissions(usd(2n), [
@@ -142,6 +143,13 @@ assert.throws(() => ledger.append({
     { account: 'PARTNER_AVAILABLE', direction: 'CREDIT', amountMinor: 25n, currency: 'EUR', partnerId: 'p1' }
   ]
 }), /MULTI_CURRENCY_TRANSACTION/);
+assert.throws(() => ledger.append({
+  id: 'malformed-line', source: 'PAYMENT_3', idempotencyKey: 'commission:3', createdAt: trial.endsAt,
+  lines: [
+    { account: 'PLATFORM_REVENUE', direction: 'DEBIT', amountMinor: 25n, currency: 'USD' },
+    { account: 'PARTNER_AVAILABLE', direction: 'CREDIT', amountMinor: 25 as unknown as bigint, currency: 'USD', partnerId: 'p1' }
+  ]
+}), /INVALID_LEDGER_LINES/);
 ledger.moveBucket({ id: 'vest-1', partnerId: 'p1', from: 'HELD', to: 'AVAILABLE', amountMinor: 25n, currency: 'USD', source: 'HOLD_EXPIRED', idempotencyKey: 'vest:1', createdAt: trial.endsAt });
 assert.equal(ledger.moveBucket({ id: 'vest-1', partnerId: 'p1', from: 'HELD', to: 'AVAILABLE', amountMinor: 25n, currency: 'USD', source: 'HOLD_EXPIRED', idempotencyKey: 'vest:1', createdAt: trial.endsAt }).id, 'vest-1');
 assert.throws(() => ledger.moveBucket({ id: 'overdraw', partnerId: 'p1', from: 'AVAILABLE', to: 'LOCKED_FOR_PAYOUT', amountMinor: 26n, currency: 'USD', source: 'PAYOUT_REQUESTED', idempotencyKey: 'payout:overdraw', createdAt: trial.endsAt }), /INSUFFICIENT_LEDGER_BUCKET/);

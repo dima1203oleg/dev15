@@ -1,4 +1,5 @@
 import express from 'express';
+import { randomUUID } from 'node:crypto';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { 
@@ -438,6 +439,10 @@ async function startServer() {
   app.disable('x-powered-by');
   app.use(express.json({ limit: '100kb' }));
   app.use((_req, res, next) => {
+    const suppliedRequestId = _req.get('x-request-id');
+    const requestId = suppliedRequestId && /^[A-Za-z0-9._:-]{1,128}$/.test(suppliedRequestId) ? suppliedRequestId : randomUUID();
+    res.locals.requestId = requestId;
+    res.setHeader('X-Request-Id', requestId);
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('X-Frame-Options', 'DENY');
@@ -880,12 +885,13 @@ async function startServer() {
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     const error = err as { type?: string; status?: number; message?: string };
     if (error.type === 'entity.parse.failed') {
-      return res.status(400).json({ error: 'INVALID_JSON', message: 'Некоректне тіло JSON-запиту.' });
+      return res.status(400).json({ error: 'INVALID_JSON', message: 'Некоректне тіло JSON-запиту.', requestId: res.locals.requestId });
     }
-    console.error('[SIREN UA] request failure:', error.message ?? 'unknown error');
+    console.error('[SIREN UA] request failure:', { requestId: res.locals.requestId, message: error.message ?? 'unknown error' });
     return res.status(error.status && error.status >= 400 ? error.status : 500).json({
       error: 'INTERNAL_SERVER_ERROR',
-      message: 'Внутрішня помилка сервера.'
+      message: 'Внутрішня помилка сервера.',
+      requestId: res.locals.requestId
     });
   });
 
