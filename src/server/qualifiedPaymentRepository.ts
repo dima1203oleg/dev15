@@ -33,6 +33,9 @@ export interface QualifiedPaymentWriteInput {
   isTestPayment?: boolean;
   fraudStatus?: 'OK' | 'REVIEW' | 'BLOCKED';
   maxAllocationBps?: number;
+  providerEventId?: string;
+  rawBody?: string;
+  signatureVerifiedAt?: string;
 }
 
 export interface QualifiedPaymentWriteResult {
@@ -81,6 +84,7 @@ function fingerprint(input: QualifiedPaymentWriteInput): string {
   return JSON.stringify([
     input.userId, input.provider, input.providerPaymentId, input.attributionId, input.ruleVersion,
     input.paidAt, input.qcbPolicy.version, input.maxAllocationBps ?? 5000, input.isTestPayment === true,
+    input.providerEventId ?? null,
     input.fraudStatus ?? null, input.payment.gross.currency, money(input.payment.gross), money(input.payment.refunds),
     money(input.payment.chargebacks), money(input.payment.nonCommissionableTaxes), money(input.payment.storeCosts),
     money(input.payment.processingCosts), money(input.payment.nonCommissionableDiscounts), money(input.payment.promoCredits)
@@ -155,12 +159,30 @@ export class QualifiedPaymentRepository {
     const attributionId = requiredString(input.attributionId, 'attribution_id');
     const ruleVersion = requiredString(input.ruleVersion, 'rule_version');
     const paidAt = requiredIso(input.paidAt, 'paid_at');
+    const providerEventId = input.providerEventId === undefined ? null : requiredString(input.providerEventId, 'provider_event_id');
+    const rawBody = input.rawBody ?? '';
+    if (rawBody.length > 100_000) throw new Error('INVALID_PAYMENT_VALUE:raw_body');
+    const signatureVerifiedAt = input.signatureVerifiedAt === undefined ? paidAt : requiredIso(input.signatureVerifiedAt, 'signature_verified_at');
     requiredString(input.qcbPolicy.version, 'qcb_policy_version');
     // Validate money/deductions even when the subscription later turns out not
     // to qualify; malformed provider payloads must never enter the database.
     calculateQcb(input.payment, input.qcbPolicy);
     const requestFingerprint = fingerprint(input);
     return this.database.withTransaction(async (client) => {
+      if (providerEventId) {
+        const existingEvent = await client.query(`
+          SELECT id, raw_body
+          FROM webhook_events
+          WHERE provider = $1 AND provider_event_id = $2
+          FOR UPDATE
+        `, [provider, providerEventId]);
+        if (existingEvent.rows[0]) {
+          const storedRawBody = Buffer.isBuffer(existingEvent.rows[0].raw_body)
+            ? existingEvent.rows[0].raw_body
+            : Buffer.from(String(existingEvent.rows[0].raw_body ?? ''), 'utf8');
+          if (rawBody && !storedRawBody.equals(Buffer.from(rawBody, 'utf8'))) throw new Error('WEBHOOK_IDEMPOTENCY_CONFLICT');
+        }
+      }
       const existingKey = await client.query(`
         SELECT request_fingerprint, response_body
         FROM idempotency_records
@@ -176,8 +198,9 @@ export class QualifiedPaymentRepository {
         SELECT id, provider, provider_payment_id
         FROM payments
         WHERE id = $1 OR (provider = $2 AND provider_payment_id = $3)
+           OR (provider = $2 AND provider_event_id = $4)
         FOR UPDATE
-      `, [paymentId, provider, providerPaymentId]);
+      `, [paymentId, provider, providerPaymentId, providerEventId]);
       if (existingPayment.rows[0]) throw new Error('PAYMENT_IDEMPOTENCY_CONFLICT');
 
       const attributionResult = await client.query(`
@@ -227,9 +250,9 @@ export class QualifiedPaymentRepository {
       };
       const qualification = qualifyPayment(qualifiedInput);
       await client.query(`
-        INSERT INTO payments (id, user_id, provider, provider_payment_id, gross_amount_minor, currency, status, is_test_payment, paid_at)
-        VALUES ($1, $2, $3, $4, $5, $6, 'SUCCEEDED', $7, $8)
-      `, [paymentId, userId, provider, providerPaymentId, input.payment.gross.amountMinor.toString(), input.payment.gross.currency, input.isTestPayment === true, paidAt]);
+        INSERT INTO payments (id, user_id, provider, provider_payment_id, gross_amount_minor, currency, status, is_test_payment, provider_event_id, paid_at)
+        VALUES ($1, $2, $3, $4, $5, $6, 'SUCCEEDED', $7, $8, $9)
+      `, [paymentId, userId, provider, providerPaymentId, input.payment.gross.amountMinor.toString(), input.payment.gross.currency, input.isTestPayment === true, providerEventId, paidAt]);
 
       let result: QualifiedPaymentWriteResult;
       if (!qualification.qualified) {
@@ -301,6 +324,12 @@ export class QualifiedPaymentRepository {
           await writeOutbox(client, 'PAYMENT_QUALIFIED', 'PAYMENT', paymentId, { directPartnerId: attribution.directPartnerId, qcbAmountMinor: qualification.qcb.amountMinor.toString() }, paidAt);
           result = { status: 'QUALIFIED', paymentId, reason: 'QUALIFIED', qcbAmountMinor: qualification.qcb.amountMinor.toString(), currency: qualification.qcb.currency, commissionIds };
         }
+      }
+      if (providerEventId) {
+        await client.query(`
+          INSERT INTO webhook_events (id, provider, provider_event_id, signature_verified_at, raw_body, processed_at, processing_status)
+          VALUES ($1, $2, $3, $4, $5, $6, 'PROCESSED')
+        `, [randomUUID(), provider, providerEventId, signatureVerifiedAt, Buffer.from(rawBody, 'utf8'), paidAt]);
       }
       await client.query(`
         INSERT INTO idempotency_records (scope, idempotency_key, request_fingerprint, response_status, response_body)

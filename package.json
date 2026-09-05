@@ -22,6 +22,7 @@
     "test:postgres-payout": "tsx scripts/postgres-payout-smoke.ts",
     "test:postgres-payout-webhook": "node scripts/postgres-payout-webhook-smoke.mjs",
     "test:postgres-subscription-webhook": "node scripts/postgres-subscription-webhook-smoke.mjs",
+    "test:postgres-payment-webhook": "node scripts/postgres-payment-webhook-smoke.mjs",
     "test:postgres-http": "node scripts/postgres-http-smoke.mjs",
     "test:identity": "tsx scripts/identity-acceptance-tests.ts",
     "test:demo-api": "npm run build && node scripts/demo-api-smoke.mjs",

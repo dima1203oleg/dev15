@@ -32,6 +32,7 @@ import { PartnerEngagementRepository } from './src/server/partnerEngagementRepos
 import { AdminRepository } from './src/server/adminRepository';
 import { AutoPayoutRepository } from './src/server/autoPayoutRepository';
 import { PayoutRepository } from './src/server/payoutRepository';
+import { QualifiedPaymentRepository } from './src/server/qualifiedPaymentRepository';
 
 // ============================================================================
 // IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
@@ -523,8 +524,8 @@ function parseNormalizedPayoutWebhook(value: unknown): {
   };
 }
 
-function webhookToleranceSeconds(): number {
-  const configured = Number.parseInt(process.env.PAYOUT_WEBHOOK_TOLERANCE_SECONDS ?? '300', 10);
+function webhookToleranceSeconds(environmentKey = 'PAYOUT_WEBHOOK_TOLERANCE_SECONDS'): number {
+  const configured = Number.parseInt(process.env[environmentKey] ?? '300', 10);
   return Number.isInteger(configured) && configured >= 0 && configured <= 900 ? configured : 300;
 }
 
@@ -571,6 +572,109 @@ function parseNormalizedSubscriptionWebhook(value: unknown): {
   };
 }
 
+function parseNormalizedPaymentWebhook(value: unknown): {
+  paymentId: string;
+  providerPaymentId: string;
+  userId: string;
+  attributionId: string;
+  payment: {
+    gross: { amountMinor: bigint; currency: 'USD' | 'UAH' | 'EUR' | 'PLN' };
+    refunds?: { amountMinor: bigint; currency: 'USD' | 'UAH' | 'EUR' | 'PLN' };
+    chargebacks?: { amountMinor: bigint; currency: 'USD' | 'UAH' | 'EUR' | 'PLN' };
+    nonCommissionableTaxes?: { amountMinor: bigint; currency: 'USD' | 'UAH' | 'EUR' | 'PLN' };
+    storeCosts?: { amountMinor: bigint; currency: 'USD' | 'UAH' | 'EUR' | 'PLN' };
+    processingCosts?: { amountMinor: bigint; currency: 'USD' | 'UAH' | 'EUR' | 'PLN' };
+    nonCommissionableDiscounts?: { amountMinor: bigint; currency: 'USD' | 'UAH' | 'EUR' | 'PLN' };
+    promoCredits?: { amountMinor: bigint; currency: 'USD' | 'UAH' | 'EUR' | 'PLN' };
+  };
+  qcbPolicy: { version: string; includeStoreCosts: boolean; includeProcessingCosts: boolean; includeTaxes: boolean };
+  ruleVersion: string;
+  paidAt: string;
+  holdCommission?: boolean;
+  isTestPayment?: boolean;
+  fraudStatus?: 'OK' | 'REVIEW' | 'BLOCKED';
+  maxAllocationBps?: number;
+} {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('INVALID_PAYMENT_WEBHOOK');
+  const payload = value as Record<string, unknown>;
+  const required = (field: string): string => {
+    const item = payload[field];
+    if (typeof item !== 'string' || item.trim().length === 0 || item.length > 256) throw new Error(`INVALID_PAYMENT_WEBHOOK:${field}`);
+    return item.trim();
+  };
+  const currency = (valueForCurrency: unknown, field: string): 'USD' | 'UAH' | 'EUR' | 'PLN' => {
+    if (valueForCurrency !== 'USD' && valueForCurrency !== 'UAH' && valueForCurrency !== 'EUR' && valueForCurrency !== 'PLN') throw new Error(`INVALID_PAYMENT_WEBHOOK:${field}`);
+    return valueForCurrency;
+  };
+  const money = (valueForMoney: unknown, field: string) => {
+    if (!valueForMoney || typeof valueForMoney !== 'object' || Array.isArray(valueForMoney)) throw new Error(`INVALID_PAYMENT_WEBHOOK:${field}`);
+    const record = valueForMoney as Record<string, unknown>;
+    if (typeof record.amountMinor !== 'string' || !/^\d{1,30}$/.test(record.amountMinor)) throw new Error(`INVALID_PAYMENT_WEBHOOK:${field}.amountMinor`);
+    return { amountMinor: BigInt(record.amountMinor), currency: currency(record.currency, `${field}.currency`) };
+  };
+  const optionalMoney = (field: string) => payload[field] === undefined || payload[field] === null ? undefined : money(payload[field], field);
+  const optionalBoolean = (field: string): boolean | undefined => {
+    if (payload[field] === undefined || payload[field] === null) return undefined;
+    if (typeof payload[field] !== 'boolean') throw new Error(`INVALID_PAYMENT_WEBHOOK:${field}`);
+    return payload[field] as boolean;
+  };
+  const optionalDate = (field: string): string | undefined => {
+    if (payload[field] === undefined || payload[field] === null) return undefined;
+    const valueForDate = required(field);
+    if (!Number.isFinite(new Date(valueForDate).getTime())) throw new Error(`INVALID_PAYMENT_WEBHOOK:${field}`);
+    return new Date(valueForDate).toISOString();
+  };
+  const qcbPolicyValue = payload.qcbPolicy;
+  if (!qcbPolicyValue || typeof qcbPolicyValue !== 'object' || Array.isArray(qcbPolicyValue)) throw new Error('INVALID_PAYMENT_WEBHOOK:qcbPolicy');
+  const qcbPolicy = qcbPolicyValue as Record<string, unknown>;
+  const qcbBoolean = (field: string): boolean => {
+    if (typeof qcbPolicy[field] !== 'boolean') throw new Error(`INVALID_PAYMENT_WEBHOOK:qcbPolicy.${field}`);
+    return qcbPolicy[field] as boolean;
+  };
+  const maxAllocationBpsValue = payload.maxAllocationBps;
+  if (maxAllocationBpsValue !== undefined && maxAllocationBpsValue !== null
+    && (typeof maxAllocationBpsValue !== 'number' || !Number.isSafeInteger(maxAllocationBpsValue) || maxAllocationBpsValue < 0 || maxAllocationBpsValue > 10000)) {
+    throw new Error('INVALID_PAYMENT_WEBHOOK:maxAllocationBps');
+  }
+  const fraudStatus = payload.fraudStatus;
+  if (fraudStatus !== undefined && fraudStatus !== 'OK' && fraudStatus !== 'REVIEW' && fraudStatus !== 'BLOCKED') throw new Error('INVALID_PAYMENT_WEBHOOK:fraudStatus');
+  const paidAt = optionalDate('paidAt');
+  if (!paidAt) throw new Error('INVALID_PAYMENT_WEBHOOK:paidAt');
+  return {
+    paymentId: required('paymentId'),
+    providerPaymentId: required('providerPaymentId'),
+    userId: required('userId'),
+    attributionId: required('attributionId'),
+    payment: {
+      gross: money(payload.gross, 'gross'),
+      refunds: optionalMoney('refunds'),
+      chargebacks: optionalMoney('chargebacks'),
+      nonCommissionableTaxes: optionalMoney('nonCommissionableTaxes'),
+      storeCosts: optionalMoney('storeCosts'),
+      processingCosts: optionalMoney('processingCosts'),
+      nonCommissionableDiscounts: optionalMoney('nonCommissionableDiscounts'),
+      promoCredits: optionalMoney('promoCredits')
+    },
+    qcbPolicy: {
+      version: requiredFromRecord(qcbPolicy.version, 'qcbPolicy.version'),
+      includeStoreCosts: qcbBoolean('includeStoreCosts'),
+      includeProcessingCosts: qcbBoolean('includeProcessingCosts'),
+      includeTaxes: qcbBoolean('includeTaxes')
+    },
+    ruleVersion: required('ruleVersion'),
+    paidAt,
+    holdCommission: optionalBoolean('holdCommission'),
+    isTestPayment: optionalBoolean('isTestPayment'),
+    fraudStatus: fraudStatus as 'OK' | 'REVIEW' | 'BLOCKED' | undefined,
+    maxAllocationBps: maxAllocationBpsValue as number | undefined
+  };
+}
+
+function requiredFromRecord(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim().length === 0 || value.length > 128) throw new Error(`INVALID_PAYMENT_WEBHOOK:${field}`);
+  return value.trim();
+}
+
 async function transitionFinancialRule(
   req: express.Request,
   res: express.Response,
@@ -614,6 +718,7 @@ async function startServer() {
   const adminRepository = new AdminRepository(database);
   const autoPayoutRepository = new AutoPayoutRepository(database);
   const payoutRepository = new PayoutRepository(database);
+  const qualifiedPaymentRepository = new QualifiedPaymentRepository(database);
   databaseRuntimeStatus = database.status();
   if (database.configured) await database.probe();
   databaseRuntimeStatus = database.status();
@@ -781,7 +886,7 @@ async function startServer() {
       return res.status(400).json({ error: 'INVALID_SUBSCRIPTION_WEBHOOK', message: 'Webhook envelope не пройшов базову перевірку.' });
     }
     try {
-      verifyWebhookSignature({ provider, eventId, rawBody, signature, timestamp, secret }, Date.now(), webhookToleranceSeconds());
+      verifyWebhookSignature({ provider, eventId, rawBody, signature, timestamp, secret }, Date.now(), webhookToleranceSeconds('PAYMENT_WEBHOOK_TOLERANCE_SECONDS'));
     } catch (error) {
       const code = error instanceof Error ? error.message : 'WEBHOOK_SIGNATURE_INVALID';
       return res.status(401).json({ error: code, status: 'UNAUTHORIZED', message: 'Webhook signature не підтверджено.' });
@@ -813,6 +918,56 @@ async function startServer() {
       const status = code === 'SUBSCRIPTION_NOT_FOUND' ? 404 : code === 'INVALID_SUBSCRIPTION_TRANSITION' || code === 'WEBHOOK_IDEMPOTENCY_CONFLICT' ? 409 : 503;
       console.error('[SIREN UA] subscription webhook failure', { requestId: res.locals.requestId, provider, eventId, code });
       return res.status(status).json({ error: code, message: 'Не вдалося застосувати subscription event.' });
+    }
+  });
+
+  // A verified payment is the only external entry point that may start the
+  // durable QCB -> L1/L2 -> rank -> commission -> ledger pipeline. Provider
+  // adapters normalize their payload first; browser requests cannot call this
+  // boundary and the signed raw body is retained for replay/audit checks.
+  app.post('/api/webhooks/:provider/payment', async (req, res) => {
+    const provider = typeof req.params.provider === 'string' ? req.params.provider : '';
+    const secret = (process.env.PAYMENT_WEBHOOK_SECRET ?? '').trim();
+    const rawBody = (req as express.Request & { rawBody?: string }).rawBody;
+    const eventId = req.get('x-siren-event-id') ?? '';
+    const timestamp = req.get('x-siren-timestamp') ?? '';
+    const signature = req.get('x-siren-signature') ?? '';
+    if (!['WEB', 'APPLE', 'GOOGLE'].includes(provider) || !secret || databaseRuntimeStatus !== 'CONNECTED') {
+      return res.status(503).json({ error: 'PAYMENT_WEBHOOK_NOT_CONNECTED', status: 'NOT_CONNECTED', message: 'Payment webhook gateway не підключений.' });
+    }
+    if (!rawBody || !/^[A-Za-z0-9._:-]{1,128}$/.test(eventId) || !/^\d+$/.test(timestamp)) {
+      return res.status(400).json({ error: 'INVALID_PAYMENT_WEBHOOK', message: 'Webhook envelope не пройшов базову перевірку.' });
+    }
+    try {
+      verifyWebhookSignature({ provider, eventId, rawBody, signature, timestamp, secret }, Date.now(), webhookToleranceSeconds('PAYMENT_WEBHOOK_TOLERANCE_SECONDS'));
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'WEBHOOK_SIGNATURE_INVALID';
+      return res.status(401).json({ error: code, status: 'UNAUTHORIZED', message: 'Webhook signature не підтверджено.' });
+    }
+    let payload: ReturnType<typeof parseNormalizedPaymentWebhook>;
+    try {
+      payload = parseNormalizedPaymentWebhook(req.body);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'INVALID_PAYMENT_WEBHOOK';
+      return res.status(400).json({ error: code, message: 'Нормалізований payment webhook має некоректну структуру.' });
+    }
+    try {
+      const result = await qualifiedPaymentRepository.process({
+        ...payload,
+        provider,
+        idempotencyKey: `payment:${provider}:${eventId}`,
+        providerEventId: eventId,
+        rawBody,
+        signatureVerifiedAt: new Date().toISOString()
+      });
+      return res.json({ ...result, provider, providerEventId: eventId });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'PAYMENT_QUALIFICATION_FAILED';
+      const status = code === 'ATTRIBUTION_NOT_FOUND' ? 404
+        : code === 'PAYMENT_IDEMPOTENCY_CONFLICT' || code === 'WEBHOOK_IDEMPOTENCY_CONFLICT' ? 409
+          : 503;
+      console.error('[SIREN UA] payment qualification failure', { requestId: res.locals.requestId, provider, eventId, code });
+      return res.status(status).json({ error: code, message: 'Не вдалося обробити verified payment.' });
     }
   });
 
