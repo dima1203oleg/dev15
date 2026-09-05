@@ -27,6 +27,7 @@ import { PostgresPartnerRepository } from './src/server/postgresPartnerRepositor
 import { FinancialRuleRepository } from './src/server/financialRuleRepository';
 import { SubscriptionRepository } from './src/server/subscriptionRepository';
 import { PartnerEngagementRepository } from './src/server/partnerEngagementRepository';
+import { AdminRepository } from './src/server/adminRepository';
 
 // ============================================================================
 // IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
@@ -533,6 +534,7 @@ async function startServer() {
   const financialRuleRepository = new FinancialRuleRepository(database);
   const subscriptionRepository = new SubscriptionRepository(database);
   const partnerEngagementRepository = new PartnerEngagementRepository(database);
+  const adminRepository = new AdminRepository(database);
   databaseRuntimeStatus = database.status();
   if (database.configured) await database.probe();
   databaseRuntimeStatus = database.status();
@@ -1182,6 +1184,17 @@ async function startServer() {
 
   // Admin Overview
   app.get('/api/admin/overview', requireRoles('ADMIN', 'SUPER_ADMIN', 'FINANCE_ADMIN', 'RISK_ADMIN', 'QUALITY_ADMIN', 'SUPPORT', 'CAMPAIGN_ADMIN', 'CONTRACT_ADMIN'), (req, res) => {
+    if (!financialDemoEnabled) {
+      if (databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+      try {
+        return adminRepository.getOverview().then((overview) => res.json(overview)).catch((error) => {
+          console.error('[SIREN UA] admin overview repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+          return res.status(503).json({ error: 'ADMIN_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Admin data temporarily unavailable.' });
+        });
+      } catch (error) {
+        return res.status(503).json({ error: 'ADMIN_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: error instanceof Error ? error.message : 'Admin data temporarily unavailable.' });
+      }
+    }
     if (!financialDemoEnabled) return financialUnavailable(res);
     const allPartners = Array.from(partners.values());
     let totalPaidMinor = 0;

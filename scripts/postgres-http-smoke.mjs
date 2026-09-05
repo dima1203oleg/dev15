@@ -163,6 +163,13 @@ try {
   const partnerAdminAccess = await request('/api/admin/financial-rules');
   assert.equal(partnerAdminAccess.response.status, 403);
 
+  const adminOverview = await request('/api/admin/overview', { headers: { authorization: `Bearer ${adminToken}` } });
+  assert.equal(adminOverview.response.status, 200);
+  assert.equal(adminOverview.body.status, 'LIVE');
+  assert.equal(adminOverview.body.subscriptions.activeTrials, 1);
+  assert.equal(adminOverview.body.finance.mrr, null);
+  assert.ok(Array.isArray(adminOverview.body.finance.unavailableMetrics));
+
   const draft = await request('/api/admin/financial-rules', {
     method: 'POST',
     headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
