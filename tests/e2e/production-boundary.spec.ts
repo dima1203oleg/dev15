@@ -58,6 +58,10 @@ test.describe('SIREN UA production boundary', () => {
     const referralLink = await request.get('/api/partner/referral-link');
     expect(referralLink.status()).toBe(503);
     await expect(referralLink.json()).resolves.toMatchObject({ error: 'FINANCIAL_DATA_NOT_CONNECTED' });
+
+    const campaignLink = await request.post('/api/partner/share', { data: { campaign: 'test' } });
+    expect(campaignLink.status()).toBe(503);
+    await expect(campaignLink.json()).resolves.toMatchObject({ error: 'FINANCIAL_DATA_NOT_CONNECTED' });
   });
 
   test('all public experience routes render without a document error', async ({ page }) => {
@@ -276,6 +280,13 @@ test.describe('SIREN UA production boundary', () => {
     await page.getByRole('button', { name: 'Створити QR-код' }).click();
     await expect(page.getByRole('img', { name: 'QR-код персонального referral-посилання' })).toBeVisible();
 
+    await page.route('**/api/partner/share', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'DEMO_DATA', referralCode: 'TEST123', campaign: 'siren_share', content: null, referralUrl: 'https://demo.sirenua.test/r/TEST123?utm_source=partner&utm_medium=referral&utm_campaign=siren_share' })
+      });
+    });
     await page.getByRole('button', { name: 'Інструменти поширення' }).click();
     await page.getByRole('button', { name: 'Згенерувати UTM' }).click();
     await expect(page.getByText(/utm_source=partner/)).toBeVisible();

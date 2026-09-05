@@ -57,6 +57,8 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
   const [qrError, setQrError] = useState<string | null>(null);
   const [utmCampaign, setUtmCampaign] = useState('siren_share');
   const [utmUrl, setUtmUrl] = useState<string | null>(null);
+  const [utmLoading, setUtmLoading] = useState(false);
+  const [utmError, setUtmError] = useState<string | null>(null);
   const [payoutAmount, setPayoutAmount] = useState<string>('0');
   const [payoutProvider, setPayoutProvider] = useState<'MONOBANK' | 'LIQPAY' | 'IBAN_SEPA'>('MONOBANK');
   const [payoutCardNumber, setPayoutCardNumber] = useState<string>('');
@@ -151,6 +153,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
       setQrDataUrl(null);
       setQrError(null);
       setUtmUrl(null);
+      setUtmError(null);
       setNetworkOffset(0);
       setNetworkHasMore(false);
       fetchPartnerData();
@@ -217,13 +220,26 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
     }
   };
 
-  const handleGenerateUtm = () => {
-    const url = new URL(referralUrl);
-    const campaign = utmCampaign.trim().replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'siren_share';
-    url.searchParams.set('utm_source', 'partner');
-    url.searchParams.set('utm_medium', 'referral');
-    url.searchParams.set('utm_campaign', campaign);
-    setUtmUrl(url.toString());
+  const handleGenerateUtm = async () => {
+    setUtmLoading(true);
+    setUtmError(null);
+    try {
+      const response = await fetch('/api/partner/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaign: utmCampaign })
+      });
+      const data = await response.json();
+      if (!response.ok || typeof data?.referralUrl !== 'string') {
+        throw new Error(data?.error || data?.status || 'PARTNER_SHARE_UNAVAILABLE');
+      }
+      setUtmUrl(data.referralUrl);
+    } catch {
+      setUtmError('Не вдалося створити кампанійне посилання. Перевірте підключення partner backend.');
+      setUtmUrl(null);
+    } finally {
+      setUtmLoading(false);
+    }
   };
 
   const handleRequestPayout = async (e: React.FormEvent) => {
@@ -553,11 +569,12 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                   </div>
                   <div className="flex items-center gap-2">
                     <input aria-label="Назва UTM кампанії" value={utmCampaign} onChange={(event) => setUtmCampaign(event.target.value)} className="w-32 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white" />
-                    <button type="button" onClick={handleGenerateUtm} className="px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-bold">
-                      Згенерувати UTM
+                    <button type="button" onClick={handleGenerateUtm} disabled={utmLoading} className="px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-bold disabled:cursor-wait disabled:opacity-60">
+                      {utmLoading ? 'Генеруємо…' : 'Згенерувати UTM'}
                     </button>
                   </div>
                 </div>
+                {utmError && <div role="alert" className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-3 text-xs text-amber-100">{utmError}</div>}
                 {utmUrl && <div className="rounded-2xl border border-purple-400/20 bg-purple-400/[0.06] p-4 text-xs"><div className="font-mono break-all text-purple-100">{utmUrl}</div><button type="button" onClick={async () => { try { await navigator.clipboard.writeText(utmUrl); } catch { setCopyError('Не вдалося скопіювати UTM-посилання. Скопіюйте його вручну.'); } }} className="mt-3 rounded-xl border border-purple-300/30 px-3 py-2 font-bold text-purple-100">Копіювати UTM-посилання</button></div>}
 
               </div>

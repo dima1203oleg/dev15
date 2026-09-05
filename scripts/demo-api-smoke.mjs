@@ -52,6 +52,15 @@ try {
   assert.equal(referralLink.body.referralCode, 'SIREN_ATLAS');
   assert.equal(referralLink.body.referralUrl, 'https://demo.sirenua.test/r/SIREN_ATLAS');
 
+  const campaignLinkResponse = await fetch(`http://127.0.0.1:${port}/api/partner/share`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ campaign: 'tiktok_sep_2026', content: 'video_07' })
+  });
+  const campaignLink = await campaignLinkResponse.json();
+  assert.equal(campaignLinkResponse.status, 200);
+  assert.equal(campaignLink.referralUrl, 'https://demo.sirenua.test/r/SIREN_ATLAS?utm_source=partner&utm_medium=referral&utm_campaign=tiktok_sep_2026&utm_content=video_07');
+
   const networkResponse = await fetch(`http://127.0.0.1:${port}/api/partner/network?limit=1&offset=1`);
   const network = await networkResponse.json();
   assert.equal(networkResponse.status, 200);
@@ -74,10 +83,11 @@ try {
   assert.equal(payouts.body.payouts[0].destinationAccount, '•••• 6789');
   assert.equal(payouts.body.payouts[0].destinationAccount.includes('UA823220010000026007123456789'), false);
 
-  const click = await fetch(`http://127.0.0.1:${port}/r/SIREN_ATLAS`, { redirect: 'manual' });
+  const click = await fetch(`http://127.0.0.1:${port}/r/SIREN_ATLAS?utm_source=partner&utm_medium=referral&utm_campaign=tiktok_sep_2026&utm_content=video_07`, { redirect: 'manual' });
   assert.equal(click.status, 302);
-  assert.equal(click.headers.get('location'), '/?ref=SIREN_ATLAS');
+  assert.equal(click.headers.get('location'), '/?ref=SIREN_ATLAS&utm_source=partner&utm_medium=referral&utm_campaign=tiktok_sep_2026&utm_content=video_07');
   assert.match(click.headers.get('set-cookie') ?? '', /siren_referral=SIREN_ATLAS/);
+  assert.match(click.headers.get('set-cookie') ?? '', /siren_referral_context=/);
 
   console.log('Demo API smoke: PASS');
 } finally {

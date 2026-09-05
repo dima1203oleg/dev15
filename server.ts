@@ -470,6 +470,22 @@ function configuredPublicOrigin(req: express.Request): string | null {
   return host ? `${req.protocol}://${host}` : null;
 }
 
+function normalizeCampaignToken(value: unknown, fallback?: string): string | null {
+  if (value === undefined && fallback !== undefined) return fallback;
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().replace(/[^A-Za-z0-9._~-]+/g, '-').replace(/^-+|-+$/g, '');
+  return normalized.length >= 1 && normalized.length <= 64 ? normalized : null;
+}
+
+function readReferralContext(req: express.Request): Record<string, string> {
+  const context: Record<string, string> = {};
+  for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content']) {
+    const value = normalizeCampaignToken(req.query[key]);
+    if (value) context[key] = value;
+  }
+  return context;
+}
+
 // ============================================================================
 // EXPRESS APPLICATION INITIALIZATION
 // ============================================================================
@@ -766,6 +782,53 @@ async function startServer() {
     });
   });
 
+  // Campaign links are generated server-side so the canonical origin and
+  // attribution parameters cannot be forged by a browser-only helper. This is
+  // still demo-only until identity, durable attribution storage and auth are
+  // connected in production.
+  app.post('/api/partner/share', (req, res) => {
+    if (!financialDemoEnabled) return financialUnavailable(res);
+    const partner = partners.get(demoPartnerId);
+    if (!partner) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
+    const payload = req.body && typeof req.body === 'object' && !Array.isArray(req.body)
+      ? req.body as { campaign?: unknown; content?: unknown }
+      : {};
+    const campaign = normalizeCampaignToken(payload.campaign, 'siren_share');
+    const content = payload.content === undefined ? null : normalizeCampaignToken(payload.content);
+    if (!campaign || (payload.content !== undefined && !content)) {
+      return res.status(400).json({
+        error: 'INVALID_CAMPAIGN_PARAMETERS',
+        message: 'Назва кампанії та content можуть містити лише безпечні символи й до 64 знаків.'
+      });
+    }
+    const origin = configuredPublicOrigin(req);
+    if (!origin) return res.status(503).json({ error: 'PUBLIC_ORIGIN_NOT_CONFIGURED', status: 'NOT_CONNECTED', message: 'Канонічний public origin не налаштований на сервері.' });
+
+    const url = new URL(`/r/${encodeURIComponent(partner.referralCode)}`, origin);
+    url.searchParams.set('utm_source', 'partner');
+    url.searchParams.set('utm_medium', 'referral');
+    url.searchParams.set('utm_campaign', campaign);
+    if (content) url.searchParams.set('utm_content', content);
+
+    auditLogs.push({
+      id: randomUUID(),
+      timestamp: new Date().toISOString(),
+      actor: demoPartnerId,
+      action: 'REFERRAL_CAMPAIGN_LINK_GENERATED',
+      targetEntity: 'PARTNER_SHARE',
+      targetId: campaign,
+      newValue: JSON.stringify({ campaign, content })
+    });
+
+    return res.json({
+      status: 'DEMO_DATA',
+      referralCode: partner.referralCode,
+      campaign,
+      content,
+      referralUrl: url.toString()
+    });
+  });
+
   // Network (L1 and L2 referrals list with privacy masking)
   app.get('/api/partner/network', (req, res) => {
     if (!financialDemoEnabled) return financialUnavailable(res);
@@ -990,8 +1053,18 @@ async function startServer() {
 
     partner.totalClicks += 1;
     const secureCookie = isProductionLike ? '; Secure' : '';
-    res.setHeader('Set-Cookie', `siren_referral=${encodeURIComponent(partner.referralCode)}; Max-Age=2592000; Path=/; HttpOnly; SameSite=Lax${secureCookie}`);
-    return res.redirect(302, `/?ref=${encodeURIComponent(partner.referralCode)}`);
+    const referralContext = readReferralContext(req);
+    const contextCookie = encodeURIComponent(JSON.stringify({
+      referralCode: partner.referralCode,
+      ...referralContext
+    }));
+    res.setHeader('Set-Cookie', [
+      `siren_referral=${encodeURIComponent(partner.referralCode)}; Max-Age=2592000; Path=/; HttpOnly; SameSite=Lax${secureCookie}`,
+      `siren_referral_context=${contextCookie}; Max-Age=2592000; Path=/; HttpOnly; SameSite=Lax${secureCookie}`
+    ]);
+    const redirectParams = new URLSearchParams({ ref: partner.referralCode });
+    for (const [key, value] of Object.entries(referralContext)) redirectParams.set(key, value);
+    return res.redirect(302, `/?${redirectParams.toString()}`);
   });
 
   // Do not let the SPA fallback turn an unknown API call into HTML. Clients
