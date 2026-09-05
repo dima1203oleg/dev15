@@ -70,7 +70,7 @@ export function canQualifySubscription(state: SubscriptionState): boolean {
 
 export function addCalendarDays(iso: string, days: number): string {
   const date = new Date(iso);
-  if (!Number.isFinite(date.getTime())) throw new Error('INVALID_DATE');
+  if (!Number.isFinite(date.getTime()) || !Number.isInteger(days)) throw new Error('INVALID_DATE');
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString();
 }
@@ -579,6 +579,7 @@ export interface PaymentProcessingResult {
   reason: string;
   qcb: Money;
   commissions: CommissionSnapshot[];
+  directPartnerId?: string;
 }
 
 function moneyFingerprint(value: Money | undefined): string {
@@ -677,6 +678,19 @@ export class InMemoryPartnerPlatform {
     }
     if (!moves.length) return [];
     this.ledger.moveBuckets(moves);
+    if (result.directPartnerId) {
+      const direct = this.partners.get(result.directPartnerId);
+      if (direct && direct.qualifiedActivePaidL1 > 0) {
+        direct.qualifiedActivePaidL1 -= 1;
+        const evaluation = evaluateRank(direct.qualifiedActivePaidL1, {
+          rank: direct.rank,
+          state: direct.rankState,
+          graceCyclesInWindow: 0
+        });
+        if (evaluation.rank) direct.rank = evaluation.rank;
+        direct.rankState = evaluation.state;
+      }
+    }
     return reversible.map(({ commission, from }) => {
       commission.state = from === 'PAID' ? 'ADJUSTED' : 'REVERSED';
       return commission;
@@ -755,7 +769,7 @@ export class InMemoryPartnerPlatform {
     for (const snapshot of snapshots) {
       this.commissions.set(snapshot.id, snapshot);
     }
-    return this.storeResult({ paymentId: input.id, status: 'QUALIFIED', reason: 'PAYMENT_QUALIFIED', qcb, commissions: snapshots }, fingerprint);
+    return this.storeResult({ paymentId: input.id, status: 'QUALIFIED', reason: 'PAYMENT_QUALIFIED', qcb, commissions: snapshots, directPartnerId: direct.id }, fingerprint);
   }
 
   private storeResult(result: PaymentProcessingResult, fingerprint: string): PaymentProcessingResult {
@@ -801,6 +815,9 @@ export interface FxSnapshot {
 }
 
 function assertUsableFxSnapshot(fx: FxSnapshot, at = new Date().toISOString()): void {
+  if (!fx || typeof fx.provider !== 'string' || !fx.provider.trim() || typeof fx.version !== 'string' || !fx.version.trim()
+    || typeof fx.rateNumerator !== 'bigint' || typeof fx.rateDenominator !== 'bigint'
+    || fx.rateNumerator <= 0n || fx.rateDenominator <= 0n) throw new Error('INVALID_FX_SNAPSHOT');
   const now = new Date(at).getTime();
   const quotedAt = new Date(fx.quotedAt).getTime();
   const expiresAt = new Date(fx.expiresAt).getTime();
@@ -910,6 +927,9 @@ export function shouldRunAutoPayout(
   checks: Pick<PayoutEligibilityInput, 'kyc' | 'compliance' | 'fraud' | 'payoutMethod'>,
   context: { cadenceDue?: boolean } = {}
 ): boolean {
+  if (!policy || typeof policy.enabled !== 'boolean' || !['MONTHLY', 'THRESHOLD'].includes(policy.cadence)) throw new Error('INVALID_AUTO_PAYOUT_POLICY');
+  assertMoney(policy.threshold);
+  assertMoney(available);
   const cadenceSatisfied = policy.cadence === 'THRESHOLD' ? available.amountMinor >= policy.threshold.amountMinor : context.cadenceDue === true;
   return policy.enabled && available.currency === policy.threshold.currency && cadenceSatisfied &&
     checks.kyc === 'VERIFIED' && checks.compliance === 'OK' && checks.fraud === 'OK' && checks.payoutMethod === 'VERIFIED';
@@ -925,6 +945,10 @@ export interface NotificationJob {
 }
 
 export function trialReminderSchedule(trial: Trial, notificationDays: readonly number[] = [7, 3, 1]): NotificationJob[] {
+  if (!Array.isArray(notificationDays) || notificationDays.length !== new Set(notificationDays).size
+    || notificationDays.some((days) => !Number.isInteger(days) || days < 0 || days > trial.trialDays)) {
+    throw new Error('INVALID_NOTIFICATION_SCHEDULE');
+  }
   return notificationDays.map((days) => ({
     id: `${trial.userId}-trial-${days}`,
     type: `TRIAL_T_MINUS_${days}`,
@@ -976,7 +1000,8 @@ export interface FraudAssessment {
 }
 
 export function assessFraud(signals: Array<{ name: string; weight: number; present: boolean }>): FraudAssessment {
-  if (signals.some((signal) => !signal.name || !Number.isFinite(signal.weight) || signal.weight < 0)) throw new Error('INVALID_FRAUD_SIGNAL');
+  if (!Array.isArray(signals) || signals.some((signal) => !signal || typeof signal.name !== 'string' || !signal.name.trim()
+    || !Number.isFinite(signal.weight) || signal.weight < 0 || signal.weight > 100 || typeof signal.present !== 'boolean')) throw new Error('INVALID_FRAUD_SIGNAL');
   const score = Math.min(100, Math.max(0, signals.filter((signal) => signal.present).reduce((sum, signal) => sum + signal.weight, 0)));
   return { score, status: score >= 80 ? 'BLOCKED' : score >= 50 ? 'REVIEW' : 'OK', signals: signals.filter((signal) => signal.present).map((signal) => signal.name) };
 }

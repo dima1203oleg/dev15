@@ -33,6 +33,9 @@ const uah = (amountMinor: bigint) => ({ amountMinor, currency: 'UAH' as const })
 const trial = startTrial('user-1', '2026-09-01T00:00:00.000Z', 30);
 assert.equal(trial.endsAt, '2026-10-01T00:00:00.000Z');
 assert.equal(trialReminderSchedule(trial).length, 3);
+assert.throws(() => trialReminderSchedule(trial, [7, 7]), /INVALID_NOTIFICATION_SCHEDULE/);
+assert.throws(() => trialReminderSchedule(trial, [31]), /INVALID_NOTIFICATION_SCHEDULE/);
+assert.throws(() => startTrial('user-1', '2026-09-01T00:00:00.000Z', 1.5), /INVALID_TRIAL_POLICY/);
 assert.equal(canQualifySubscription('TRIAL_ACTIVE'), false);
 assert.equal(canQualifySubscription('PREMIUM_ACTIVE'), true);
 assert.equal(qualifyPayment({
@@ -140,6 +143,9 @@ platform.releaseHold(paidResult.commissions[0].id, '2026-10-02T00:00:00.000Z');
 assert.equal(platform.getCommission(paidResult.commissions[0].id)?.state, 'AVAILABLE');
 platform.reversePayment('paid-payment', 'REFUND', '2026-10-03T00:00:00.000Z');
 assert.equal(platform.getCommission(paidResult.commissions[0].id)?.state, 'REVERSED');
+assert.deepEqual(platform.getPartner('p1'), { id: 'p1', qualifiedActivePaidL1: 0, rank: 'STARTER', rankState: 'BELOW_THRESHOLD' });
+assert.deepEqual(platform.reversePayment('paid-payment', 'REFUND', '2026-10-04T00:00:00.000Z'), [], 'a repeated reversal must be idempotent');
+assert.equal(platform.getPartner('p1')?.qualifiedActivePaidL1, 0);
 
 const webhooks = new WebhookInbox();
 assert.equal(webhooks.accept('provider', 'evt-1'), true);
@@ -212,11 +218,13 @@ assert.equal(expiredCheck.allowed, false);
 assert.equal(expiredCheck.code, 'FX_SNAPSHOT_EXPIRED');
 assert.equal(expiredCheck.minimumPayout, null);
 assert.throws(() => convertWithFx(usd(1000n), 'UAH', expiredFx, '2026-09-03T00:00:00.000Z'), /FX_SNAPSHOT_EXPIRED/);
+assert.throws(() => convertWithFx(usd(1000n), 'UAH', { ...fx, provider: '' }, '2026-09-30T00:00:00.000Z'), /INVALID_FX_SNAPSHOT/);
 
 assert.equal(shouldRunAutoPayout({ enabled: true, threshold: uah(42000n), cadence: 'THRESHOLD' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' }), true);
 assert.equal(shouldRunAutoPayout({ enabled: true, threshold: uah(42000n), cadence: 'THRESHOLD' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'REVIEW', payoutMethod: 'VERIFIED' }), false);
 assert.equal(shouldRunAutoPayout({ enabled: true, threshold: uah(42000n), cadence: 'MONTHLY' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' }), false);
 assert.equal(shouldRunAutoPayout({ enabled: true, threshold: uah(42000n), cadence: 'MONTHLY' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' }, { cadenceDue: true }), true);
+assert.throws(() => shouldRunAutoPayout({ enabled: true, threshold: { amountMinor: -1n, currency: 'UAH' }, cadence: 'THRESHOLD' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' }), /INVALID_MONEY/);
 assert.throws(() => validateRankRules([{ rank: 'GOLD', minQualifiedActivePaidL1: 1, rateBps: 2000 }, { rank: 'GOLD', minQualifiedActivePaidL1: 75, rateBps: 2000 }]), /INVALID_RANK_RULES/);
 const customRankRules = [{ rank: 'STARTER' as const, minQualifiedActivePaidL1: 1, rateBps: 700 }];
 const customRankPlatform = new InMemoryPartnerPlatform(new ImmutableLedger(), { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true }, true, customRankRules);
