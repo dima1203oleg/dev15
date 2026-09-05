@@ -16,6 +16,7 @@ import {
   type QcbPolicy
 } from '../domain/partnerPlatform';
 import type { PostgresBoundary } from './postgresBoundary';
+import { PartnerEngagementRepository } from './partnerEngagementRepository';
 
 export interface QualifiedPaymentWriteInput {
   paymentId: string;
@@ -266,6 +267,10 @@ export class QualifiedPaymentRepository {
             VALUES ($1, $2, 'QUALIFIED_L1_PAYMENT', $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11)
           `, [rankEventId, attribution.directPartnerId, directContext.rank, nextRank, directContext.rankState, evaluation.state, nextCount, ruleVersion, `rank:payment:${paymentId}`, JSON.stringify({ rateBps: evaluation.rateBps, reason: 'QUALIFIED_L1_PAYMENT' }), paidAt]);
         }
+        // Keep non-financial partner projections in the same commit as the
+        // qualified payment/rank change. Outbox events are emitted only for
+        // newly unlocked achievements or an actual Ambassador tier change.
+        await new PartnerEngagementRepository(this.database).syncPartnerWithClient(client, attribution.directPartnerId, paidAt);
         if (!calculation.cap.passed) {
           result = { status: 'CAP_VALIDATION_FAILED', paymentId, reason: calculation.cap.reason, qcbAmountMinor: qualification.qcb.amountMinor.toString(), currency: qualification.qcb.currency, commissionIds: [] };
           await writeOutbox(client, 'CAP_VALIDATION_FAILED', 'PAYMENT', paymentId, { qcbAmountMinor: qualification.qcb.amountMinor.toString(), totalAllocationBps: calculation.cap.totalAllocationBps }, paidAt);
