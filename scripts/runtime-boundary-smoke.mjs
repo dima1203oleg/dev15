@@ -50,6 +50,9 @@ try {
 
   const page = await fetch(`http://127.0.0.1:${port}/`);
   assert.equal(page.status, 200);
+  assert.match(page.headers.get('content-security-policy') ?? '', /default-src 'self'/);
+  assert.equal(page.headers.get('x-frame-options'), 'DENY');
+  assert.match(page.headers.get('permissions-policy') ?? '', /geolocation=\(self\)/);
   assert.match(await page.text(), /SIREN/i);
 
   console.log('Runtime boundary smoke: PASS');
