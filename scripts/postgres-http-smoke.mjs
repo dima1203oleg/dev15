@@ -136,6 +136,20 @@ try {
   assert.equal(dashboard.body.partner.referralCode, referralCode);
   assert.equal(dashboard.body.wallet.availableMinor, 0);
 
+  const autoPayoutBefore = await request('/api/partner/auto-payout');
+  assert.equal(autoPayoutBefore.response.status, 200);
+  assert.equal(autoPayoutBefore.body.policy, null);
+  assert.equal(autoPayoutBefore.body.execution.provider, 'NOT_CONNECTED');
+  const autoPayoutUpdate = await request('/api/partner/auto-payout', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ enabled: true, cadence: 'THRESHOLD', thresholdMinor: '1000', currency: 'UAH' })
+  });
+  assert.equal(autoPayoutUpdate.response.status, 200);
+  assert.equal(autoPayoutUpdate.body.policy.enabled, true);
+  assert.equal(autoPayoutUpdate.body.policy.thresholdMinor, '1000');
+  assert.equal(autoPayoutUpdate.body.execution.provider, 'NOT_CONNECTED');
+
   const network = await request('/api/partner/network?limit=10&offset=0');
   assert.equal(network.response.status, 200);
   assert.equal(network.body.l1.count, 0);
@@ -239,6 +253,7 @@ try {
 } finally {
   await db.query('DELETE FROM partner_link_clicks WHERE partner_id = $1', [partnerId]).catch(() => {});
   await db.query('DELETE FROM partner_campaign_links WHERE partner_id = $1', [partnerId]).catch(() => {});
+  await db.query('DELETE FROM auto_payout_policies WHERE partner_id = $1', [partnerId]).catch(() => {});
   await db.query('DELETE FROM payout_requests WHERE id = $1', [payoutRequestId]).catch(() => {});
   await db.query('DELETE FROM payout_methods WHERE id = $1', [payoutMethodId]).catch(() => {});
   if (subscriptionId) {

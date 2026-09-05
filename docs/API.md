@@ -24,6 +24,8 @@ The durable read model is implemented in `src/server/postgresPartnerRepository.t
 
 `GET /api/partner/payouts` returns payout history with masked destinations only (for example `•••• 6789`); full payout instruments must remain server-side and provider-scoped.
 
+`GET`/`PUT /api/partner/auto-payout` persist the partner's monthly/threshold preference and write an audit record. The response always exposes provider execution state; with no connected provider the preference is stored but no payout is scheduled, locked or simulated.
+
 `GET /api/admin/financial-rules` and `POST /api/admin/financial-rules` plus `/validate`, `/approve` and `/schedule` expose the authenticated maker/checker rule lifecycle. They require PostgreSQL + OIDC roles and never mutate wallet balances; each transition is audited transactionally.
 
 `GET /api/admin/overview` exposes a read-only durable operational projection: trials, qualified paid users, qualified revenue, partner commission liabilities, pending payouts, fraud/quality review counts, chargebacks and privacy-safe partner ranking. MRR and contribution margin remain explicitly unavailable until a real price book and settlement-cost sources are connected.

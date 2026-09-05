@@ -28,6 +28,7 @@ import { FinancialRuleRepository } from './src/server/financialRuleRepository';
 import { SubscriptionRepository } from './src/server/subscriptionRepository';
 import { PartnerEngagementRepository } from './src/server/partnerEngagementRepository';
 import { AdminRepository } from './src/server/adminRepository';
+import { AutoPayoutRepository } from './src/server/autoPayoutRepository';
 
 // ============================================================================
 // IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
@@ -535,6 +536,7 @@ async function startServer() {
   const subscriptionRepository = new SubscriptionRepository(database);
   const partnerEngagementRepository = new PartnerEngagementRepository(database);
   const adminRepository = new AdminRepository(database);
+  const autoPayoutRepository = new AutoPayoutRepository(database);
   databaseRuntimeStatus = database.status();
   if (database.configured) await database.probe();
   databaseRuntimeStatus = database.status();
@@ -1176,6 +1178,62 @@ async function startServer() {
         destinationAccount: maskSensitiveDestination(payout.destinationAccount)
       }))
     });
+  });
+
+  app.get('/api/partner/auto-payout', requireRoles('PARTNER', 'AMBASSADOR'), async (_req, res) => {
+    if (financialDemoEnabled || databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+    const principal = res.locals.principal as { subject?: unknown } | undefined;
+    if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+    try {
+      const partnerId = await partnerRepository.getPartnerIdForUser(principal.subject);
+      if (!partnerId) return res.status(404).json({ error: 'PARTNER_NOT_FOUND', message: 'Partner profile не знайдено.' });
+      return res.json({
+        status: 'LIVE',
+        policy: await autoPayoutRepository.getForPartner(partnerId),
+        execution: {
+          provider: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED',
+          message: payoutProvider.connected ? 'Автовиплата очікує проходження всіх payout gates.' : 'Автовиплата збережена, але provider не підключений; кошти не переміщуються.'
+        }
+      });
+    } catch (error) {
+      console.error('[SIREN UA] auto payout read failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+      return res.status(503).json({ error: 'AUTO_PAYOUT_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Auto-payout data temporarily unavailable.' });
+    }
+  });
+
+  app.put('/api/partner/auto-payout', requireRoles('PARTNER', 'AMBASSADOR'), async (req, res) => {
+    if (financialDemoEnabled || databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+    const principal = res.locals.principal as { subject?: unknown } | undefined;
+    if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+    const payload = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body as Record<string, unknown> : {};
+    if (typeof payload.enabled !== 'boolean' || (payload.cadence !== 'MONTHLY' && payload.cadence !== 'THRESHOLD') || typeof payload.thresholdMinor !== 'string' || !/^\d+$/.test(payload.thresholdMinor) || (payload.currency !== 'USD' && payload.currency !== 'UAH' && payload.currency !== 'EUR' && payload.currency !== 'PLN')) {
+      return res.status(400).json({ error: 'INVALID_AUTO_PAYOUT_VALUE', message: 'Потрібні enabled, cadence, positive thresholdMinor та підтримувана currency.' });
+    }
+    try {
+      const partnerId = await partnerRepository.getPartnerIdForUser(principal.subject);
+      if (!partnerId) return res.status(404).json({ error: 'PARTNER_NOT_FOUND', message: 'Partner profile не знайдено.' });
+      const policy = await autoPayoutRepository.upsert({
+        partnerId,
+        enabled: payload.enabled,
+        cadence: payload.cadence,
+        thresholdMinor: payload.thresholdMinor,
+        currency: payload.currency,
+        updatedBy: principal.subject,
+        updatedAt: new Date().toISOString()
+      });
+      return res.json({
+        status: 'LIVE',
+        policy,
+        execution: {
+          provider: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED',
+          message: payoutProvider.connected ? 'Policy збережена; виконання додатково перевіряє KYC, compliance та fraud.' : 'Policy збережена. Реальний provider не підключений, тому автоматична виплата не запускається.'
+        }
+      });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'AUTO_PAYOUT_UPDATE_FAILED';
+      const status = code === 'PARTNER_NOT_FOUND' ? 404 : code.startsWith('INVALID_AUTO_PAYOUT_VALUE') ? 400 : 503;
+      return res.status(status).json({ error: code, message: 'Не вдалося зберегти налаштування автовиплати.' });
+    }
   });
 
   // --------------------------------------------------------------------------
