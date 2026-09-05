@@ -95,6 +95,20 @@ export interface PersistedPayout {
   failureReason?: string;
 }
 
+export interface PersistedRankEvaluation {
+  partnerId: string;
+  qualifiedActivePaidL1: number;
+  rank: string;
+  rankState: string;
+  rateBps: number;
+  graceCyclesInWindow: number;
+  ruleVersion: string;
+  reason: string;
+  eventType: string;
+  idempotencyKey: string;
+  occurredAt: string;
+}
+
 function requiredString(value: unknown, field: string): string {
   if (typeof value !== 'string' || value.length === 0) throw new Error(`INVALID_DATABASE_VALUE:${field}`);
   return value;
@@ -118,6 +132,12 @@ function requiredIso(value: unknown, field: string): string {
   return date.toISOString();
 }
 
+function rankRule(rank: string): (typeof DEFAULT_RANK_RULES)[number] {
+  const rule = DEFAULT_RANK_RULES.find((candidate) => candidate.rank === rank);
+  if (!rule) throw new Error(`INVALID_DATABASE_VALUE:rank:${rank}`);
+  return rule;
+}
+
 function networkStatus(row: Record<string, unknown>): string {
   if (row.attribution_status === 'REJECTED') return 'REJECTED';
   if (row.qualified_at) return 'ACTIVE';
@@ -132,6 +152,92 @@ function networkStatus(row: Record<string, unknown>): string {
 export class PostgresPartnerRepository {
   constructor(private readonly database: PostgresBoundary) {}
 
+  async recordRankEvaluation(input: PersistedRankEvaluation): Promise<'CREATED' | 'DUPLICATE'> {
+    if (!input.partnerId || !input.ruleVersion || !input.reason || !input.eventType || !input.idempotencyKey) throw new Error('INVALID_RANK_EVALUATION');
+    if (!Number.isSafeInteger(input.qualifiedActivePaidL1) || input.qualifiedActivePaidL1 < 0
+      || !Number.isSafeInteger(input.graceCyclesInWindow) || input.graceCyclesInWindow < 0
+      || !Number.isSafeInteger(input.rateBps) || input.rateBps < 0 || input.rateBps > 10000) {
+      throw new Error('INVALID_RANK_EVALUATION');
+    }
+    rankRule(input.rank);
+    if (!['ACTIVE', 'BELOW_THRESHOLD', 'GRACE', 'COOLDOWN', 'SUSPENDED'].includes(input.rankState)) throw new Error('INVALID_RANK_EVALUATION');
+    const occurredAt = requiredIso(input.occurredAt, 'rank_occurred_at');
+
+    return this.database.withTransaction(async (client) => {
+      const existing = await client.query<Record<string, unknown>>(`
+        SELECT partner_id, event_type, new_rank, new_state, qualified_active_paid_l1, rule_version
+        FROM rank_events
+        WHERE idempotency_key = $1
+        FOR UPDATE
+      `, [input.idempotencyKey]);
+      if (existing.rows[0]) {
+        const row = existing.rows[0];
+        const same = row.partner_id === input.partnerId
+          && row.event_type === input.eventType
+          && row.new_rank === input.rank
+          && row.new_state === input.rankState
+          && safeInteger(row.qualified_active_paid_l1, 'rank_event_count') === input.qualifiedActivePaidL1
+          && row.rule_version === input.ruleVersion;
+        if (!same) throw new Error('IDEMPOTENCY_CONFLICT');
+        return 'DUPLICATE';
+      }
+
+      const partnerResult = await client.query<Record<string, unknown>>(`
+        SELECT rank, rank_state, qualified_active_paid_l1
+        FROM partners
+        WHERE id = $1
+        FOR UPDATE
+      `, [input.partnerId]);
+      const partner = partnerResult.rows[0];
+      if (!partner) throw new Error('PARTNER_NOT_FOUND');
+
+      const eventId = randomUUID();
+      const snapshotId = randomUUID();
+      await client.query(`
+        INSERT INTO rank_events (
+          id, partner_id, event_type, previous_rank, new_rank, previous_state, new_state,
+          qualified_active_paid_l1, rule_version, idempotency_key, payload, occurred_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12)
+      `, [
+        eventId,
+        input.partnerId,
+        input.eventType,
+        partner.rank,
+        input.rank,
+        partner.rank_state,
+        input.rankState,
+        input.qualifiedActivePaidL1,
+        input.ruleVersion,
+        input.idempotencyKey,
+        JSON.stringify({ reason: input.reason, rateBps: input.rateBps, graceCyclesInWindow: input.graceCyclesInWindow }),
+        occurredAt
+      ]);
+      await client.query(`
+        INSERT INTO partner_rank_snapshots (
+          id, partner_id, qualified_active_paid_l1, rank, rank_state, rate_bps,
+          grace_cycles_in_window, rule_version, reason, occurred_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `, [
+        snapshotId,
+        input.partnerId,
+        input.qualifiedActivePaidL1,
+        input.rank,
+        input.rankState,
+        input.rateBps,
+        input.graceCyclesInWindow,
+        input.ruleVersion,
+        input.reason,
+        occurredAt
+      ]);
+      await client.query(`
+        UPDATE partners
+        SET rank = $2, rank_state = $3, qualified_active_paid_l1 = $4
+        WHERE id = $1
+      `, [input.partnerId, input.rank, input.rankState, input.qualifiedActivePaidL1]);
+      return 'CREATED';
+    });
+  }
+
   private async getDashboardBy(field: 'p.id' | 'p.user_id', value: string): Promise<PersistedPartnerDashboard | null> {
     const result = await this.database.query<Record<string, unknown>>(`
       SELECT
@@ -139,6 +245,9 @@ export class PostgresPartnerRepository {
         p.qualified_active_paid_l1, p.quality_status, p.created_at,
         COALESCE(a.tier, 'NONE') AS ambassador_tier,
         COALESCE(a.approved, false) AS ambassador_approved,
+        rank_snapshot.rank AS snapshot_rank,
+        rank_snapshot.rank_state AS snapshot_rank_state,
+        rank_snapshot.rate_bps AS snapshot_rate_bps,
         COALESCE((SELECT COUNT(*) FROM referral_attributions ra WHERE ra.direct_partner_id = p.id AND ra.status <> 'REJECTED'), 0)::bigint AS l1_total,
         COALESCE((SELECT COUNT(*) FROM referral_attributions ra WHERE ra.second_level_partner_id = p.id AND ra.status <> 'REJECTED'), 0)::bigint AS l2_total,
         COALESCE((SELECT COUNT(*) FROM referral_attributions ra WHERE ra.direct_partner_id = p.id AND ra.qualified_at IS NOT NULL AND ra.status = 'LOCKED'), 0)::bigint AS l1_paid,
@@ -148,6 +257,13 @@ export class PostgresPartnerRepository {
         w.locked_for_payout_minor, w.paid_minor, w.reversed_minor, w.debt_minor
       FROM partners p
       LEFT JOIN ambassador_profiles a ON a.partner_id = p.id
+      LEFT JOIN LATERAL (
+        SELECT prs.rank, prs.rank_state, prs.rate_bps
+        FROM partner_rank_snapshots prs
+        WHERE prs.partner_id = p.id
+        ORDER BY prs.occurred_at DESC, prs.id DESC
+        LIMIT 1
+      ) rank_snapshot ON true
       LEFT JOIN wallet_projections w ON w.partner_id = p.id
       WHERE ${field} = $1
     `, [value]);
@@ -155,7 +271,13 @@ export class PostgresPartnerRepository {
     if (!row) return null;
 
     const activeL1PaidCount = safeInteger(row.qualified_active_paid_l1, 'qualified_active_paid_l1');
-    const resolved = resolveRank(activeL1PaidCount, DEFAULT_RANK_RULES) ?? DEFAULT_RANK_RULES[0];
+    const storedRank = requiredString(row.snapshot_rank ?? row.rank, 'rank');
+    const storedRule = rankRule(storedRank);
+    const resolved = row.snapshot_rank ? {
+      rank: storedRank,
+      minQualifiedActivePaidL1: storedRule.minQualifiedActivePaidL1,
+      rateBps: safeInteger(row.snapshot_rate_bps, 'snapshot_rate_bps')
+    } : (resolveRank(activeL1PaidCount, DEFAULT_RANK_RULES) ?? DEFAULT_RANK_RULES[0]);
     const currentRuleIndex = DEFAULT_RANK_RULES.findIndex((rule) => rule.rank === resolved.rank);
     const nextRule = DEFAULT_RANK_RULES[currentRuleIndex + 1];
     const targetThreshold = nextRule?.minQualifiedActivePaidL1 ?? resolved.minQualifiedActivePaidL1;
@@ -168,7 +290,7 @@ export class PostgresPartnerRepository {
         rank: requiredString(row.rank, 'rank'),
         effectiveRank: resolved.rank,
         partnerRateBps: resolved.rateBps,
-        rankState: requiredString(row.rank_state, 'rank_state'),
+        rankState: requiredString(row.snapshot_rank_state ?? row.rank_state, 'rank_state'),
         qualityStatus: requiredString(row.quality_status, 'quality_status'),
         ambassadorTier: requiredString(row.ambassador_tier, 'ambassador_tier'),
         isAmbassadorApproved: row.ambassador_approved === true,
@@ -328,7 +450,13 @@ export class PostgresPartnerRepository {
         latest_qp.qualified_at AS last_payment_at
       FROM referral_attributions ra
       JOIN users u ON u.id = ra.user_id
-      LEFT JOIN subscriptions s ON s.user_id = ra.user_id
+      LEFT JOIN LATERAL (
+        SELECT s.plan_code
+        FROM subscriptions s
+        WHERE s.user_id = ra.user_id
+        ORDER BY s.updated_at DESC, s.id DESC
+        LIMIT 1
+      ) s ON true
       LEFT JOIN LATERAL (
         SELECT qp.qcb_amount_minor, qp.qualified_at
         FROM qualified_payments qp

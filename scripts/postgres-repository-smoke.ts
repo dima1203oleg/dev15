@@ -27,7 +27,7 @@ try {
       userId, `${userId}@example.test`, 'Test User', secondUserId, `${secondUserId}@example.test`, 'Second User'
     ]);
     await client.query(`INSERT INTO partners (id, user_id, referral_code, rank, rank_state, qualified_active_paid_l1, quality_status) VALUES
-      ($1, $2, $3, 'STARTER', 'ACTIVE', 1, 'QUALITY_GOOD'),
+      ($1, $2, $3, 'BRONZE', 'GRACE', 1, 'QUALITY_GOOD'),
       ($4, $5, $6, 'STARTER', 'ACTIVE', 0, 'QUALITY_GOOD')`, [
       partnerId, userId, `REF_${suffix}`, secondPartnerId, secondUserId, `REF2_${suffix}`
     ]);
@@ -52,13 +52,48 @@ try {
   });
 
   const repository = new PostgresPartnerRepository(database);
+  assert.equal(await repository.recordRankEvaluation({
+    partnerId,
+    qualifiedActivePaidL1: 1,
+    rank: 'BRONZE',
+    rankState: 'GRACE',
+    rateBps: 1000,
+    graceCyclesInWindow: 1,
+    ruleVersion: 'rank-v1',
+    reason: 'THRESHOLD_GRACE',
+    eventType: 'GRACE_STARTED',
+    idempotencyKey: `rank:${suffix}`,
+    occurredAt: now
+  }), 'CREATED');
+  assert.equal(await repository.recordRankEvaluation({
+    partnerId,
+    qualifiedActivePaidL1: 1,
+    rank: 'BRONZE',
+    rankState: 'GRACE',
+    rateBps: 1000,
+    graceCyclesInWindow: 1,
+    ruleVersion: 'rank-v1',
+    reason: 'THRESHOLD_GRACE',
+    eventType: 'GRACE_STARTED',
+    idempotencyKey: `rank:${suffix}`,
+    occurredAt: now
+  }), 'DUPLICATE');
   const dashboard = await repository.getDashboard(partnerId);
   assert.ok(dashboard);
   assert.equal(dashboard.partner.activeL1PaidCount, 1);
   assert.equal(dashboard.partner.totalL1Count, 1);
   assert.equal(dashboard.partner.totalL2Count, 1);
-  assert.equal(dashboard.partner.effectiveRank, 'STARTER');
+  assert.equal(dashboard.partner.effectiveRank, 'BRONZE');
+  assert.equal(dashboard.partner.partnerRateBps, 1000);
+  assert.equal(dashboard.partner.rankState, 'GRACE');
+  assert.equal(dashboard.rankProgress.nextRank, 'SILVER');
+  assert.equal(dashboard.rankProgress.remainingToNext, 29);
   assert.equal(dashboard.wallet.availableMinor, 500);
+
+  await assert.rejects(
+    database.query(`DELETE FROM partner_rank_snapshots WHERE partner_id = $1`, [partnerId]),
+    /IMMUTABLE_RANK_HISTORY/
+  );
 
   const l1 = await repository.listNetwork(partnerId, 'L1', 10, 0);
   assert.equal(l1.count, 1);
