@@ -141,6 +141,16 @@ try {
   assert.equal(network.body.l1.count, 0);
   assert.equal(network.body.l2.count, 0);
 
+  const achievements = await request('/api/partner/achievements');
+  assert.equal(achievements.response.status, 200);
+  assert.deepEqual(achievements.body.achievements, []);
+  const ambassador = await request('/api/partner/ambassador');
+  assert.equal(ambassador.response.status, 200);
+  assert.equal(ambassador.body.ambassador, null);
+  const leaderboard = await request('/api/partner/leaderboard?metric=MONTHLY');
+  assert.equal(leaderboard.response.status, 200);
+  assert.deepEqual(leaderboard.body.entries, []);
+
   const ledger = await request('/api/partner/ledger');
   assert.equal(ledger.response.status, 200);
   assert.deepEqual(ledger.body.entries, []);

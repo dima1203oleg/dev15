@@ -26,6 +26,7 @@ import { createOidcIdentityVerifier, IdentityRole } from './src/server/identityB
 import { PostgresPartnerRepository } from './src/server/postgresPartnerRepository';
 import { FinancialRuleRepository } from './src/server/financialRuleRepository';
 import { SubscriptionRepository } from './src/server/subscriptionRepository';
+import { PartnerEngagementRepository } from './src/server/partnerEngagementRepository';
 
 // ============================================================================
 // IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
@@ -531,6 +532,7 @@ async function startServer() {
   const partnerRepository = new PostgresPartnerRepository(database);
   const financialRuleRepository = new FinancialRuleRepository(database);
   const subscriptionRepository = new SubscriptionRepository(database);
+  const partnerEngagementRepository = new PartnerEngagementRepository(database);
   databaseRuntimeStatus = database.status();
   if (database.configured) await database.probe();
   databaseRuntimeStatus = database.status();
@@ -1071,6 +1073,47 @@ async function startServer() {
       l2: page(l2List),
       depthLimitNotice: 'Глибина партнерської моделі суворо обмежена 2 рівнями (L1 + L2). L3+ не оплачується.'
     });
+  });
+
+  app.get('/api/partner/achievements', requireRoles('PARTNER', 'AMBASSADOR'), async (_req, res) => {
+    if (financialDemoEnabled || databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+    const principal = res.locals.principal as { subject?: unknown } | undefined;
+    if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+    try {
+      const partnerId = await partnerRepository.getPartnerIdForUser(principal.subject);
+      if (!partnerId) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
+      return res.json({ status: 'LIVE', achievements: await partnerEngagementRepository.listAchievements(partnerId) });
+    } catch (error) {
+      console.error('[SIREN UA] partner achievements repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+      return res.status(503).json({ error: 'PARTNER_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Partner data temporarily unavailable.' });
+    }
+  });
+
+  app.get('/api/partner/ambassador', requireRoles('PARTNER', 'AMBASSADOR'), async (_req, res) => {
+    if (financialDemoEnabled || databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+    const principal = res.locals.principal as { subject?: unknown } | undefined;
+    if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+    try {
+      const partnerId = await partnerRepository.getPartnerIdForUser(principal.subject);
+      if (!partnerId) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
+      return res.json({ status: 'LIVE', ambassador: await partnerEngagementRepository.getAmbassador(partnerId) });
+    } catch (error) {
+      console.error('[SIREN UA] partner ambassador repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+      return res.status(503).json({ error: 'PARTNER_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Partner data temporarily unavailable.' });
+    }
+  });
+
+  app.get('/api/partner/leaderboard', requireRoles('PARTNER', 'AMBASSADOR'), async (req, res) => {
+    if (financialDemoEnabled || databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+    try {
+      const metric = typeof req.query.metric === 'string' ? req.query.metric : 'MONTHLY';
+      const limit = typeof req.query.limit === 'string' && /^\d+$/.test(req.query.limit) ? Math.min(100, Math.max(1, Number(req.query.limit))) : 100;
+      return res.json({ status: 'LIVE', metric, entries: await partnerEngagementRepository.latestLeaderboard(metric, limit) });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'LEADERBOARD_UNAVAILABLE';
+      if (code === 'INVALID_LEADERBOARD_METRIC') return res.status(400).json({ error: code, message: 'Непідтримуваний тип рейтингу.' });
+      return res.status(503).json({ error: 'LEADERBOARD_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Leaderboard data temporarily unavailable.' });
+    }
   });
 
   // Earnings & Immutable Ledger Projection
