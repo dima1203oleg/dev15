@@ -25,16 +25,10 @@ import {
   Watch,
   WifiOff,
 } from 'lucide-react';
-import {
-  DEMO_SPATIAL_MODEL,
-  EMPTY_SPATIAL_MODEL,
-  SpatialDataMode,
-  SpatialDevice,
-  SpatialLayer,
-  ThreatSceneModel,
-} from '../data/spatialModel';
+import { SpatialDataMode, SpatialDevice, SpatialLayer, ThreatSceneModel } from '../data/spatialModel';
 import { MobileExperience } from './MobileExperience';
 import { TabletExperience } from './TabletExperience';
+import { projectTrajectory } from '../utils/spatialProjection';
 
 type DeviceTab = {
   id: SpatialDevice;
@@ -88,6 +82,8 @@ const SpatialCore: React.FC<{
   const visibleLayers = device === 'MOBILE' || device === 'WATCH' || device === 'CAR' ? 3 : device === 'TV' ? 5 : 6;
   const layers = model.layers.filter((layer) => !activeLayerIds || activeLayerIds.includes(layer.id)).slice(0, visibleLayers);
   const isUnavailable = model.dataMode === 'NOT_CONNECTED';
+  const liveTrajectory = model.dataMode === 'LIVE' ? model.trajectories.find((trajectory) => trajectory.points.length > 1) : undefined;
+  const projectedLiveTrajectory = liveTrajectory ? projectTrajectory(liveTrajectory.points, liveTrajectory.currentPosition, 520, 260) : null;
 
   return (
     <div className={`spatial-core spatial-core--${device.toLowerCase()} ${compact ? 'spatial-core--compact' : ''}`} aria-label="SIREN Spatial Intelligence Core">
@@ -109,12 +105,13 @@ const SpatialCore: React.FC<{
           </div>
         ))}
       </div>
-      {!isUnavailable && model.trajectories.length > 0 && <svg className="spatial-core__trajectory" viewBox="0 0 520 260" fill="none" aria-hidden="true">
+      {model.dataMode === 'DEMO_DATA' && model.trajectories.length > 0 && <svg className="spatial-core__trajectory" viewBox="0 0 520 260" fill="none" aria-hidden="true">
         <path d="M72 192 C150 170 172 96 266 115 S366 104 454 45" stroke="#fb7185" strokeWidth="3" strokeDasharray="8 12" />
         <path d="M85 210 C166 199 236 158 318 174 S407 160 472 114" stroke="#fbbf24" strokeWidth="2" strokeDasharray="4 12" opacity=".8" />
         <circle cx="454" cy="45" r="10" fill="#fb7185" fillOpacity=".18" stroke="#fb7185" />
         <circle cx="454" cy="45" r="4" fill="#fff" />
       </svg>}
+      {(!activeLayerIds || activeLayerIds.includes('TRAJECTORY')) && projectedLiveTrajectory?.path && <svg className="spatial-core__trajectory" viewBox="0 0 520 260" fill="none" aria-hidden="true"><path d={projectedLiveTrajectory.path} stroke={liveTrajectory?.confidence === 'CONFIRMED' ? '#34d399' : liveTrajectory?.confidence === 'PREDICTED' ? '#fb7185' : '#fbbf24'} strokeWidth="3" strokeDasharray={liveTrajectory?.confidence === 'CONFIRMED' ? undefined : liveTrajectory?.confidence === 'PREDICTED' ? '8 12' : '4 8'} />{projectedLiveTrajectory.currentPoint && <circle cx={projectedLiveTrajectory.currentPoint.x} cy={projectedLiveTrajectory.currentPoint.y} r="5" fill="#fff" />}</svg>}
       <div className="spatial-core__base" />
       {isUnavailable ? (
         <div className="spatial-core__status">
@@ -306,14 +303,13 @@ const ARScene: React.FC = () => (
   <div className="device-scene device-scene--ar"><div className="flex items-start justify-between"><div><p className="text-[10px] font-mono tracking-[0.2em] text-violet-300/80">FUTURE-READY SPATIAL API</p><h3 className="mt-1 text-2xl font-black text-white">Простір, а не сторінка</h3><p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">Компоненти вже розділені так, щоб у майбутньому відобразити ту саму реальність у WebXR, AR-окулярах або VR-ситуаційній кімнаті.</p></div><Glasses className="h-6 w-6 text-violet-300" /></div><div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{['SpatialScene', 'LayerStack', 'ThreatNode', 'Trajectory', 'RiskVolume', 'RegionMesh'].map((module, index) => <div key={module} className="rounded-2xl border border-violet-300/20 bg-violet-400/[0.06] p-4"><div className="text-[10px] font-mono text-violet-200">0{index + 1}</div><div className="mt-2 text-sm font-bold text-white">{module}</div><div className="mt-1 text-[10px] text-slate-500">shared spatial primitive</div></div>)}</div><div className="mt-6 inline-flex items-center gap-2 rounded-full border border-violet-300/25 bg-violet-400/10 px-3 py-1.5 text-[10px] font-mono text-violet-200"><CheckCircle2 className="h-3.5 w-3.5" /> FUTURE READY · БЕЗ FAKE LIVE DATA</div></div>
 );
 
-export const DeviceExperienceLab: React.FC<{ dataMode: SpatialDataMode }> = ({ dataMode }) => {
+export const DeviceExperienceLab: React.FC<{ model: ThreatSceneModel }> = ({ model }) => {
   const [activeDevice, setActiveDevice] = useState<SpatialDevice>(() => {
     if (typeof window === 'undefined') return 'DESKTOP';
     if (window.matchMedia('(max-width: 767px)').matches) return 'MOBILE';
     if (window.matchMedia('(max-width: 1199px)').matches) return 'TABLET';
     return 'DESKTOP';
   });
-  const model = useMemo(() => dataMode === 'DEMO_DATA' ? DEMO_SPATIAL_MODEL : { ...EMPTY_SPATIAL_MODEL, dataMode }, [dataMode]);
   const activeTab = DEVICE_TABS.find((tab) => tab.id === activeDevice) ?? DEVICE_TABS[1];
   const renderScene = () => {
     switch (activeDevice) {

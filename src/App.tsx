@@ -233,8 +233,7 @@ export default function App() {
             const el = document.getElementById('download-section');
             el?.scrollIntoView({ behavior: 'smooth' });
           }}
-          threats={threats}
-          threatDataMode={threatDataMode}
+          model={spatialModel}
         />
 
         {/* Interactive Threat Map & 7-Step Simulator */}

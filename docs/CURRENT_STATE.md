@@ -13,9 +13,9 @@ Date: 2026-09-05
 - Database: missing. In-memory arrays/maps are not a production source of truth.
 - CI/CD, migrations, observability and external payment provider: missing/unverified.
 - Partner Platform 4.0: exact minor-unit/QCB/cap/rank/ledger/FX/payout-gate primitives and acceptance suite exist; database, billing, KYC/AML, FX and payout adapters remain unconnected.
-- Production data guard: enabled. Bundled fixtures are only served in development or with explicit `SIREN_DATA_MODE=DEMO`.
+- Production data guard: enabled. Bundled fixtures are only served by the development server; production ignores demo flags and keeps safety/financial APIs `NOT_CONNECTED` until authoritative integrations exist.
 - Browser safety gate: Playwright covers 11 production-boundary tests, including mobile/desktop interaction flows, public partner/admin dialogs, nine public-route axe scans, golden screenshots, stale-feed clearing, and critical-content timing in explicit `NOT_CONNECTED` mode.
-- Performance gate: production main bundle is 399.2 KiB JavaScript and 173.6 KiB CSS, within the 450/200 KiB budgets; spatial routes are split into lazy chunks.
+- Performance gate: production main bundle is approximately 402 KiB JavaScript and 176 KiB CSS, within the 450/200 KiB budgets; spatial routes are split into lazy chunks.
 - Dependency security: `npm audit --omit=dev` passes with zero reported vulnerabilities after the Express 5 upgrade.
 
 ## Verification
@@ -31,4 +31,4 @@ Date: 2026-09-05
 
 ## Important truth boundary
 
-The current visual map and partner flows are a product prototype. They are not authoritative threat telemetry, real authentication, or real money movement.
+The current visual map and partner flows are a product prototype. They are not authoritative threat telemetry, real authentication, or real money movement. Live scene surfaces now consume normalized API data when a verified feed is connected; they still require authoritative geographic geometry and a real WebGL renderer before the 3D digital twin claim is production-ready.

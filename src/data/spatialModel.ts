@@ -39,11 +39,20 @@ export interface ThreatEventModel {
   eta: string;
 }
 
+export interface TrajectoryPointModel {
+  lat: number;
+  lng: number;
+  timeOffsetMin: number;
+  isConfirmed: boolean;
+}
+
 export interface TrajectoryModel {
   id: string;
   direction: string;
   confidence: string;
   status: string;
+  points: TrajectoryPointModel[];
+  currentPosition?: { lat: number; lng: number };
 }
 
 export interface RiskState {
@@ -115,7 +124,14 @@ export function createSpatialModel(args: {
       id: `${threat.id}-trajectory`,
       direction: threat.directionLabel,
       confidence: threat.confidence,
-      status: threat.status
+      status: threat.status,
+      points: threat.trajectory.map((point) => ({
+        lat: point.lat,
+        lng: point.lng,
+        timeOffsetMin: point.timeOffsetMin,
+        isConfirmed: point.isConfirmed
+      })),
+      currentPosition: { lat: threat.currentLat, lng: threat.currentLng }
     })),
     shelters: args.shelters.map((shelter) => ({
       id: shelter.id,
@@ -150,8 +166,8 @@ export const DEMO_SPATIAL_MODEL: ThreatSceneModel = {
     { id: 'demo-2', label: 'Зміна напрямку', status: 'Оцінюється', confidence: 'PREDICTED', eta: '20–30 хв' },
   ],
   trajectories: [
-    { id: 'trajectory-1', direction: 'північно-західний', confidence: 'ESTIMATED', status: 'Оцінка' },
-    { id: 'trajectory-2', direction: 'східний сектор', confidence: 'PREDICTED', status: 'Прогноз' },
+    { id: 'trajectory-1', direction: 'північно-західний', confidence: 'ESTIMATED', status: 'Оцінка', points: [] },
+    { id: 'trajectory-2', direction: 'східний сектор', confidence: 'PREDICTED', status: 'Прогноз', points: [] },
   ],
   shelters: [
     { id: 'shelter-1', label: 'Найближче укриття', distance: '450 м', status: 'Відкрите' },

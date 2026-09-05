@@ -4,8 +4,7 @@ import {
   Users, Bell, AlertTriangle, ChevronRight, QrCode, Sparkles, Building2,
   Award
 } from 'lucide-react';
-import { ThreatEvent } from '../types';
-import { DEMO_SPATIAL_MODEL, EMPTY_SPATIAL_MODEL } from '../data/spatialModel';
+import { ThreatSceneModel } from '../data/spatialModel';
 import { HeroIntelligenceStack } from './HeroIntelligenceStack';
 import { MobileExperience } from './MobileExperience';
 import { TabletExperience } from './TabletExperience';
@@ -30,8 +29,7 @@ interface HeroSectionProps {
   onNavigateToFeatures: () => void;
   onNavigateToPartner: () => void;
   onNavigateToDownload: () => void;
-  threats: ThreatEvent[];
-  threatDataMode: 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
+  model: ThreatSceneModel;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -39,21 +37,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onNavigateToFeatures,
   onNavigateToPartner,
   onNavigateToDownload,
-  threats,
-  threatDataMode
+  model
 }) => {
-  const mobileModel = threatDataMode === 'DEMO_DATA' ? DEMO_SPATIAL_MODEL : { ...EMPTY_SPATIAL_MODEL, dataMode: threatDataMode };
-  const tabletModel = threatDataMode === 'DEMO_DATA' ? DEMO_SPATIAL_MODEL : { ...EMPTY_SPATIAL_MODEL, dataMode: threatDataMode };
+  const threatDataMode = model.dataMode;
 
   return (
     <section className="relative overflow-hidden pt-6 pb-20 lg:pt-10 lg:pb-28">
 
       <div className="mobile-home-only">
-        <MobileExperience model={mobileModel} onDownload={onNavigateToDownload} />
+        <MobileExperience model={model} onDownload={onNavigateToDownload} />
       </div>
 
       <div className="tablet-home-only">
-        <TabletExperience model={tabletModel} />
+        <TabletExperience model={model} />
       </div>
 
       <div className="desktop-home-only">
@@ -196,12 +192,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             onNavigateToDownload={onNavigateToDownload}
             onNavigateToMap={onNavigateToMap}
             onNavigateToPartner={onNavigateToPartner}
-            dataMode={threatDataMode}
+            model={model}
           />
         </Suspense>
 
         <Suspense fallback={<SpatialSurfaceLoading label="Завантаження device experience SIREN UA" />}>
-          <DeviceExperienceLab dataMode={threatDataMode} />
+          <DeviceExperienceLab model={model} />
         </Suspense>
 
         {/* ========================================================================= */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Radio, Compass, Navigation, Clock, MapPin, Shield, AlertTriangle, Layers, Info, CheckCircle2, Play, RefreshCw, Eye } from 'lucide-react';
 import { ThreatEvent, RegionAlert, Shelter } from '../types';
 import { DEFAULT_REGIONS } from '../data/mockData';
@@ -22,6 +22,11 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
   const [activeTab, setActiveTab] = useState<'MAP' | 'SIMULATOR' | 'SHELTERS'>('MAP');
   const [simulatorStep, setSimulatorStep] = useState<number>(1);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const showSimulator = threatDataMode === 'DEMO_DATA';
+
+  useEffect(() => {
+    if (!showSimulator && activeTab === 'SIMULATOR') setActiveTab('MAP');
+  }, [activeTab, showSimulator]);
 
   const safeRegions = (regions && regions.length > 0)
     ? regions
@@ -137,17 +142,19 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
             >
               Оперативна карта
             </button>
-            <button
-              onClick={() => setActiveTab('SIMULATOR')}
-              className={`px-3.5 py-2 rounded-lg transition-all flex items-center gap-1.5 ${
-                activeTab === 'SIMULATOR'
-                  ? 'bg-amber-600 text-white shadow'
-                  : 'text-amber-400 hover:text-amber-300'
-              }`}
-            >
-              <Play className="w-3 h-3" />
-              Демо-симулятор (7 кроків)
-            </button>
+            {showSimulator && (
+              <button
+                onClick={() => setActiveTab('SIMULATOR')}
+                className={`px-3.5 py-2 rounded-lg transition-all flex items-center gap-1.5 ${
+                  activeTab === 'SIMULATOR'
+                    ? 'bg-amber-600 text-white shadow'
+                    : 'text-amber-400 hover:text-amber-300'
+                }`}
+              >
+                <Play className="w-3 h-3" />
+                Демо-симулятор (7 кроків)
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('SHELTERS')}
               className={`px-3.5 py-2 rounded-lg transition-all ${

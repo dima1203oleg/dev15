@@ -9,6 +9,7 @@
     "start": "NODE_ENV=production node dist/server.cjs",
     "lint": "tsc --noEmit",
     "test:financial": "tsx scripts/financial-acceptance-tests.ts",
+    "test:spatial": "tsx scripts/spatial-acceptance-tests.ts",
     "test:e2e": "playwright test",
     "test:performance": "npm run build && node scripts/performance-budget.mjs"
   },

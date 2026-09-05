@@ -32,6 +32,8 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
   const [payoutProvider, setPayoutProvider] = useState<'MONOBANK' | 'LIQPAY' | 'IBAN_SEPA'>('MONOBANK');
   const [payoutCardNumber, setPayoutCardNumber] = useState<string>('');
   const [payoutSuccessMsg, setPayoutSuccessMsg] = useState<string | null>(null);
+  const [payoutErrorMsg, setPayoutErrorMsg] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
 
   // Local state fetched from server API
   const [dashboardData, setDashboardData] = useState<any>(null);
@@ -43,19 +45,38 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
   const fetchPartnerData = async () => {
     try {
       setLoading(true);
-      const [dashRes, netRes, ledRes, poRes] = await Promise.all([
-        fetch('/api/partner/dashboard').then(r => r.json()),
-        fetch('/api/partner/network').then(r => r.json()),
-        fetch('/api/partner/ledger').then(r => r.json()),
-        fetch('/api/partner/payouts').then(r => r.json())
+      const responses = await Promise.all([
+        fetch('/api/partner/dashboard'),
+        fetch('/api/partner/network'),
+        fetch('/api/partner/ledger'),
+        fetch('/api/partner/payouts')
       ]);
+      const payloads = await Promise.all(responses.map(async (response) => {
+        const contentType = response.headers.get('content-type') ?? '';
+        if (!contentType.includes('application/json')) throw new Error('PARTNER_API_NON_JSON_RESPONSE');
+        const body = await response.json();
+        return { ok: response.ok, body };
+      }));
+      const [dashRes, netRes, ledRes, poRes] = payloads;
+      if (!dashRes.ok) throw new Error(dashRes.body?.error || dashRes.body?.status || 'PARTNER_API_UNAVAILABLE');
 
-      setDashboardData(dashRes);
-      setNetworkData({ l1: netRes.l1?.items || [], l2: netRes.l2?.items || [] });
-      setLedgerEntries(ledRes.entries || []);
-      setPayoutsList(poRes.payouts || []);
+      // Dashboard is the critical response. Auxiliary endpoints may be
+      // unavailable independently; never turn a provider gap into empty
+      // financial data that looks authoritative.
+      setDashboardData(dashRes.body);
+      setNetworkData(netRes.ok ? { l1: netRes.body.l1?.items || [], l2: netRes.body.l2?.items || [] } : { l1: [], l2: [] });
+      setLedgerEntries(ledRes.ok ? ledRes.body.entries || [] : []);
+      setPayoutsList(poRes.ok ? poRes.body.payouts || [] : []);
     } catch (e) {
       console.error('Error fetching partner data:', e);
+      setDashboardData({
+        error: 'PARTNER_API_UNAVAILABLE',
+        status: 'NOT_CONNECTED',
+        message: 'Партнерський backend не підтвердив повний набір даних. Баланси, мережа та виплати приховано.'
+      });
+      setNetworkData({ l1: [], l2: [] });
+      setLedgerEntries([]);
+      setPayoutsList([]);
     } finally {
       setLoading(false);
     }
@@ -64,6 +85,8 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setDashboardData(null);
+      setPayoutSuccessMsg(null);
+      setPayoutErrorMsg(null);
       fetchPartnerData();
     }
   }, [isOpen]);
@@ -95,15 +118,23 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
 
   const referralUrl = `${window.location.origin}/r/${encodeURIComponent(partner.referralCode)}`;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(referralUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
+  const handleCopy = async () => {
+    try {
+      if (!navigator.clipboard) throw new Error('CLIPBOARD_UNAVAILABLE');
+      await navigator.clipboard.writeText(referralUrl);
+      setCopyError(null);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      setCopyError('Не вдалося скопіювати посилання. Скопіюйте його вручну.');
+    }
   };
 
   const handleRequestPayout = async (e: React.FormEvent) => {
     e.preventDefault();
     const amountMinor = parseMinorUnits(payoutAmount);
+    setPayoutSuccessMsg(null);
+    setPayoutErrorMsg(null);
     try {
       const res = await fetch('/api/partner/payouts', {
         method: 'POST',
@@ -120,10 +151,10 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
         fetchPartnerData();
         setTimeout(() => setPayoutSuccessMsg(null), 4000);
       } else {
-        alert(data.error || 'Помилка при створенні виплати');
+        setPayoutErrorMsg(data.error || data.message || 'Помилка при створенні виплати');
       }
     } catch (err) {
-      alert('Помилка мережі при запиті виплати');
+      setPayoutErrorMsg('Не вдалося надіслати запит на виплату. Провайдер або мережа недоступні.');
     }
   };
 
@@ -351,27 +382,16 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                     <QrCode className="w-4 h-4" />
                   </button>
                 </div>
+                {copyError && <p className="w-full text-right text-[11px] text-amber-200">{copyError}</p>}
               </div>
 
               {/* Quick QR Code Display if toggled */}
               {showQrModal && (
                 <div className="p-6 rounded-2xl bg-slate-900 border border-slate-700 flex flex-col items-center text-center animate-fadeIn">
-                  <div className="w-44 h-44 rounded-2xl bg-white p-3 flex items-center justify-center shadow-xl mb-3">
-                    {/* SVG generated clean QR representation */}
-                    <div className="w-full h-full border-4 border-slate-950 p-2 flex flex-col justify-between">
-                      <div className="flex justify-between">
-                        <div className="w-8 h-8 bg-slate-950"></div>
-                        <div className="w-8 h-8 bg-slate-950"></div>
-                      </div>
-                      <div className="text-[10px] font-mono text-slate-950 font-bold">SIREN UA</div>
-                      <div className="flex justify-between">
-                        <div className="w-8 h-8 bg-slate-950"></div>
-                        <div className="w-6 h-6 bg-slate-950"></div>
-                      </div>
-                    </div>
-                  </div>
+                  <QrCode className="h-16 w-16 text-slate-500" aria-hidden="true" />
+                  <div className="mt-3 text-sm font-bold text-white">QR ще не генерується</div>
                   <span className="text-xs font-bold text-white font-mono">{referralUrl}</span>
-                  <p className="text-[11px] text-slate-400 mt-1">Використовуйте для стікерів, відео в TikTok або Telegram-каналів</p>
+                  <p className="text-[11px] text-slate-400 mt-1">Потрібен підключений attribution endpoint і production QR encoder. Не показуємо декоративний QR як робочий.</p>
                 </div>
               )}
 
@@ -528,6 +548,12 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                 <div className="p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span>{payoutSuccessMsg}</span>
+                </div>
+              )}
+              {payoutErrorMsg && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs font-semibold flex items-center gap-2" role="alert">
+                  <AlertCircle className="w-4 h-4 text-amber-300" />
+                  <span>{payoutErrorMsg}</span>
                 </div>
               )}
 

@@ -8,6 +8,7 @@ import {
   ambassadorTierForQualifiedL1,
   calculateCommissions,
   calculateQcb,
+  qualifyPayment,
   assessFraud,
   canQualifySubscription,
   convertWithFx,
@@ -32,6 +33,11 @@ assert.equal(trial.endsAt, '2026-10-01T00:00:00.000Z');
 assert.equal(trialReminderSchedule(trial).length, 3);
 assert.equal(canQualifySubscription('TRIAL_ACTIVE'), false);
 assert.equal(canQualifySubscription('PREMIUM_ACTIVE'), true);
+assert.equal(qualifyPayment({
+  id: 'mismatch', userId: 'user-a', attribution: { userId: 'user-b', id: 'attr-mismatch', directPartnerId: 'p1', status: 'ATTRIBUTED', sourceChannel: 'DIRECT' as const, attributedAt: trial.startedAt },
+  payment: { gross: usd(100n) }, qcbPolicy: { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true },
+  directPartnerRank: DEFAULT_RANK_RULES[0], ruleVersion: 'comp-v1', createdAt: trial.startedAt
+}).reason, 'ATTRIBUTION_USER_MISMATCH');
 
 // QCB is calculated from the qualified transaction, never from the plan label.
 const qcb = calculateQcb({ gross: usd(100n), storeCosts: usd(15n), processingCosts: usd(5n) }, {
@@ -105,13 +111,13 @@ assert.throws(() => assessFraud([{ name: 'negative-weight', weight: -1, present:
 const platform = new InMemoryPartnerPlatform(new ImmutableLedger(), { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true }, true);
 platform.addPartner({ id: 'p1', qualifiedActivePaidL1: 0, rank: 'STARTER', rankState: 'ACTIVE' });
 platform.addPartner({ id: 'p2', qualifiedActivePaidL1: 0, rank: 'STARTER', rankState: 'ACTIVE' });
-const trialResult = platform.processPaidPayment({ id: 'trial-payment', userId: 'trial-user', payment: { gross: usd(100n) }, attribution, createdAt: trial.startedAt, ruleVersion: 'comp-v1', isTestPayment: true, fraudStatus: 'OK' });
+const trialResult = platform.processPaidPayment({ id: 'trial-payment', userId: 'trial-user', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'trial-user' }, createdAt: trial.startedAt, ruleVersion: 'comp-v1', isTestPayment: true, fraudStatus: 'OK' });
 assert.equal(trialResult.status, 'NOT_QUALIFIED');
 assert.equal(platform.getPartner('p1')?.qualifiedActivePaidL1, 0);
-const paidResult = platform.processPaidPayment({ id: 'paid-payment', userId: 'paid-user', payment: { gross: usd(100n) }, attribution, createdAt: trial.endsAt, ruleVersion: 'comp-v1', fraudStatus: 'OK' });
+const paidResult = platform.processPaidPayment({ id: 'paid-payment', userId: 'paid-user', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'paid-user' }, createdAt: trial.endsAt, ruleVersion: 'comp-v1', fraudStatus: 'OK' });
 assert.equal(paidResult.status, 'QUALIFIED');
 assert.equal(platform.getPartner('p1')?.qualifiedActivePaidL1, 1);
-assert.equal(platform.processPaidPayment({ id: 'paid-payment', userId: 'paid-user', payment: { gross: usd(100n) }, attribution, createdAt: trial.endsAt, ruleVersion: 'comp-v1', fraudStatus: 'OK' }).status, 'DUPLICATE');
+assert.equal(platform.processPaidPayment({ id: 'paid-payment', userId: 'paid-user', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'paid-user' }, createdAt: trial.endsAt, ruleVersion: 'comp-v1', fraudStatus: 'OK' }).status, 'DUPLICATE');
 platform.releaseHold(paidResult.commissions[0].id, '2026-10-02T00:00:00.000Z');
 assert.equal(platform.getCommission(paidResult.commissions[0].id)?.state, 'AVAILABLE');
 platform.reversePayment('paid-payment', 'REFUND', '2026-10-03T00:00:00.000Z');

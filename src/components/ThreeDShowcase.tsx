@@ -8,7 +8,8 @@ import {
   Compass, Zap, WifiOff
 } from 'lucide-react';
 import { tacticalAudio } from '../utils/audioTactical';
-import { SpatialDataMode } from '../data/spatialModel';
+import { SpatialDataMode, ThreatSceneModel } from '../data/spatialModel';
+import { projectTrajectory } from '../utils/spatialProjection';
 
 export type ShowcaseMode = 'ECOSYSTEM' | 'DESKTOP' | 'LAPTOP' | 'PHONE' | 'TABLET' | 'HOLOGRAM';
 
@@ -16,8 +17,54 @@ interface ThreeDShowcaseProps {
   onNavigateToDownload: () => void;
   onNavigateToMap: () => void;
   onNavigateToPartner?: () => void;
-  dataMode: SpatialDataMode;
+  model: ThreatSceneModel;
 }
+
+const LiveSpatialShowcase: React.FC<{
+  model: ThreatSceneModel;
+  onNavigateToDownload: () => void;
+  onNavigateToMap: () => void;
+  onNavigateToPartner?: () => void;
+}> = ({ model, onNavigateToDownload, onNavigateToMap, onNavigateToPartner }) => {
+  const leadEvent = model.events[0];
+  const leadTrajectory = model.trajectories[0];
+  const projectedTrajectory = leadTrajectory ? projectTrajectory(leadTrajectory.points, leadTrajectory.currentPosition, 520, 300) : null;
+  const layers = model.layers.filter((layer) => layer.id !== 'LIVE_DATA');
+
+  return (
+    <section className="device-constellation-preview" aria-label="Жива просторова модель SIREN UA">
+      <div className="device-constellation-preview__grid" aria-hidden="true" />
+      <div className="device-constellation-preview__intro">
+        <div className="device-constellation-preview__eyebrow"><Database className="h-3.5 w-3.5 text-cyan-300" /> SIREN LIVE SPATIAL CORE</div>
+        <h2>Жива модель ситуації.<br /><span>Одна реальність — багато шарів.</span></h2>
+        <p>Карта, події, напрямки, ризик і укриття зібрані з актуального нормалізованого потоку даних.</p>
+        <div className="device-constellation-preview__state"><span /> LIVE · {model.lastUpdated ? `оновлено ${model.lastUpdated}` : 'freshness не надано'}</div>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button type="button" onClick={onNavigateToMap} className="rounded-xl border border-cyan-300/30 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100">Відкрити карту <ArrowUpRight className="ml-1 inline h-3.5 w-3.5" /></button>
+          {onNavigateToPartner && <button type="button" onClick={onNavigateToPartner} className="rounded-xl border border-violet-300/25 bg-violet-400/10 px-3 py-2 text-xs font-bold text-violet-100">Партнерський простір</button>}
+          <button type="button" onClick={onNavigateToDownload} className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-xs font-bold text-slate-200">Завантажити</button>
+        </div>
+      </div>
+      <div className="relative z-10 grid min-h-[280px] gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_220px] sm:p-7">
+        <div className="relative flex min-h-[280px] items-center justify-center overflow-hidden rounded-3xl border border-cyan-300/20 bg-[#06111d]/80 p-5 [perspective:900px]">
+          <div className="absolute inset-8 rounded-[42%] border border-cyan-300/15 bg-cyan-400/[0.03] shadow-[0_0_80px_rgba(34,211,238,0.12)] [transform:rotateX(58deg)_rotateZ(-8deg)]" />
+          <div className="relative grid w-[82%] max-w-[430px] grid-cols-3 gap-1.5 [transform:rotateX(58deg)_rotateZ(-8deg)]" aria-hidden="true">
+            {Array.from({ length: 18 }, (_, index) => <span key={index} className={`aspect-square rounded-sm border ${index % 5 === 0 ? 'border-rose-300/60 bg-rose-400/35 shadow-[0_0_18px_rgba(251,113,133,0.55)]' : index % 3 === 0 ? 'border-amber-300/45 bg-amber-400/20' : 'border-cyan-300/25 bg-cyan-400/[0.08]'}`} />)}
+          </div>
+          {projectedTrajectory?.path && <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 520 300" fill="none" aria-hidden="true"><path d={projectedTrajectory.path} stroke={leadTrajectory?.confidence === 'CONFIRMED' ? '#34d399' : leadTrajectory?.confidence === 'PREDICTED' ? '#fb7185' : '#fbbf24'} strokeWidth="3" strokeDasharray={leadTrajectory?.confidence === 'CONFIRMED' ? undefined : leadTrajectory?.confidence === 'PREDICTED' ? '8 12' : '4 8'} />{projectedTrajectory.currentPoint && <circle cx={projectedTrajectory.currentPoint.x} cy={projectedTrajectory.currentPoint.y} r="5" fill="#fff" />}</svg>}
+          <div className="absolute bottom-4 left-4 rounded-xl border border-cyan-300/20 bg-slate-950/80 px-3 py-2 text-[10px] font-mono text-cyan-100">{model.region.label} · {model.risk.label}</div>
+          <div className="absolute right-4 top-4 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2.5 py-1 text-[9px] font-mono text-emerald-200">CONNECTED</div>
+        </div>
+        <div className="space-y-2">
+          <div className="rounded-2xl border border-rose-300/20 bg-rose-400/[0.07] p-3"><div className="text-[9px] font-mono tracking-[0.14em] text-rose-200">ACTIVE EVENT</div><div className="mt-1 text-sm font-bold text-white">{leadEvent?.label ?? 'Подій не зафіксовано'}</div><div className="mt-1 text-[10px] text-slate-400">{leadEvent ? `${leadEvent.confidence} · ${leadEvent.eta}` : 'Дані подій відсутні'}</div></div>
+          <div className="rounded-2xl border border-amber-300/20 bg-amber-400/[0.07] p-3"><div className="text-[9px] font-mono tracking-[0.14em] text-amber-200">TRAJECTORY</div><div className="mt-1 text-sm font-bold text-white">{leadTrajectory?.direction ?? 'Напрямок не надано'}</div><div className="mt-1 text-[10px] text-slate-400">{leadTrajectory ? `${leadTrajectory.confidence} · ${leadTrajectory.status}` : 'Без прогнозної геометрії'}</div></div>
+          <div className="rounded-2xl border border-cyan-300/20 bg-cyan-400/[0.06] p-3"><div className="text-[9px] font-mono tracking-[0.14em] text-cyan-200">SPATIAL LAYERS</div><div className="mt-2 flex flex-wrap gap-1.5">{layers.map((layer) => <span key={layer.id} className="rounded-full border border-slate-700 bg-slate-950/60 px-2 py-1 text-[9px] text-slate-300">{layer.shortLabel}</span>)}</div></div>
+        </div>
+      </div>
+      <div className="device-constellation-preview__footer"><span><Monitor className="h-4 w-4" /> Реальний normalized model</span><span><Radio className="h-4 w-4" /> Без підміни live-даних</span></div>
+    </section>
+  );
+};
 
 const SpatialUnavailableShowcase: React.FC<{ dataMode: SpatialDataMode }> = ({ dataMode }) => (
   <section className="device-constellation-preview" aria-label="3D-вітрина пристроїв SIREN UA">
@@ -43,7 +90,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
   onNavigateToDownload,
   onNavigateToMap,
   onNavigateToPartner,
-  dataMode,
+  model,
 }) => {
   const [activeMode, setActiveMode] = useState<ShowcaseMode>('ECOSYSTEM');
   const [isExploded, setIsExploded] = useState<boolean>(false);
@@ -57,15 +104,15 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [payoutModalOpen, setPayoutModalOpen] = useState<boolean>(false);
   const [payoutAmount, setPayoutAmount] = useState<string>('4230');
-  const [payoutSuccess, setPayoutSuccess] = useState<boolean>(false);
 
   // Parallax 3D mouse tracking
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Keep hook order stable when the API changes from unavailable to demo/live.
-  // The unavailable surface is a render state, not a different component lifecycle.
-  if (dataMode !== 'DEMO_DATA') return <SpatialUnavailableShowcase dataMode={dataMode} />;
+  // Keep the visual fixture explicitly isolated from connected data. Live data
+  // uses the normalized model instead of falling back to an empty placeholder.
+  if (model.dataMode === 'NOT_CONNECTED') return <SpatialUnavailableShowcase dataMode={model.dataMode} />;
+  if (model.dataMode === 'LIVE') return <LiveSpatialShowcase model={model} onNavigateToDownload={onNavigateToDownload} onNavigateToMap={onNavigateToMap} onNavigateToPartner={onNavigateToPartner} />;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current || isAutoRotate) return;
@@ -98,14 +145,6 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
     setTimeout(() => setCopiedLink(false), 2400);
   };
 
-  const handleSimulatePayout = () => {
-    setPayoutSuccess(true);
-    tacticalAudio.playAllClearChime();
-    setTimeout(() => {
-      setPayoutSuccess(false);
-      setPayoutModalOpen(false);
-    }, 2000);
-  };
 
   // Base angles for isometric perspective
   const rotX = activeMode === 'ECOSYSTEM' ? 14 - mousePos.y * 14 : (activeMode === 'HOLOGRAM' ? 58 - mousePos.y * 22 : 8 - mousePos.y * 12);
@@ -262,7 +301,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
               }`}
             >
               <Layers className="w-3.5 h-3.5 text-cyan-400" />
-              <span>{isExploded ? 'Зібрати' : '💥 3D Вибух'}</span>
+              <span>{isExploded ? 'Зібрати шари' : 'Розкласти шари'}</span>
             </button>
           )}
 
@@ -1206,7 +1245,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-cyan-400" />
-                <span className="font-bold text-base">Миттєва виплата винагороди</span>
+                <span className="font-bold text-base">Партнерський payout flow · DEMO</span>
               </div>
               <button
                 onClick={() => setPayoutModalOpen(false)}
@@ -1216,16 +1255,10 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
               </button>
             </div>
 
-            {payoutSuccess ? (
-              <div className="py-8 text-center space-y-2">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto">
-                  <Check className="w-6 h-6" />
+            <div className="space-y-4">
+                <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
+                  DEMO UI · Провайдер виплат не підключений. Жоден запит, баланс або платіж тут не виконується.
                 </div>
-                <div className="font-bold text-lg text-white">Виплату відправлено!</div>
-                <div className="text-xs text-slate-400 font-mono">Кошти зараховано на ваш баланс.</div>
-              </div>
-            ) : (
-              <div className="space-y-4">
                 <div>
                   <label className="text-xs text-slate-400 block mb-1">Сума до виведення (₴):</label>
                   <input
@@ -1241,7 +1274,7 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
                   <label className="text-xs text-slate-400 block mb-1">Номер банківської картки або IBAN:</label>
                   <input
                     type="text"
-                    defaultValue="UA213223130000026007233566731"
+                    placeholder="У DEMO UI рахунок не зберігається"
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-xs focus:border-cyan-400 outline-none"
                   />
                 </div>
@@ -1254,14 +1287,15 @@ export const ThreeDShowcase: React.FC<ThreeDShowcaseProps> = ({
                     Скасувати
                   </button>
                   <button
-                    onClick={handleSimulatePayout}
-                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white shadow-lg shadow-blue-500/30"
+                    type="button"
+                    disabled
+                    title="Потрібен підключений та перевірений payout provider"
+                    className="px-5 py-2 rounded-xl bg-slate-800 text-xs font-bold text-slate-500 cursor-not-allowed"
                   >
-                    Підтвердити виведення 4,230 ₴
+                    Провайдер не підключений
                   </button>
                 </div>
               </div>
-            )}
           </div>
         </div>
       )}

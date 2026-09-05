@@ -286,6 +286,7 @@ export interface QualifiedPayment {
 }
 
 export function qualifyPayment(input: QualifiedPayment): { qualified: boolean; reason: string; qcb: Money } {
+  if (input.userId !== input.attribution.userId) return { qualified: false, reason: 'ATTRIBUTION_USER_MISMATCH', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
   if (input.isTestPayment) return { qualified: false, reason: 'TEST_PAYMENT', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
   if (input.fraudStatus && input.fraudStatus !== 'OK') return { qualified: false, reason: 'FRAUD_REVIEW', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
   if (input.attribution.status === 'REJECTED') return { qualified: false, reason: 'REJECTED_ATTRIBUTION', qcb: { amountMinor: 0n, currency: input.payment.gross.currency } };
@@ -623,6 +624,7 @@ export class InMemoryPartnerPlatform {
   }): PaymentProcessingResult {
     const previous = this.payments.get(input.id);
     if (previous) return { ...previous, status: 'DUPLICATE' };
+    if (input.userId !== input.attribution.userId) return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'ATTRIBUTION_USER_MISMATCH', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] });
     if (input.attribution.status === 'REJECTED') return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'REJECTED_ATTRIBUTION', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] });
     if (isSelfReferral(input.attribution)) return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'SELF_REFERRAL', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] });
     const qcb = calculateQcb(input.payment, this.qcbPolicy);

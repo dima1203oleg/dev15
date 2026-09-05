@@ -3,12 +3,19 @@ import { Download, Apple, Smartphone, Globe, QrCode, CheckCircle2, ShieldCheck, 
 
 export const DownloadSection: React.FC = () => {
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
   const sampleDeepLink = 'https://sirenua.com/join/SIREN_ATLAS';
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(sampleDeepLink);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
+  const handleCopyLink = async () => {
+    try {
+      if (!navigator.clipboard) throw new Error('CLIPBOARD_UNAVAILABLE');
+      await navigator.clipboard.writeText(sampleDeepLink);
+      setCopyError(null);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      setCopyError('Не вдалося скопіювати приклад посилання. Виділіть його вручну.');
+    }
   };
 
   return (
@@ -119,6 +126,7 @@ export const DownloadSection: React.FC = () => {
               {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             </button>
           </div>
+          {copyError && <p className="w-full text-center text-xs text-amber-200" role="alert">{copyError}</p>}
         </div>
 
       </div>
