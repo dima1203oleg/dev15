@@ -124,7 +124,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
           >
             Огляд системи
           </button>
-          {isDemoData && <button
+          <button
             onClick={() => setActiveAdminTab('CAP_VALIDATOR')}
             className={`py-3.5 px-4 border-b-2 transition-all flex items-center gap-1.5 ${
               activeAdminTab === 'CAP_VALIDATOR' ? 'border-rose-400 text-rose-300' : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -132,7 +132,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
           >
             <Scale className="w-4 h-4" />
             50% Hard Cap Валідатор
-          </button>}
+          </button>
           <button
             onClick={() => setActiveAdminTab('THREAT_SETTINGS')}
             className={`py-3.5 px-4 border-b-2 transition-all flex items-center gap-1.5 ${
@@ -232,6 +232,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                 </p>
               </div>
 
+              {isDemoData ? <>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="text-slate-300 block mb-1">Ставка L1 (%):</label>
@@ -293,6 +294,14 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                   </div>
                 </div>
               )}
+              </> : <div className="p-5 rounded-2xl border border-amber-500/40 bg-amber-950/30 text-amber-200">
+                <div className="flex items-center gap-2 text-sm font-bold mb-1">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span>CAP VALIDATOR · NOT CONNECTED</span>
+                </div>
+                <p className="font-mono text-xs">Фінансовий backend не підключений.</p>
+                <div className="mt-2 text-[11px] text-slate-400">Перевірка правил доступна після підключення авторизованого financial backend.</div>
+              </div>}
             </div>
           )}
 
