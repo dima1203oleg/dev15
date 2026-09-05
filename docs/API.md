@@ -10,6 +10,8 @@ Referral links use `GET /r/:referralCode`. In the development financial demo thi
 
 `GET /api/partner/referral-link` is the authenticated partner-link boundary in the eventual production contract. The current demo implementation returns the seeded demo link only in development financial demo mode; production-like mode returns `503 FINANCIAL_DATA_NOT_CONNECTED` until identity, attribution storage and database are connected.
 
+`GET /api/auth/session` uses the OIDC/JWKS verifier when identity is configured in a production-like runtime. It returns only the verified subject, email and allowlisted roles from a valid bearer token; demo mode is explicitly marked `DEMO_ONLY`. It never accepts a browser-supplied role or partner balance.
+
 `POST /api/partner/share` accepts a bounded `campaign` and optional `content`, then returns a canonical server-generated referral URL with UTM parameters. In the demo it records an append-only audit event; in production it remains unavailable until authenticated identity and durable campaign/attribution storage are connected. The referral redirect preserves only validated UTM fields in the landing URL and an HttpOnly context cookie so a future signup flow can attach the campaign without trusting browser state.
 
 `GET /api/partner/network?limit=20&offset=0` returns aggregate counts plus bounded, privacy-safe L1/L2 pages. `limit` is capped server-side at 50; the browser never needs to receive an unbounded referral tree. `hasMore` indicates whether another page is available.

@@ -61,6 +61,10 @@ try {
   assert.equal(partner.response.status, 503);
   assert.equal(partner.body.error, 'FINANCIAL_DATA_NOT_CONNECTED');
 
+  const session = await getJson('/api/auth/session');
+  assert.equal(session.response.status, 503);
+  assert.equal(session.body.error, 'FINANCIAL_DATA_NOT_CONNECTED');
+
   const page = await fetch(`http://127.0.0.1:${port}/`);
   assert.equal(page.status, 200);
   assert.match(page.headers.get('content-security-policy') ?? '', /default-src 'self'/);

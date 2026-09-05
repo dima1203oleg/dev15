@@ -22,6 +22,7 @@ import {
   validateAllocationCap
 } from './src/domain/partnerPlatform';
 import { createPostgresBoundary, DatabaseRuntimeStatus } from './src/server/postgresBoundary';
+import { createOidcIdentityVerifier } from './src/server/identityBoundary';
 
 // ============================================================================
 // IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
@@ -241,7 +242,7 @@ function hasConfiguration(...keys: string[]): ConfigurationState {
 function integrationConfiguration(): Record<'threatServer' | 'identity' | 'database' | 'queue' | 'billing' | 'fx' | 'kyc' | 'payout', ConfigurationState> {
   return {
     threatServer: hasConfiguration('THREAT_SERVER_URL', 'THREAT_SERVER_AUTH_SECRET'),
-    identity: hasConfiguration('IDENTITY_ISSUER_URL', 'IDENTITY_AUDIENCE', 'SESSION_SECRET', 'PII_ENCRYPTION_KEY'),
+    identity: hasConfiguration('IDENTITY_ISSUER_URL', 'IDENTITY_AUDIENCE', 'IDENTITY_JWKS_URL', 'SESSION_SECRET', 'PII_ENCRYPTION_KEY'),
     database: hasConfiguration('DATABASE_URL'),
     queue: hasConfiguration('QUEUE_URL'),
     billing: hasConfiguration('PAYMENT_PROVIDER', 'PAYMENT_WEBHOOK_SECRET'),
@@ -495,6 +496,7 @@ function readReferralContext(req: express.Request): Record<string, string> {
 async function startServer() {
   const app = express();
   const database = createPostgresBoundary();
+  const identityVerifier = createOidcIdentityVerifier();
   databaseRuntimeStatus = database.status();
   if (database.configured) await database.probe();
   databaseRuntimeStatus = database.status();
@@ -650,12 +652,33 @@ async function startServer() {
   // --------------------------------------------------------------------------
 
   // Current User Session
-  app.get('/api/auth/session', (req, res) => {
-    if (!financialDemoEnabled) return financialUnavailable(res);
+  app.get('/api/auth/session', async (req, res) => {
+    if (!financialDemoEnabled) {
+      if (identityVerifier.status() !== 'CONFIGURED') return financialUnavailable(res);
+      try {
+        const principal = await identityVerifier.authenticate(req.get('authorization'));
+        return res.json({
+          user: {
+            id: principal.subject,
+            email: principal.email,
+            role: principal.roles[0] ?? 'USER',
+            roles: principal.roles,
+            identitySource: 'OIDC'
+          }
+        });
+      } catch (error) {
+        const code = error instanceof Error ? error.message : 'IDENTITY_UNAUTHORIZED';
+        return res.status(code === 'IDENTITY_NOT_CONFIGURED' ? 503 : 401).json({
+          error: code === 'IDENTITY_NOT_CONFIGURED' ? 'IDENTITY_NOT_CONNECTED' : 'IDENTITY_UNAUTHORIZED',
+          status: code === 'IDENTITY_NOT_CONFIGURED' ? 'NOT_CONNECTED' : 'UNAUTHORIZED',
+          message: code === 'IDENTITY_NOT_CONFIGURED' ? 'Identity provider не підключений.' : 'Потрібен дійсний bearer token.'
+        });
+      }
+    }
     const partner = partners.get(demoPartnerId);
     const wallet = calculateWallet(demoPartnerId);
 
-    res.json({
+    return res.json({
       user: {
         id: 'usr-demo-01',
         email: 'partner@sirenua.com',
@@ -664,7 +687,8 @@ async function startServer() {
         partnerProfile: partner,
         wallet,
         isKycVerified: true,
-        taxId: '••••2019'
+        taxId: '••••2019',
+        identitySource: 'DEMO_ONLY'
       }
     });
   });
