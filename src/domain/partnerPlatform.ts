@@ -697,6 +697,8 @@ export class InMemoryPartnerPlatform {
   private readonly payments = new Map<string, PaymentProcessingResult>();
   private readonly paymentFingerprints = new Map<string, string>();
   private readonly commissions = new Map<string, CommissionSnapshot>();
+  private readonly qualifiedPaymentsByAttribution = new Map<string, Set<string>>();
+  private readonly paymentAttributionIds = new Map<string, string>();
 
   constructor(
     ledger = new ImmutableLedger(),
@@ -739,7 +741,10 @@ export class InMemoryPartnerPlatform {
     }
     if (!moves.length) return [];
     this.ledger.moveBuckets(moves);
-    if (result.directPartnerId) {
+    const attributionId = this.paymentAttributionIds.get(paymentId);
+    const activePayments = attributionId ? this.qualifiedPaymentsByAttribution.get(attributionId) : undefined;
+    if (activePayments) activePayments.delete(paymentId);
+    if (result.directPartnerId && activePayments?.size === 0) {
       const direct = this.partners.get(result.directPartnerId);
       if (direct && direct.qualifiedActivePaidL1 > 0) {
         direct.qualifiedActivePaidL1 -= 1;
@@ -789,10 +794,11 @@ export class InMemoryPartnerPlatform {
     if (!direct) throw new Error('DIRECT_PARTNER_NOT_FOUND');
     const second = input.attribution.secondLevelPartnerId ? this.partners.get(input.attribution.secondLevelPartnerId) : undefined;
     const previousDirect = { ...direct };
+    const attributionPayments = this.qualifiedPaymentsByAttribution.get(input.attribution.id) ?? new Set<string>();
+    const firstQualifiedPayment = attributionPayments.size === 0;
     // Renewals pay commission but must not count the same attributed user as
     // another qualified personal L1. The first qualified payment is the only
     // event that changes the rank counter.
-    const firstQualifiedPayment = !input.attribution.qualifiedAt;
     if (firstQualifiedPayment) direct.qualifiedActivePaidL1 += 1;
     const directRule = resolveRank(direct.qualifiedActivePaidL1, this.rankRules) ?? this.rankRules[0];
     if (firstQualifiedPayment) {
@@ -839,6 +845,9 @@ export class InMemoryPartnerPlatform {
     for (const snapshot of snapshots) {
       this.commissions.set(snapshot.id, snapshot);
     }
+    attributionPayments.add(input.id);
+    this.qualifiedPaymentsByAttribution.set(input.attribution.id, attributionPayments);
+    this.paymentAttributionIds.set(input.id, input.attribution.id);
     return this.storeResult({ paymentId: input.id, status: 'QUALIFIED', reason: 'PAYMENT_QUALIFIED', qcb, commissions: snapshots, directPartnerId: direct.id }, fingerprint);
   }
 

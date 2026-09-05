@@ -171,8 +171,10 @@ platform.releaseHold(paidResult.commissions[0].id, '2026-10-02T00:00:00.000Z');
 assert.equal(platform.getCommission(paidResult.commissions[0].id)?.state, 'AVAILABLE');
 platform.reversePayment('paid-payment', 'REFUND', '2026-10-03T00:00:00.000Z');
 assert.equal(platform.getCommission(paidResult.commissions[0].id)?.state, 'REVERSED');
-assert.deepEqual(platform.getPartner('p1'), { id: 'p1', qualifiedActivePaidL1: 0, rank: 'STARTER', rankState: 'BELOW_THRESHOLD' });
+assert.deepEqual(platform.getPartner('p1'), { id: 'p1', qualifiedActivePaidL1: 1, rank: 'STARTER', rankState: 'ACTIVE' }, 'first payment reversal must preserve rank while renewal remains active');
 assert.deepEqual(platform.reversePayment('paid-payment', 'REFUND', '2026-10-04T00:00:00.000Z'), [], 'a repeated reversal must be idempotent');
+platform.reversePayment('renewal-payment', 'CHARGEBACK', '2026-11-03T00:00:00.000Z');
+assert.deepEqual(platform.getPartner('p1'), { id: 'p1', qualifiedActivePaidL1: 0, rank: 'STARTER', rankState: 'BELOW_THRESHOLD' });
 assert.equal(platform.getPartner('p1')?.qualifiedActivePaidL1, 0);
 
 const webhooks = new WebhookInbox();
