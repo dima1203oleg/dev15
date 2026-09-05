@@ -814,6 +814,11 @@ export interface PayoutEligibilityInput {
   compliance: 'OK' | 'REVIEW' | 'BLOCKED';
   fraud: 'OK' | 'REVIEW' | 'BLOCKED';
   payoutMethod: 'VERIFIED' | 'MISSING' | 'FAILED';
+  feeQuote?: {
+    providerFee: Money;
+    fxFee?: Money;
+    withholding?: Money;
+  };
   asOf?: string;
 }
 
@@ -835,7 +840,18 @@ export function checkPayoutEligibility(input: PayoutEligibilityInput): PayoutChe
     throw error;
   }
   if (input.requested.currency !== input.available.currency || input.requested.amountMinor > input.available.amountMinor) return { allowed: false, code: 'INSUFFICIENT_AVAILABLE_BALANCE', minimumPayout };
-  if (input.requested.amountMinor < minimumPayout.amountMinor) return { allowed: false, code: 'BELOW_MINIMUM_PAYOUT', minimumPayout };
+  if (!input.policy.requestedGrossMinimum) {
+    if (!input.feeQuote) return { allowed: false, code: 'PAYOUT_FEE_QUOTE_REQUIRED', minimumPayout };
+    const deductions = [input.feeQuote.providerFee, input.feeQuote.fxFee, input.feeQuote.withholding].filter((fee): fee is Money => fee !== undefined);
+    for (const fee of deductions) {
+      assertMoney(fee);
+      if (fee.currency !== input.requested.currency) throw new Error('CURRENCY_MISMATCH');
+    }
+    const netAmountMinor = input.requested.amountMinor - deductions.reduce((sum, fee) => sum + fee.amountMinor, 0n);
+    if (netAmountMinor < minimumPayout.amountMinor) return { allowed: false, code: 'BELOW_MINIMUM_NET_PAYOUT', minimumPayout };
+  } else if (input.requested.amountMinor < minimumPayout.amountMinor) {
+    return { allowed: false, code: 'BELOW_MINIMUM_PAYOUT', minimumPayout };
+  }
   if (input.kyc !== 'VERIFIED') return { allowed: false, code: 'KYC_REQUIRED', minimumPayout };
   if (input.compliance !== 'OK') return { allowed: false, code: 'COMPLIANCE_REVIEW', minimumPayout };
   if (input.fraud !== 'OK') return { allowed: false, code: 'FRAUD_REVIEW', minimumPayout };

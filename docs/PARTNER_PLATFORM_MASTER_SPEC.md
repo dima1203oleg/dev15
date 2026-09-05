@@ -37,8 +37,9 @@ The implementation boundary is `src/domain/partnerPlatform.ts`. It is framework-
 11. Provider fee, FX fee and withholding are shown before confirmation and are borne by the partner according to policy.
 12. Auto-payout is allowed only after KYC, payout-method, compliance and fraud gates pass.
 13. Auto-payout cadence is explicit: `THRESHOLD` requires the available threshold; `MONTHLY` requires a scheduler-provided due signal. It must never run merely because a balance happens to be above threshold.
-14. Duplicate payment, commission, payout and webhook deliveries must be idempotent. A duplicate payment id with a changed normalized payload is an explicit idempotency conflict, not a successful retry.
-15. Rank, achievements, Ambassador status and leaderboard position are separate entities. Achievements do not change compensation by default.
+14. Payout minimum policy is explicit: gross-minimum checks compare the requested amount; net-minimum checks require a provider fee quote and compare the deterministic post-fee amount. No net minimum is inferred without a quote.
+15. Duplicate payment, commission, payout and webhook deliveries must be idempotent. A duplicate payment id with a changed normalized payload is an explicit idempotency conflict, not a successful retry.
+16. Rank, achievements, Ambassador status and leaderboard position are separate entities. Achievements do not change compensation by default.
 
 ## Core lifecycle
 
