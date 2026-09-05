@@ -17,6 +17,7 @@ const referralCode = `HTTP_${suffix}`;
 const payoutMethodId = `payout-method-${suffix}`;
 const payoutRequestId = `payout-request-${suffix}`;
 const ruleVersion = `comp-http-${suffix}`;
+let subscriptionId;
 const now = new Date().toISOString();
 
 const { privateKey, publicKey } = await generateKeyPair('RS256');
@@ -112,6 +113,23 @@ try {
   assert.equal(session.body.user.id, userId);
   assert.deepEqual(session.body.user.roles, ['PARTNER']);
 
+  const noSubscription = await request('/api/subscription');
+  assert.equal(noSubscription.response.status, 404);
+  const trial = await request('/api/subscription/trial', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' }
+  });
+  assert.equal(trial.response.status, 201);
+  assert.equal(trial.body.status, 'CREATED');
+  assert.equal(trial.body.subscription.state, 'TRIAL_ACTIVE');
+  assert.equal(trial.body.subscription.planCode, 'PREMIUM_MONTHLY');
+  subscriptionId = trial.body.subscription.id;
+  assert.equal(new Date(trial.body.subscription.trialEndsAt).getTime() - new Date(trial.body.subscription.createdAt).getTime(), 30 * 24 * 60 * 60 * 1000);
+  const reminders = await db.query(`SELECT notification_type FROM notification_jobs WHERE recipient_id = $1 ORDER BY notification_type`, [userId]);
+  assert.deepEqual(reminders.rows.map((row) => row.notification_type), ['TRIAL_T_MINUS_1', 'TRIAL_T_MINUS_3', 'TRIAL_T_MINUS_7']);
+  const duplicateTrial = await request('/api/subscription/trial', { method: 'POST' });
+  assert.equal(duplicateTrial.response.status, 409);
+
   const dashboard = await request('/api/partner/dashboard');
   assert.equal(dashboard.response.status, 200);
   assert.equal(dashboard.body.partner.id, partnerId);
@@ -204,6 +222,11 @@ try {
   await db.query('DELETE FROM partner_campaign_links WHERE partner_id = $1', [partnerId]).catch(() => {});
   await db.query('DELETE FROM payout_requests WHERE id = $1', [payoutRequestId]).catch(() => {});
   await db.query('DELETE FROM payout_methods WHERE id = $1', [payoutMethodId]).catch(() => {});
+  if (subscriptionId) {
+    await db.query('DELETE FROM subscription_events WHERE subscription_id = $1', [subscriptionId]).catch(() => {});
+    await db.query('DELETE FROM notification_jobs WHERE recipient_id = $1', [userId]).catch(() => {});
+    await db.query('DELETE FROM subscriptions WHERE id = $1', [subscriptionId]).catch(() => {});
+  }
   await db.query('DELETE FROM audit_logs WHERE target_entity = $1 AND target_id = $2', ['FINANCIAL_RULE_VERSION', ruleVersion]).catch(() => {});
   await db.query('DELETE FROM financial_rule_versions WHERE version = $1', [ruleVersion]).catch(() => {});
   await db.query('DELETE FROM partners WHERE id = $1', [partnerId]).catch(() => {});

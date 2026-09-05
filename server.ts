@@ -25,6 +25,7 @@ import { createPostgresBoundary, DatabaseRuntimeStatus } from './src/server/post
 import { createOidcIdentityVerifier, IdentityRole } from './src/server/identityBoundary';
 import { PostgresPartnerRepository } from './src/server/postgresPartnerRepository';
 import { FinancialRuleRepository } from './src/server/financialRuleRepository';
+import { SubscriptionRepository } from './src/server/subscriptionRepository';
 
 // ============================================================================
 // IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
@@ -529,6 +530,7 @@ async function startServer() {
   const identityVerifier = createOidcIdentityVerifier();
   const partnerRepository = new PostgresPartnerRepository(database);
   const financialRuleRepository = new FinancialRuleRepository(database);
+  const subscriptionRepository = new SubscriptionRepository(database);
   databaseRuntimeStatus = database.status();
   if (database.configured) await database.probe();
   databaseRuntimeStatus = database.status();
@@ -748,6 +750,41 @@ async function startServer() {
         identitySource: 'DEMO_ONLY'
       }
     });
+  });
+
+  app.get('/api/subscription', requireRoles('USER', 'PARTNER', 'AMBASSADOR'), async (req, res) => {
+    if (financialDemoEnabled || databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+    const principal = res.locals.principal as { subject?: unknown } | undefined;
+    if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+    try {
+      const subscription = await subscriptionRepository.getForUser(principal.subject);
+      if (!subscription) return res.status(404).json({ error: 'SUBSCRIPTION_NOT_FOUND', message: 'Підписку для цього користувача не знайдено.' });
+      return res.json({ subscription });
+    } catch (error) {
+      console.error('[SIREN UA] subscription read failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+      return res.status(503).json({ error: 'SUBSCRIPTION_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Subscription data temporarily unavailable.' });
+    }
+  });
+
+  app.post('/api/subscription/trial', requireRoles('USER', 'PARTNER', 'AMBASSADOR'), async (req, res) => {
+    if (financialDemoEnabled || databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+    const principal = res.locals.principal as { subject?: unknown } | undefined;
+    if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+    try {
+      const existing = await subscriptionRepository.getForUser(principal.subject);
+      if (existing) return res.status(409).json({ error: 'SUBSCRIPTION_ALREADY_EXISTS', message: 'Для цього користувача вже існує subscription record.' });
+      const result = await subscriptionRepository.startTrial({
+        id: randomUUID(),
+        userId: principal.subject,
+        planCode: 'PREMIUM_MONTHLY',
+        startedAt: new Date().toISOString()
+      });
+      return res.status(201).json({ subscription: result.subscription, status: result.status });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'TRIAL_START_FAILED';
+      const status = code === 'USER_NOT_FOUND' ? 404 : code === 'SUBSCRIPTION_IDEMPOTENCY_CONFLICT' ? 409 : 503;
+      return res.status(status).json({ error: code, message: 'Не вдалося активувати trial.' });
+    }
   });
 
   // Switch Demo Role (For seamless UX testing)

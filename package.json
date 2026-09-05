@@ -13,6 +13,7 @@
     "test:runtime-boundary": "npm run build && node scripts/runtime-boundary-smoke.mjs",
     "test:database-boundary": "npm run build && node scripts/database-boundary-smoke.mjs",
     "test:postgres-repository": "tsx scripts/postgres-repository-smoke.ts",
+    "test:postgres-subscription": "tsx scripts/postgres-subscription-smoke.ts",
     "test:postgres-http": "node scripts/postgres-http-smoke.mjs",
     "test:identity": "tsx scripts/identity-acceptance-tests.ts",
     "test:demo-api": "npm run build && node scripts/demo-api-smoke.mjs",
