@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { Header } from './components/Header';
 import { AlertTicker } from './components/AlertTicker';
@@ -13,7 +13,7 @@ import { PartnerDashboardModal } from './components/PartnerDashboardModal';
 import { AdminDashboardModal } from './components/AdminDashboardModal';
 import { Footer } from './components/Footer';
 import { ThreatEvent, RegionAlert, Shelter } from './types';
-import { createSpatialModel } from './data/spatialModel';
+import { createSpatialModel, isValidThreatPayload } from './data/spatialModel';
 
 type ThreatDataMode = 'LIVE' | 'DEMO_DATA' | 'NOT_CONNECTED';
 
@@ -44,6 +44,8 @@ export default function App() {
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<string>('USER');
   const [currentRank, setCurrentRank] = useState<string>('—');
+  const threatSyncRequestRef = useRef(0);
+  const activeThreatRequestRef = useRef<AbortController | null>(null);
 
   const clearThreatState = () => {
     setIsThreatServerOnline(false);
@@ -54,8 +56,8 @@ export default function App() {
     setShelters([]);
   };
 
-  const readJson = async (url: string): Promise<{ response: Response; body: any }> => {
-    const response = await fetch(url);
+  const readJson = async (url: string, signal: AbortSignal): Promise<{ response: Response; body: unknown }> => {
+    const response = await fetch(url, { signal });
     const contentType = response.headers.get('content-type') ?? '';
     if (!contentType.includes('application/json')) throw new Error(`NON_JSON_RESPONSE:${url}`);
     const body = await response.json();
@@ -64,50 +66,68 @@ export default function App() {
 
   // Fetch threat feed on mount and on periodic sync
   const fetchThreatData = async () => {
+    const requestId = ++threatSyncRequestRef.current;
+    activeThreatRequestRef.current?.abort();
+    const controller = new AbortController();
+    activeThreatRequestRef.current = controller;
+    const timeoutId = window.setTimeout(() => controller.abort(), 8_000);
+    const isCurrentRequest = () => threatSyncRequestRef.current === requestId;
     try {
-      const statusResult = await readJson('/api/threats/status');
-      const statusRes = statusResult.body;
+      const statusResult = await readJson('/api/threats/status', controller.signal);
+      const statusRes = statusResult.body as { connected?: unknown; mode?: unknown; lastSyncAt?: unknown };
 
       // A disconnected status is a valid, explicit boundary. Do not request
       // or retain any cached-looking payloads after it is reported.
-      if (statusResult.response.status !== 200 || statusRes.connected !== true) {
-        clearThreatState();
+      if (statusResult.response.status !== 200 || statusRes.connected !== true || (statusRes.mode !== 'LIVE' && statusRes.mode !== 'DEMO_DATA')) {
+        if (isCurrentRequest()) clearThreatState();
         return;
       }
 
       const [threatsResult, regionsResult, sheltersResult] = await Promise.all([
-        readJson('/api/threats/live'),
-        readJson('/api/threats/regions'),
-        readJson('/api/threats/shelters')
+        readJson('/api/threats/live', controller.signal),
+        readJson('/api/threats/regions', controller.signal),
+        readJson('/api/threats/shelters', controller.signal)
       ]);
       if (!threatsResult.response.ok || !regionsResult.response.ok || !sheltersResult.response.ok) {
         throw new Error('INCOMPLETE_THREAT_PAYLOAD');
       }
 
-      const threatsRes = threatsResult.body;
-      const regionsRes = regionsResult.body;
-      const sheltersRes = sheltersResult.body;
-      if (!Array.isArray(threatsRes.threats) || !Array.isArray(regionsRes.regions) || !Array.isArray(sheltersRes.shelters)) {
+      const combinedPayload = {
+        threats: (threatsResult.body as { threats?: unknown }).threats,
+        regions: (regionsResult.body as { regions?: unknown }).regions,
+        shelters: (sheltersResult.body as { shelters?: unknown }).shelters
+      };
+      if (!isValidThreatPayload(combinedPayload) || !isCurrentRequest()) {
         throw new Error('INVALID_THREAT_PAYLOAD');
       }
 
       setIsThreatServerOnline(true);
-      setThreatDataMode(statusRes.mode === 'DEMO_DATA' ? 'DEMO_DATA' : 'LIVE');
+      setThreatDataMode(statusRes.mode);
       setLastSyncAt(typeof statusRes.lastSyncAt === 'string' ? statusRes.lastSyncAt : null);
-      setThreats(threatsRes.threats);
-      setRegions(regionsRes.regions);
-      setShelters(sheltersRes.shelters);
+      setThreats(combinedPayload.threats);
+      setRegions(combinedPayload.regions);
+      setShelters(combinedPayload.shelters);
     } catch (err) {
       // Never leave the previous feed rendered as if it were still current.
-      clearThreatState();
-      console.error('Error fetching situational data:', err);
+      if (isCurrentRequest()) {
+        clearThreatState();
+        if (!(err instanceof DOMException && err.name === 'AbortError')) console.error('Error fetching situational data:', err);
+      }
+    } finally {
+      window.clearTimeout(timeoutId);
+      if (isCurrentRequest()) activeThreatRequestRef.current = null;
     }
   };
 
   useEffect(() => {
     fetchThreatData();
     const interval = setInterval(fetchThreatData, 12000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      threatSyncRequestRef.current += 1;
+      activeThreatRequestRef.current?.abort();
+      activeThreatRequestRef.current = null;
+    };
   }, []);
 
   const spatialModel = useMemo(() => createSpatialModel({

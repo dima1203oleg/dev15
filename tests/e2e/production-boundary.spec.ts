@@ -179,4 +179,31 @@ test.describe('SIREN UA production boundary', () => {
     await expect(page.getByText('DEMO DATA', { exact: true })).toHaveCount(0);
     await expect(page.getByText(/ПІДКЛЮЧЕННЯ ОЧІКУЄТЬСЯ/)).toBeVisible();
   });
+
+  test('rejects malformed connected threat payloads instead of rendering partial data', async ({ page }) => {
+    await page.route('**/api/threats/status', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ connected: true, mode: 'LIVE', lastSyncAt: '2026-09-05T10:00:00.000Z' }),
+      });
+    });
+    await page.route('**/api/threats/live', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ threats: [{ id: 'bad-event', currentLat: 'not-a-number' }] }),
+      });
+    });
+    await page.route('**/api/threats/regions', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ regions: [] }) });
+    });
+    await page.route('**/api/threats/shelters', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ shelters: [] }) });
+    });
+
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('NOT CONNECTED', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('bad-event', { exact: true })).toHaveCount(0);
+  });
 });

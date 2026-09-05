@@ -88,6 +88,57 @@ export interface ThreatSceneModel {
   timeline: TimelineEvent[];
 }
 
+const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+const isString = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
+
+function isValidThreatEvent(value: unknown): value is ThreatEvent {
+  if (!value || typeof value !== 'object') return false;
+  const threat = value as ThreatEvent;
+  return isString(threat.id)
+    && isString(threat.categoryLabel)
+    && isFiniteNumber(threat.currentLat)
+    && isFiniteNumber(threat.currentLng)
+    && isString(threat.updatedAt)
+    && isString(threat.source)
+    && Array.isArray(threat.trajectory)
+    && threat.trajectory.every((point) => point && isFiniteNumber(point.lat) && isFiniteNumber(point.lng) && isFiniteNumber(point.timeOffsetMin) && typeof point.isConfirmed === 'boolean');
+}
+
+function isValidRegion(value: unknown): value is RegionAlert {
+  if (!value || typeof value !== 'object') return false;
+  const region = value as RegionAlert;
+  return isString(region.id)
+    && isString(region.name)
+    && isString(region.riskLevel)
+    && Number.isInteger(region.threatCount)
+    && region.threatCount >= 0
+    && Number.isInteger(region.sheltersCount)
+    && region.sheltersCount >= 0
+    && Array.isArray(region.districts);
+}
+
+function isValidShelter(value: unknown): value is Shelter {
+  if (!value || typeof value !== 'object') return false;
+  const shelter = value as Shelter;
+  return isString(shelter.id)
+    && isString(shelter.name)
+    && isString(shelter.address)
+    && isFiniteNumber(shelter.lat)
+    && isFiniteNumber(shelter.lng)
+    && (shelter.distanceMeters === undefined || isFiniteNumber(shelter.distanceMeters));
+}
+
+export function isValidThreatPayload(value: unknown): value is { threats: ThreatEvent[]; regions: RegionAlert[]; shelters: Shelter[] } {
+  if (!value || typeof value !== 'object') return false;
+  const payload = value as { threats?: unknown; regions?: unknown; shelters?: unknown };
+  return Array.isArray(payload.threats)
+    && Array.isArray(payload.regions)
+    && Array.isArray(payload.shelters)
+    && payload.threats.every(isValidThreatEvent)
+    && payload.regions.every(isValidRegion)
+    && payload.shelters.every(isValidShelter);
+}
+
 export function createSpatialModel(args: {
   dataMode: SpatialDataMode;
   threats: ThreatEvent[];
