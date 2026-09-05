@@ -52,15 +52,23 @@ export class AdminRepository {
     const [subscription, revenue, commissions, liabilities, payout, risk, topPartners] = await Promise.all([
       this.database.query(`
         SELECT
-          COUNT(*) FILTER (WHERE state IN ('TRIAL_ACTIVE', 'TRIAL_ENDING'))::int AS active_trials,
-          COUNT(DISTINCT qp.payment_id)::int AS paid_subscribers,
-          COUNT(DISTINCT CASE WHEN s.state = 'PREMIUM_ACTIVE' THEN s.user_id END)::int AS trial_to_paid_users
-        FROM subscriptions s
-        LEFT JOIN qualified_payments qp ON qp.payment_id IN (SELECT p.id FROM payments p WHERE p.user_id = s.user_id)
+          (SELECT COUNT(*) FROM subscriptions WHERE state IN ('TRIAL_ACTIVE', 'TRIAL_ENDING'))::int AS active_trials,
+          (SELECT COUNT(DISTINCT user_id) FROM subscriptions WHERE state = 'PREMIUM_ACTIVE')::int AS paid_subscribers,
+          (SELECT COUNT(DISTINCT paid.user_id)
+           FROM subscriptions paid
+           WHERE paid.state = 'PREMIUM_ACTIVE'
+             AND EXISTS (SELECT 1 FROM subscriptions trial WHERE trial.user_id = paid.user_id AND trial.trial_ends_at IS NOT NULL))::int AS trial_to_paid_users
       `),
       this.database.query(`
-        SELECT currency, COALESCE(SUM(qcb_amount_minor), 0)::numeric AS amount_minor
-        FROM qualified_payments GROUP BY currency ORDER BY currency
+        SELECT qp.currency,
+               COALESCE(SUM(GREATEST(qp.qcb_amount_minor - COALESCE(adjustments.amount_minor, 0), 0)), 0)::numeric AS amount_minor
+        FROM qualified_payments qp
+        LEFT JOIN (
+          SELECT payment_id, SUM(amount_minor)::bigint AS amount_minor
+          FROM payment_adjustments
+          GROUP BY payment_id
+        ) adjustments ON adjustments.payment_id = qp.payment_id
+        GROUP BY qp.currency ORDER BY qp.currency
       `),
       this.database.query(`
         SELECT currency, COALESCE(SUM(rounded_commission_minor) FILTER (WHERE state NOT IN ('REVERSED', 'ADJUSTED')), 0)::numeric AS amount_minor

@@ -18,10 +18,14 @@ Referral links use `GET /r/:referralCode`. In the development financial demo thi
 
 `GET /api/partner/network?limit=20&offset=0` returns aggregate counts plus bounded, privacy-safe L1/L2 pages. `limit` is capped server-side at 50; the browser never needs to receive an unbounded referral tree. `hasMore` indicates whether another page is available.
 
+`GET /api/partner/achievements`, `/api/partner/ambassador` and `/api/partner/leaderboard?metric=MONTHLY` expose durable non-financial partner projections. Achievement unlocks and Ambassador eligibility are synchronized transactionally with qualified payments; leaderboard reads contain only public-opt-in entries and return no synthetic rows when a snapshot is not ready.
+
 The durable read model is implemented in `src/server/postgresPartnerRepository.ts` and reads wallet balances only from `wallet_projections`. Dashboard, network, ledger and payout-history reads use this boundary when the production prerequisites are present; payout creation still fails closed until a verified provider adapter and transactional write orchestration are supplied.
 
 `GET /api/partner/payouts` returns payout history with masked destinations only (for example `•••• 6789`); full payout instruments must remain server-side and provider-scoped.
 
 `GET /api/admin/financial-rules` and `POST /api/admin/financial-rules` plus `/validate`, `/approve` and `/schedule` expose the authenticated maker/checker rule lifecycle. They require PostgreSQL + OIDC roles and never mutate wallet balances; each transition is audited transactionally.
+
+`GET /api/admin/overview` exposes a read-only durable operational projection: trials, qualified paid users, qualified revenue, partner commission liabilities, pending payouts, fraud/quality review counts, chargebacks and privacy-safe partner ranking. MRR and contribution margin remain explicitly unavailable until a real price book and settlement-cost sources are connected.
 
 The built-server demo contract is covered by `npm run test:demo-api`: it checks the referral URL, bounded network response, privacy stripping and attribution cookie/redirect.

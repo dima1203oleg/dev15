@@ -167,6 +167,8 @@ try {
   assert.equal(adminOverview.response.status, 200);
   assert.equal(adminOverview.body.status, 'LIVE');
   assert.equal(adminOverview.body.subscriptions.activeTrials, 1);
+  assert.equal(adminOverview.body.subscriptions.paidSubscribers, 0);
+  assert.equal(adminOverview.body.subscriptions.trialToPaidUsers, 0);
   assert.equal(adminOverview.body.finance.mrr, null);
   assert.ok(Array.isArray(adminOverview.body.finance.unavailableMetrics));
 
