@@ -11,9 +11,11 @@
     "test:financial": "tsx scripts/financial-acceptance-tests.ts",
     "test:spatial": "tsx scripts/spatial-acceptance-tests.ts",
     "test:runtime-boundary": "npm run build && node scripts/runtime-boundary-smoke.mjs",
+    "test:database-boundary": "npm run build && node scripts/database-boundary-smoke.mjs",
     "test:demo-api": "npm run build && node scripts/demo-api-smoke.mjs",
     "test:e2e": "playwright test",
-    "test:performance": "npm run build && node scripts/performance-budget.mjs"
+    "test:performance": "npm run build && node scripts/performance-budget.mjs",
+    "db:migrate": "node scripts/migrate-postgres.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -26,6 +28,7 @@
     "express": "^5.2.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "pg": "^8.16.3",
     "qrcode": "^1.5.4",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",

@@ -21,6 +21,7 @@ import {
   percentHalfUp,
   validateAllocationCap
 } from './src/domain/partnerPlatform';
+import { createPostgresBoundary, DatabaseRuntimeStatus } from './src/server/postgresBoundary';
 
 // ============================================================================
 // IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
@@ -229,6 +230,7 @@ let payoutRequests: PayoutRequest[] = [];
 let auditLogs: AuditLogItem[] = [];
 let sandboxSequence = 0;
 const payoutProvider = new NotConnectedPayoutProvider();
+let databaseRuntimeStatus: DatabaseRuntimeStatus = 'NOT_CONFIGURED';
 
 type ConfigurationState = 'CONFIGURED' | 'NOT_CONFIGURED';
 
@@ -492,6 +494,10 @@ function readReferralContext(req: express.Request): Record<string, string> {
 
 async function startServer() {
   const app = express();
+  const database = createPostgresBoundary();
+  databaseRuntimeStatus = database.status();
+  if (database.configured) await database.probe();
+  databaseRuntimeStatus = database.status();
   const configuredPort = Number.parseInt(process.env.PORT ?? '3000', 10);
   if (!Number.isInteger(configuredPort) || configuredPort < 1 || configuredPort > 65535) {
     throw new Error('PORT must be an integer between 1 and 65535.');
@@ -535,20 +541,23 @@ async function startServer() {
   });
 
   app.get('/api/ready', (_req, res) => {
-    const checks: Record<'threatData' | 'financialData' | 'payoutProvider', string> = {
+    const checks: Record<'threatData' | 'financialData' | 'payoutProvider' | 'database', string> = {
       threatData: isThreatServerConnected ? threatDataMode : 'NOT_CONNECTED',
       financialData: financialDemoEnabled ? 'DEMO_DATA' : 'NOT_CONNECTED',
-      payoutProvider: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED'
+      payoutProvider: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED',
+      database: databaseRuntimeStatus
     };
     const configuration = integrationConfiguration();
     const ready = checks.threatData === 'LIVE'
       && checks.financialData === 'CONNECTED'
       && checks.payoutProvider === 'CONNECTED'
+      && checks.database === 'CONNECTED'
       && Object.values(configuration).every((state) => state === 'CONFIGURED');
     res.status(ready ? 200 : 503).json({
       status: ready ? 'ready' : 'not_ready',
       checks,
       configuration,
+      runtime: { database: databaseRuntimeStatus },
       message: ready ? 'Production dependencies are connected.' : 'Потрібні production-інтеграції ще не підключені.'
     });
   });
