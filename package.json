@@ -14,6 +14,7 @@
     "test:database-boundary": "npm run build && node scripts/database-boundary-smoke.mjs",
     "test:postgres-repository": "tsx scripts/postgres-repository-smoke.ts",
     "test:postgres-subscription": "tsx scripts/postgres-subscription-smoke.ts",
+    "test:postgres-financial-rule": "tsx scripts/postgres-financial-rule-smoke.ts",
     "test:postgres-qualified-payment": "tsx scripts/postgres-qualified-payment-smoke.ts",
     "test:postgres-payout": "tsx scripts/postgres-payout-smoke.ts",
     "test:postgres-http": "node scripts/postgres-http-smoke.mjs",

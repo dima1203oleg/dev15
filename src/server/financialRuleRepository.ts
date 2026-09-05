@@ -73,6 +73,19 @@ export class FinancialRuleRepository {
     return result.rows.map(mapRule);
   }
 
+  async getActive(ruleType: string, at: string): Promise<FinancialRuleVersion | null> {
+    const normalizedRuleType = ruleToken(ruleType, 'rule_type');
+    const effectiveAt = requiredIso(at, 'effective_at');
+    const result = await this.database.query(`
+      SELECT version, rule_type, state, value, created_by, approved_by, effective_from, reason, created_at
+      FROM financial_rule_versions
+      WHERE rule_type = $1 AND state = 'ACTIVE' AND effective_from IS NOT NULL AND effective_from <= $2
+      ORDER BY effective_from DESC, created_at DESC, version DESC
+      LIMIT 1
+    `, [normalizedRuleType, effectiveAt]);
+    return result.rows[0] ? mapRule(result.rows[0]) : null;
+  }
+
   async createDraft(input: { version: string; ruleType: string; value: Record<string, unknown>; createdBy: string; reason: string }): Promise<FinancialRuleVersion> {
     const version = ruleToken(input.version, 'version');
     const ruleType = ruleToken(input.ruleType, 'rule_type');
@@ -125,6 +138,39 @@ export class FinancialRuleRepository {
         VALUES ($1, $2, 'FINANCIAL_RULE_VERSION', $3, $4::jsonb, $5::jsonb, $6)
       `, [actor, `FINANCIAL_RULE_${action.toLowerCase()}`, version, auditValue(previous), auditValue(updated), previous.reason]);
       return updated;
+    });
+  }
+
+  /** Activate approved schedules whose effective time has arrived. */
+  async activateDue(at: string, actorId = 'SYSTEM_RULE_ACTIVATOR', limit = 100): Promise<number> {
+    const effectiveAt = requiredIso(at, 'activation_time');
+    const actor = requiredString(actorId, 'actor_id');
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 500) throw new Error('INVALID_RULE_BATCH');
+    return this.database.withTransaction(async (client) => {
+      const due = await client.query(`
+        SELECT version, rule_type, state, value, created_by, approved_by, effective_from, reason, created_at
+        FROM financial_rule_versions
+        WHERE state = 'SCHEDULED' AND effective_from IS NOT NULL AND effective_from <= $1
+        ORDER BY effective_from ASC, created_at ASC, version ASC
+        FOR UPDATE SKIP LOCKED
+        LIMIT $2
+      `, [effectiveAt, limit]);
+      for (const row of due.rows) {
+        const previous = mapRule(row);
+        const result = await client.query(`
+          UPDATE financial_rule_versions
+          SET state = 'ACTIVE'
+          WHERE version = $1 AND state = 'SCHEDULED'
+          RETURNING version, rule_type, state, value, created_by, approved_by, effective_from, reason, created_at
+        `, [previous.version]);
+        if (!result.rows[0]) continue;
+        const activated = mapRule(result.rows[0]);
+        await client.query(`
+          INSERT INTO audit_logs (actor_id, action, target_entity, target_id, previous_value, new_value, reason)
+          VALUES ($1, 'FINANCIAL_RULE_ACTIVATED', 'FINANCIAL_RULE_VERSION', $2, $3::jsonb, $4::jsonb, $5)
+        `, [actor, activated.version, auditValue(previous), auditValue(activated), activated.reason]);
+      }
+      return due.rows.length;
     });
   }
 }
