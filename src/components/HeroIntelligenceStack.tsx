@@ -1,5 +1,7 @@
 import React from 'react';
 import { Clock3, DatabaseZap, Home, MapPinned, Navigation2, ShieldCheck } from 'lucide-react';
+import { ThreatSceneModel } from '../data/spatialModel';
+import { projectTrajectory } from '../utils/spatialProjection';
 
 const layers = [
   { title: 'ТРАЄКТОРІЯ', detail: 'напрямок + прогноз', tone: 'rose', icon: Navigation2 },
@@ -8,8 +10,21 @@ const layers = [
   { title: 'УКРИТТЯ', detail: 'перевірені поруч', tone: 'emerald', icon: Home },
 ];
 
-export const HeroIntelligenceStack: React.FC = () => (
-  <div className="relative mx-auto mt-12 h-[390px] w-full max-w-[560px] lg:col-span-1 lg:mt-0 lg:h-[520px]" aria-label="SIREN Intelligence Prism — візуальна модель шарів ситуації">
+export const HeroIntelligenceStack: React.FC<{ model: ThreatSceneModel }> = ({ model }) => {
+  const leadTrajectory = model.trajectories[0];
+  const liveProjection = model.dataMode === 'LIVE' && leadTrajectory
+    ? projectTrajectory(leadTrajectory.points, leadTrajectory.currentPosition, 600, 400, 40)
+    : null;
+  const demoTrajectory = model.dataMode === 'DEMO_DATA' && model.trajectories.length > 0
+    ? 'M112 250 C180 210 190 145 270 124 S390 115 460 55'
+    : null;
+  const trajectoryPath = liveProjection?.path ?? demoTrajectory;
+  const trajectoryLabel = model.dataMode === 'LIVE'
+    ? (trajectoryPath ? `Реальна траєкторія: ${leadTrajectory?.confidence ?? 'UNKNOWN'}` : 'Геометрія траєкторії не надана')
+    : model.dataMode === 'DEMO_DATA' ? 'ДЕМОНСТРАЦІЙНА траєкторія' : 'Траєкторія очікує джерело даних';
+
+  return (
+  <div className="relative mx-auto mt-12 h-[390px] w-full max-w-[560px] lg:col-span-1 lg:mt-0 lg:h-[520px]" aria-label={`SIREN Intelligence Prism — ${trajectoryLabel}`}>
     <div className="absolute inset-x-8 top-8 h-64 rounded-full bg-cyan-500/10 blur-3xl" />
     <div className="absolute inset-0 siren-grid opacity-60" />
     <div className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/20 [box-shadow:0_0_80px_rgba(34,211,238,0.18),inset_0_0_60px_rgba(34,211,238,0.08)]" />
@@ -41,12 +56,11 @@ export const HeroIntelligenceStack: React.FC = () => (
           </div>
         ))}
 
-        <svg className="pointer-events-none absolute -inset-16 h-[calc(100%+8rem)] w-[calc(100%+8rem)] overflow-visible" viewBox="0 0 600 400" fill="none" aria-hidden="true">
-          <path d="M112 250 C180 210 190 145 270 124 S390 115 460 55" stroke="#fb7185" strokeWidth="2" strokeDasharray="6 8" className="animate-dash-flow" />
-          <path d="M164 304 C240 260 315 290 398 240" stroke="#22d3ee" strokeWidth="1.5" strokeDasharray="3 9" opacity=".8" className="animate-dash-flow" />
-          <circle cx="460" cy="55" r="9" fill="#fb7185" fillOpacity=".25" stroke="#fb7185" />
-          <circle cx="460" cy="55" r="3" fill="#fff" />
-        </svg>
+        {trajectoryPath && <svg className="pointer-events-none absolute -inset-16 h-[calc(100%+8rem)] w-[calc(100%+8rem)] overflow-visible" viewBox="0 0 600 400" fill="none" aria-hidden="true">
+          <path d={trajectoryPath} stroke={model.dataMode === 'LIVE' && leadTrajectory?.confidence === 'CONFIRMED' ? '#34d399' : '#fb7185'} strokeWidth="2" strokeDasharray={model.dataMode === 'LIVE' && leadTrajectory?.confidence === 'CONFIRMED' ? undefined : '6 8'} className={model.dataMode === 'LIVE' ? undefined : 'animate-dash-flow'} />
+          {liveProjection?.currentPoint && <circle cx={liveProjection.currentPoint.x} cy={liveProjection.currentPoint.y} r="7" fill="#fff" />}
+          {model.dataMode === 'DEMO_DATA' && <><circle cx="460" cy="55" r="9" fill="#fb7185" fillOpacity=".25" stroke="#fb7185" /><circle cx="460" cy="55" r="3" fill="#fff" /></>}
+        </svg>}
       </div>
     </div>
 
@@ -63,4 +77,5 @@ export const HeroIntelligenceStack: React.FC = () => (
       CONFIDENCE · TIMESTAMP · SOURCE
     </div>
   </div>
-);
+  );
+};

@@ -181,7 +181,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
           </div>
 
-          <HeroIntelligenceStack />
+          <HeroIntelligenceStack model={model} />
         </div>
 
         {/* ========================================================================= */}

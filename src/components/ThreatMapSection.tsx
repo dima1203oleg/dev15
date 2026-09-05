@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Radio, Compass, Navigation, Clock, MapPin, Shield, AlertTriangle, Layers, Info, CheckCircle2, Play, RefreshCw, Eye } from 'lucide-react';
 import { ThreatEvent, RegionAlert, Shelter } from '../types';
-import { DEFAULT_REGIONS } from '../data/mockData';
 
 interface ThreatMapSectionProps {
   threats: ThreatEvent[];
@@ -28,11 +27,7 @@ export const ThreatMapSection: React.FC<ThreatMapSectionProps> = ({
     if (!showSimulator && activeTab === 'SIMULATOR') setActiveTab('MAP');
   }, [activeTab, showSimulator]);
 
-  const safeRegions = (regions && regions.length > 0)
-    ? regions
-    : threatDataMode === 'DEMO_DATA'
-      ? DEFAULT_REGIONS
-      : [];
+  const safeRegions = regions && regions.length > 0 ? regions : [];
   const selectedRegion = safeRegions.find(r => r.id === selectedRegionId) || safeRegions[0] || {
     id: 'unavailable',
     name: 'Дані регіонів недоступні',
