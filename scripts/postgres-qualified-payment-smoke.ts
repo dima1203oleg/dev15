@@ -15,6 +15,7 @@ const uplinePartnerId = `payment-upline-partner-${suffix}`;
 const attributionId = `payment-attribution-${suffix}`;
 const trialAttributionId = `payment-trial-attribution-${suffix}`;
 const paymentId = `payment-qualified-${suffix}`;
+const renewalPaymentId = `payment-renewal-${suffix}`;
 const capPaymentId = `payment-cap-${suffix}`;
 const trialPaymentId = `payment-trial-${suffix}`;
 const now = '2026-02-01T00:00:00.000Z';
@@ -76,6 +77,21 @@ try {
   assert.deepEqual(rank.rows[0], { qualified_active_paid_l1: 1, rank: 'STARTER', rank_state: 'ACTIVE' });
   const outbox = await database.query(`SELECT COUNT(*)::int AS count FROM event_outbox WHERE aggregate_id = $1 OR aggregate_id = ANY($2::text[])`, [paymentId, qualified.commissionIds]);
   assert.equal(outbox.rows[0].count, 3);
+
+  const renewal = await repository.process({
+    ...input,
+    paymentId: renewalPaymentId,
+    idempotencyKey: `qualified-payment-renewal:${suffix}`,
+    providerPaymentId: `provider-renewal-payment-${suffix}`
+  });
+  assert.equal(renewal.status, 'QUALIFIED');
+  assert.equal(renewal.commissionIds.length, 2);
+  const renewalRank = await database.query(`SELECT qualified_active_paid_l1, rank, rank_state FROM partners WHERE id = $1`, [directPartnerId]);
+  assert.deepEqual(renewalRank.rows[0], { qualified_active_paid_l1: 1, rank: 'STARTER', rank_state: 'ACTIVE' });
+  const renewalDirectProjection = await database.query(`SELECT held_minor FROM wallet_projections WHERE partner_id = $1`, [directPartnerId]);
+  assert.equal(renewalDirectProjection.rows[0].held_minor, '100');
+  const renewalUplineProjection = await database.query(`SELECT held_minor FROM wallet_projections WHERE partner_id = $1`, [uplinePartnerId]);
+  assert.equal(renewalUplineProjection.rows[0].held_minor, '400');
 
   const capFailed = await repository.process({
     ...input,

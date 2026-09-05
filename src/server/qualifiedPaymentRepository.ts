@@ -235,6 +235,7 @@ export class QualifiedPaymentRepository {
         result = { status: 'NOT_QUALIFIED', paymentId, reason: qualification.reason, qcbAmountMinor: qualification.qcb.amountMinor.toString(), currency: qualification.qcb.currency, commissionIds: [] };
         await writeOutbox(client, 'PAYMENT_NOT_QUALIFIED', 'PAYMENT', paymentId, { reason: result.reason, userId }, paidAt);
       } else {
+        const wasAlreadyQualified = Boolean(attribution.qualifiedAt);
         const allocations: Array<{ partnerId: string; referralLevel: 'L1' | 'L2'; rateBps: number }> = [
           { partnerId: attribution.directPartnerId, referralLevel: 'L1' as const, rateBps: directContext.rateBps }
         ];
@@ -248,21 +249,23 @@ export class QualifiedPaymentRepository {
           UPDATE referral_attributions SET status = 'LOCKED', qualified_at = COALESCE(qualified_at, $2)
           WHERE id = $1
         `, [attributionId, paidAt]);
-        const nextCount = directContext.count + 1;
-        const evaluation = evaluateRank(nextCount, { rank: directContext.rank, state: directContext.rankState, graceCyclesInWindow: directContext.graceCycles }, undefined, DEFAULT_RANK_RULES);
-        const nextRank = evaluation.rank ?? directContext.rank;
-        const rankEventId = randomUUID();
-        await client.query(`
-          UPDATE partners SET qualified_active_paid_l1 = $2, rank = $3, rank_state = $4 WHERE id = $1
-        `, [attribution.directPartnerId, nextCount, nextRank, evaluation.state]);
-        await client.query(`
-          INSERT INTO partner_rank_snapshots (id, partner_id, qualified_active_paid_l1, rank, rank_state, rate_bps, grace_cycles_in_window, rule_version, reason, occurred_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'QUALIFIED_L1_PAYMENT', $9)
-        `, [randomUUID(), attribution.directPartnerId, nextCount, nextRank, evaluation.state, evaluation.rateBps, directContext.graceCycles, ruleVersion, paidAt]);
-        await client.query(`
-          INSERT INTO rank_events (id, partner_id, event_type, previous_rank, new_rank, previous_state, new_state, qualified_active_paid_l1, rule_version, idempotency_key, payload, occurred_at)
-          VALUES ($1, $2, 'QUALIFIED_L1_PAYMENT', $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11)
-        `, [rankEventId, attribution.directPartnerId, directContext.rank, nextRank, directContext.rankState, evaluation.state, nextCount, ruleVersion, `rank:payment:${paymentId}`, JSON.stringify({ rateBps: evaluation.rateBps, reason: 'QUALIFIED_L1_PAYMENT' }), paidAt]);
+        if (!wasAlreadyQualified) {
+          const nextCount = directContext.count + 1;
+          const evaluation = evaluateRank(nextCount, { rank: directContext.rank, state: directContext.rankState, graceCyclesInWindow: directContext.graceCycles }, undefined, DEFAULT_RANK_RULES);
+          const nextRank = evaluation.rank ?? directContext.rank;
+          const rankEventId = randomUUID();
+          await client.query(`
+            UPDATE partners SET qualified_active_paid_l1 = $2, rank = $3, rank_state = $4 WHERE id = $1
+          `, [attribution.directPartnerId, nextCount, nextRank, evaluation.state]);
+          await client.query(`
+            INSERT INTO partner_rank_snapshots (id, partner_id, qualified_active_paid_l1, rank, rank_state, rate_bps, grace_cycles_in_window, rule_version, reason, occurred_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'QUALIFIED_L1_PAYMENT', $9)
+          `, [randomUUID(), attribution.directPartnerId, nextCount, nextRank, evaluation.state, evaluation.rateBps, directContext.graceCycles, ruleVersion, paidAt]);
+          await client.query(`
+            INSERT INTO rank_events (id, partner_id, event_type, previous_rank, new_rank, previous_state, new_state, qualified_active_paid_l1, rule_version, idempotency_key, payload, occurred_at)
+            VALUES ($1, $2, 'QUALIFIED_L1_PAYMENT', $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11)
+          `, [rankEventId, attribution.directPartnerId, directContext.rank, nextRank, directContext.rankState, evaluation.state, nextCount, ruleVersion, `rank:payment:${paymentId}`, JSON.stringify({ rateBps: evaluation.rateBps, reason: 'QUALIFIED_L1_PAYMENT' }), paidAt]);
+        }
         if (!calculation.cap.passed) {
           result = { status: 'CAP_VALIDATION_FAILED', paymentId, reason: calculation.cap.reason, qcbAmountMinor: qualification.qcb.amountMinor.toString(), currency: qualification.qcb.currency, commissionIds: [] };
           await writeOutbox(client, 'CAP_VALIDATION_FAILED', 'PAYMENT', paymentId, { qcbAmountMinor: qualification.qcb.amountMinor.toString(), totalAllocationBps: calculation.cap.totalAllocationBps }, paidAt);

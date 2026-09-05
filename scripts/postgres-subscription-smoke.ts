@@ -30,6 +30,10 @@ try {
     repository.startTrial({ id: subscriptionId, userId, planCode: 'PREMIUM_MONTHLY', startedAt, trialDays: 29 }),
     /SUBSCRIPTION_IDEMPOTENCY_CONFLICT/
   );
+  await assert.rejects(
+    repository.startTrial({ id: `subscription-conflict-${suffix}`, userId, planCode: 'PREMIUM_MONTHLY', startedAt }),
+    /SUBSCRIPTION_ALREADY_EXISTS/
+  );
 
   const reminderJobs = await database.query(`SELECT notification_type FROM notification_jobs WHERE recipient_id = $1 ORDER BY notification_type`, [userId]);
   assert.deepEqual(reminderJobs.rows.map((row) => row.notification_type), ['TRIAL_T_MINUS_1', 'TRIAL_T_MINUS_3', 'TRIAL_T_MINUS_7']);

@@ -78,6 +78,9 @@ export class SubscriptionRepository {
     const fingerprint = subscriptionFingerprint({ userId, planCode, trialEndsAt: trial.endsAt, startedAt, trialDays });
 
     return this.database.withTransaction(async (client) => {
+      // Lock before reading so concurrent first-trial requests cannot both
+      // pass when no subscription row exists yet.
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`subscription-trial:${userId}`]);
       const existing = await client.query(`
         SELECT id, user_id, plan_code, state, trial_ends_at, current_period_start, current_period_end,
                provider, billing_consent_at, created_at, updated_at
@@ -99,6 +102,15 @@ export class SubscriptionRepository {
       }
       const user = await client.query('SELECT id FROM users WHERE id = $1', [userId]);
       if (!user.rows[0]) throw new Error('USER_NOT_FOUND');
+      const existingForUser = await client.query(`
+        SELECT id
+        FROM subscriptions
+        WHERE user_id = $1
+        ORDER BY updated_at DESC, id DESC
+        LIMIT 1
+        FOR UPDATE
+      `, [userId]);
+      if (existingForUser.rows[0]) throw new Error('SUBSCRIPTION_ALREADY_EXISTS');
       const now = startedAt;
       const inserted = await client.query(`
         INSERT INTO subscriptions (id, user_id, plan_code, state, trial_ends_at, created_at, updated_at)
