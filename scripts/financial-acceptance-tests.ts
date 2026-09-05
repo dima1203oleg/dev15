@@ -223,6 +223,11 @@ const customRankPlatform = new InMemoryPartnerPlatform(new ImmutableLedger(), { 
 customRankPlatform.addPartner({ id: 'custom-p1', qualifiedActivePaidL1: 0, rank: 'STARTER', rankState: 'ACTIVE' });
 const customRankResult = customRankPlatform.processPaidPayment({ id: 'custom-rank-payment', userId: 'custom-user', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'custom-user', directPartnerId: 'custom-p1', secondLevelPartnerId: undefined }, createdAt: trial.endsAt, ruleVersion: 'comp-custom-v1', fraudStatus: 'OK' });
 assert.equal(customRankResult.commissions[0]?.rateBps, 700);
+const rollbackPlatform = new InMemoryPartnerPlatform(new ImmutableLedger(), { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true }, true);
+rollbackPlatform.addPartner({ id: 'rollback-p1', qualifiedActivePaidL1: 74, rank: 'SILVER', rankState: 'ACTIVE' });
+const rollbackResult = rollbackPlatform.processPaidPayment({ id: 'rollback-payment', userId: 'rollback-user', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'rollback-user', directPartnerId: 'rollback-p1', secondLevelPartnerId: undefined }, createdAt: trial.endsAt, ruleVersion: 'comp-rollback-v1', maxAllocationBps: 1000, fraudStatus: 'OK' });
+assert.equal(rollbackResult.status, 'CAP_VALIDATION_FAILED');
+assert.deepEqual(rollbackPlatform.getPartner('rollback-p1'), { id: 'rollback-p1', qualifiedActivePaidL1: 74, rank: 'SILVER', rankState: 'ACTIVE' }, 'failed payment must not leave an upgraded rank behind');
 const disconnectedPayoutProvider = new NotConnectedPayoutProvider();
 assert.equal(disconnectedPayoutProvider.connected, false);
 await assert.rejects(() => disconnectedPayoutProvider.calculateFee(uah(42000n)), /PAYOUT_PROVIDER_NOT_CONNECTED/);

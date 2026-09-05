@@ -14,6 +14,17 @@ const server = spawn(process.execPath, ['dist/server.cjs'], {
   stdio: ['ignore', 'pipe', 'pipe']
 });
 
+let serverExited = false;
+let serverExitCode = null;
+let serverStderr = '';
+server.stderr.on('data', (chunk) => {
+  serverStderr = `${serverStderr}${chunk}`.slice(-2000);
+});
+server.on('exit', (code) => {
+  serverExited = true;
+  serverExitCode = code;
+});
+
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 async function getJson(path) {
@@ -23,7 +34,8 @@ async function getJson(path) {
 
 try {
   let health;
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (serverExited) break;
     try {
       health = await getJson('/api/health');
       break;
@@ -31,7 +43,7 @@ try {
       await wait(100);
     }
   }
-  assert.ok(health, 'demo server did not start');
+  assert.ok(health, `demo server did not start (exit=${serverExitCode ?? 'pending'}): ${serverStderr || 'startup timeout'}`);
   assert.equal(health.body.financialDataMode, 'DEMO_DATA');
 
   const referralLink = await getJson('/api/partner/referral-link');
@@ -49,6 +61,17 @@ try {
   assert.equal(network.l1.hasMore, true);
   assert.equal(Object.hasOwn(network.l1.items[0], 'userId'), false);
   assert.equal(Object.hasOwn(network.l1.items[0], 'referrerL1Id'), false);
+
+  const dashboard = await getJson('/api/partner/dashboard');
+  assert.equal(dashboard.response.status, 200);
+  assert.equal(dashboard.body.wallet.availableMinor, 6940);
+  assert.equal(dashboard.body.wallet.pendingMinor, 2980);
+  assert.equal(dashboard.body.wallet.lifetimeEarnedMinor, 9920);
+
+  const payouts = await getJson('/api/partner/payouts');
+  assert.equal(payouts.response.status, 200);
+  assert.equal(payouts.body.payouts[0].destinationAccount, '•••• 6789');
+  assert.equal(payouts.body.payouts[0].destinationAccount.includes('UA823220010000026007123456789'), false);
 
   const click = await fetch(`http://127.0.0.1:${port}/r/SIREN_ATLAS`, { redirect: 'manual' });
   assert.equal(click.status, 302);

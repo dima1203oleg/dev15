@@ -711,6 +711,7 @@ export class InMemoryPartnerPlatform {
     const direct = this.partners.get(input.attribution.directPartnerId);
     if (!direct) throw new Error('DIRECT_PARTNER_NOT_FOUND');
     const second = input.attribution.secondLevelPartnerId ? this.partners.get(input.attribution.secondLevelPartnerId) : undefined;
+    const previousDirect = { ...direct };
     direct.qualifiedActivePaidL1 += 1;
     const directRule = resolveRank(direct.qualifiedActivePaidL1, this.rankRules) ?? this.rankRules[0];
     direct.rank = directRule.rank;
@@ -731,7 +732,7 @@ export class InMemoryPartnerPlatform {
       fraudStatus: input.fraudStatus
     }, this.hold);
     if (!snapshots.length) {
-      direct.qualifiedActivePaidL1 -= 1;
+      Object.assign(direct, previousDirect);
       return this.storeResult({ paymentId: input.id, status: 'CAP_VALIDATION_FAILED', reason: 'CAP_VALIDATION_FAILED', qcb, commissions: [] }, fingerprint);
     }
     const ledgerTransactions = snapshots.map((snapshot) => this.ledger.commissionTransaction({
@@ -748,7 +749,7 @@ export class InMemoryPartnerPlatform {
     try {
       this.ledger.appendBatch(ledgerTransactions);
     } catch (error) {
-      direct.qualifiedActivePaidL1 -= 1;
+      Object.assign(direct, previousDirect);
       throw error;
     }
     for (const snapshot of snapshots) {

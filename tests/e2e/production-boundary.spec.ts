@@ -244,7 +244,7 @@ test.describe('SIREN UA production boundary', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           l1: { count: 11, activePaidCount: 11, offset, limit: 10, hasMore: firstPage, items: [{ id: firstPage ? 'l1-test' : 'l1-page-2', userAnonymousLabel: firstPage ? 'Користувач #L1-TEST' : 'Користувач #L1-PAGE-2', sourceChannel: 'TELEGRAM', utmCampaign: 'test', isQualifiedPaid: true, subscriptionPlan: 'PREMIUM_MONTHLY', monthlyQcbMinor: 100, registeredAt: '2026-09-01T00:00:00.000Z', lastPaymentAt: '2026-09-01T00:00:00.000Z', status: 'ACTIVE' }] },
-          l2: { count: 1, activePaidCount: 1, offset, limit: 10, hasMore: false, items: [{ id: 'l2-test', userAnonymousLabel: 'Користувач #L2-TEST', sourceChannel: 'QR', utmCampaign: 'test', isQualifiedPaid: true, subscriptionPlan: 'PREMIUM_MONTHLY', monthlyQcbMinor: 100, registeredAt: '2026-09-01T00:00:00.000Z', lastPaymentAt: '2026-09-01T00:00:00.000Z', status: 'ACTIVE' }] }
+          l2: { count: 2, activePaidCount: 1, offset, limit: 10, hasMore: false, items: [{ id: 'l2-test', userAnonymousLabel: 'Користувач #L2-TEST', sourceChannel: 'QR', utmCampaign: 'test', isQualifiedPaid: true, subscriptionPlan: 'PREMIUM_MONTHLY', monthlyQcbMinor: 100, registeredAt: '2026-09-01T00:00:00.000Z', lastPaymentAt: '2026-09-01T00:00:00.000Z', status: 'ACTIVE' }, { id: 'l2-trial', userAnonymousLabel: 'Користувач #L2-TRIAL', sourceChannel: 'QR', utmCampaign: 'test', isQualifiedPaid: false, subscriptionPlan: 'PREMIUM_MONTHLY', monthlyQcbMinor: 100, registeredAt: '2026-09-01T00:00:00.000Z', status: 'EXPIRED' }] }
         })
       });
     });
@@ -264,6 +264,8 @@ test.describe('SIREN UA production boundary', () => {
     await expect(page.getByText('Користувач #L1-TEST')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'L2 · Мережа першого рівня' })).toBeVisible();
     await expect(page.getByText('Користувач #L2-TEST')).toBeVisible();
+    await expect(page.getByText('Користувач #L2-TRIAL')).toBeVisible();
+    await expect(page.getByText('Комісія не нараховується', { exact: true })).toBeVisible();
     await expect(page.getByText('+0.20 грн/міс', { exact: true }).first()).toBeVisible();
     await page.getByRole('button', { name: 'Далі' }).click();
     await expect(page.getByText('Користувач #L1-PAGE-2')).toBeVisible();

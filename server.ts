@@ -389,14 +389,17 @@ function calculateWallet(partnerId: string): WalletProjection {
 
   for (const entry of ledgerEntries) {
     if (entry.partnerId === partnerId) {
+      const isPartnerEarningCredit = entry.creditAccount === 'PARTNER_PENDING_PAYABLE'
+        || entry.creditAccount === 'PARTNER_AVAILABLE_PAYABLE'
+        || entry.creditAccount === 'PARTNER_LOCKED_PAYOUT';
       if (entry.creditAccount === 'PARTNER_AVAILABLE_PAYABLE') {
         availableMinor += entry.amountMinor;
-        lifetimeEarnedMinor += entry.amountMinor;
       } else if (entry.creditAccount === 'PARTNER_PENDING_PAYABLE') {
         pendingMinor += entry.amountMinor;
       } else if (entry.creditAccount === 'PARTNER_LOCKED_PAYOUT') {
         lockedPayoutMinor += entry.amountMinor;
       }
+      if (isPartnerEarningCredit) lifetimeEarnedMinor += entry.amountMinor;
 
       if (entry.debitAccount === 'PARTNER_AVAILABLE_PAYABLE') {
         availableMinor -= entry.amountMinor;
@@ -422,6 +425,11 @@ function calculateWallet(partnerId: string): WalletProjection {
     lifetimeEarnedMinor,
     currency: 'UAH'
   };
+}
+
+function maskSensitiveDestination(value: string): string {
+  const normalized = value.replace(/\s+/g, '');
+  return normalized.length >= 4 ? `•••• ${normalized.slice(-4)}` : '••••';
 }
 
 // ============================================================================
@@ -589,7 +597,7 @@ async function startServer() {
         partnerProfile: partner,
         wallet,
         isKycVerified: true,
-        taxId: '3128492019'
+        taxId: '••••2019'
       }
     });
   });
@@ -783,7 +791,10 @@ async function startServer() {
     if (!financialDemoEnabled) return financialUnavailable(res);
     const list = payoutRequests.filter(p => p.partnerId === demoPartnerId);
     res.json({
-      payouts: list.slice().reverse()
+      payouts: list.slice().reverse().map((payout) => ({
+        ...payout,
+        destinationAccount: maskSensitiveDestination(payout.destinationAccount)
+      }))
     });
   });
 

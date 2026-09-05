@@ -22,6 +22,14 @@ function formatCommissionMinor(qcbMinor: number, rateBps: number): string {
   return `${minorText.slice(0, -2)}.${minorText.slice(-2)} грн/міс`;
 }
 
+function formatMoneyMinor(amountMinor: number): string {
+  if (!Number.isSafeInteger(amountMinor)) return '—';
+  const sign = amountMinor < 0 ? '-' : '';
+  const minorText = BigInt(Math.abs(amountMinor)).toString().padStart(3, '0');
+  const major = BigInt(minorText.slice(0, -2)).toLocaleString('uk-UA');
+  return `${sign}${major},${minorText.slice(-2)}`;
+}
+
 interface PartnerDashboardModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -97,7 +105,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
       setLoading(true);
       const responses = await Promise.all([
         fetch('/api/partner/dashboard'),
-        fetch('/api/partner/network'),
+        fetch('/api/partner/network?limit=10&offset=0'),
         fetch('/api/partner/ledger'),
         fetch('/api/partner/payouts')
       ]);
@@ -378,7 +386,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                 <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/40">
                   <span className="text-xs text-amber-300 font-medium block">Доступно до виплати:</span>
                   <div className="text-2xl font-extrabold text-amber-400 font-mono mt-1">
-                    {(wallet.availableMinor / 100).toLocaleString('uk-UA')} <span className="text-sm font-bold">грн</span>
+                    {formatMoneyMinor(wallet.availableMinor)} <span className="text-sm font-bold">грн</span>
                   </div>
                   <span className="text-[10px] text-slate-400 mt-1 block">Мінімум: еквівалент $10 · FX snapshot</span>
                 </div>
@@ -387,7 +395,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                 <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
                   <span className="text-xs text-slate-400 font-medium block">В очікуванні (versioned hold policy):</span>
                   <div className="text-2xl font-extrabold text-slate-200 font-mono mt-1">
-                    {(wallet.pendingMinor / 100).toLocaleString('uk-UA')} <span className="text-sm font-bold">грн</span>
+                    {formatMoneyMinor(wallet.pendingMinor)} <span className="text-sm font-bold">грн</span>
                   </div>
                   <span className="text-[10px] text-slate-500 mt-1 block">Захист від повернень</span>
                 </div>
@@ -396,7 +404,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                 <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
                   <span className="text-xs text-slate-400 font-medium block">Зароблено всього:</span>
                   <div className="text-2xl font-extrabold text-white font-mono mt-1">
-                    {(wallet.lifetimeEarnedMinor / 100).toLocaleString('uk-UA')} <span className="text-sm font-bold">грн</span>
+                    {formatMoneyMinor(wallet.lifetimeEarnedMinor)} <span className="text-sm font-bold">грн</span>
                   </div>
                   <span className="text-[10px] text-slate-500 mt-1 block">За весь час співпраці</span>
                 </div>
@@ -405,7 +413,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                 <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
                   <span className="text-xs text-slate-400 font-medium block">Виплачено на карту:</span>
                   <div className="text-2xl font-extrabold text-emerald-400 font-mono mt-1">
-                    {(wallet.paidTotalMinor / 100).toLocaleString('uk-UA')} <span className="text-sm font-bold">грн</span>
+                    {formatMoneyMinor(wallet.paidTotalMinor)} <span className="text-sm font-bold">грн</span>
                   </div>
                   <span className="text-[10px] text-slate-500 mt-1 block">Успішно перераховано</span>
                 </div>
@@ -576,7 +584,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                     {group.items.length ? group.items.map((u) => (
                       <div key={u.id} className="p-3.5 flex items-center justify-between hover:bg-slate-800/50 transition-colors">
                         <div className="flex items-center gap-3"><div className={`w-7 h-7 rounded-lg ${group.tone === 'amber' ? 'bg-amber-500/20 text-amber-300' : 'bg-cyan-500/20 text-cyan-300'} flex items-center justify-center font-bold font-mono`}>{group.level}</div><div><div className="font-bold text-white">{u.userAnonymousLabel}</div><div className="text-[11px] text-slate-400 font-mono">Канал: {u.sourceChannel} • {u.subscriptionPlan}</div></div></div>
-                        <div className="text-right"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.isQualifiedPaid ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>{u.isQualifiedPaid ? 'Кваліфікований платний' : 'Безкоштовний'}</span><div className="text-[11px] text-amber-400 font-mono font-bold mt-1">+{formatCommissionMinor(u.monthlyQcbMinor, partner.partnerRateBps)}</div></div>
+                        <div className="text-right"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.isQualifiedPaid ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>{u.isQualifiedPaid ? 'Кваліфікований платний' : 'Безкоштовний'}</span><div className={`text-[11px] font-mono font-bold mt-1 ${u.isQualifiedPaid ? 'text-amber-400' : 'text-slate-500'}`}>{u.isQualifiedPaid ? `+${formatCommissionMinor(u.monthlyQcbMinor, partner.partnerRateBps)}` : 'Комісія не нараховується'}</div></div>
                       </div>
                     )) : <div className="p-4 text-center text-slate-500">Записів ще немає.</div>}
                   </div>
@@ -617,7 +625,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
 
                     <div className="text-right">
                       <span className="text-sm font-bold font-mono text-emerald-400">
-                        +{(e.amountMinor / 100).toFixed(2)} грн
+                        +{formatMoneyMinor(e.amountMinor)} грн
                       </span>
                       <div className="text-[10px] text-slate-400 font-mono">
                         Ставка: {e.rateBps ? e.rateBps / 100 : 20}%
@@ -682,7 +690,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
 
                 <div>
                   <label className="text-xs text-slate-400 block mb-1">
-                    Сума виведення (грн) • Доступно: {(wallet.availableMinor / 100).toLocaleString('uk-UA')} грн:
+                    Сума виведення (грн) • Доступно: {formatMoneyMinor(wallet.availableMinor)} грн:
                   </label>
                   <input
                     type="number"
@@ -693,7 +701,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono text-base font-bold"
                   />
                   <span className="text-[10px] text-slate-500 mt-1 block">
-                    Мінімум: {minimumPayoutMinor === null ? 'очікує FX snapshot' : `${(minimumPayoutMinor / 100).toLocaleString('uk-UA')} грн`} • Комісія провайдера — за рахунок партнера
+                    Мінімум: {minimumPayoutMinor === null ? 'очікує FX snapshot' : `${formatMoneyMinor(minimumPayoutMinor)} грн`} • Комісія провайдера — за рахунок партнера
                   </span>
                 </div>
 
@@ -719,7 +727,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
 
                       <div className="text-right">
                         <span className="text-sm font-bold font-mono text-white">
-                          {(po.amountMinor / 100).toFixed(2)} грн
+                          {formatMoneyMinor(po.amountMinor)} грн
                         </span>
                         <div>
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">
