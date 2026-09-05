@@ -8,3 +8,5 @@ REGISTERED → TRIAL_ACTIVE → TRIAL_ENDING → PAYMENT_PENDING → PREMIUM_ACT
 ```
 
 `PAYMENT_PENDING` after trial expiry is allowed only when a valid, active billing agreement with recorded user consent exists. Otherwise the worker must transition to `TRIAL_EXPIRED`; it must never silently create a charge.
+
+Trial creation is serialized per user with a transaction-scoped advisory lock, so two concurrent first-trial requests cannot create duplicate subscriptions. A different subscription id for a user that already has a subscription is rejected explicitly; retrying the same id with the same payload is idempotent.
