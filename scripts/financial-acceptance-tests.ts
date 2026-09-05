@@ -7,6 +7,7 @@ import {
   NotConnectedPayoutProvider,
   PayoutOrchestrator,
   SecureWebhookInbox,
+  TransactionalOutbox,
   WebhookInbox,
   ambassadorTierForQualifiedL1,
   calculateCommissions,
@@ -172,6 +173,18 @@ assert.equal(platform.getPartner('p1')?.qualifiedActivePaidL1, 0);
 const webhooks = new WebhookInbox();
 assert.equal(webhooks.accept('provider', 'evt-1'), true);
 assert.equal(webhooks.accept('provider', 'evt-1'), false);
+const outbox = new TransactionalOutbox();
+const outboxEvent = { id: 'outbox-1', type: 'PAYMENT_QUALIFIED', aggregateType: 'payment', aggregateId: 'payment-1', payload: { qcbMinor: 100n.toString() }, occurredAt: trial.endsAt };
+const firstOutboxSnapshot = outbox.enqueue(outboxEvent);
+assert.deepEqual(firstOutboxSnapshot, outbox.enqueue(outboxEvent));
+firstOutboxSnapshot.attempts = 99;
+assert.equal(outbox.pending()[0]?.attempts, 0, 'outbox snapshots must not expose mutable internal state');
+assert.equal(outbox.pending().length, 1);
+assert.equal(outbox.markFailed('outbox-1', 'temporary worker failure').attempts, 1);
+assert.equal(outbox.markPublished('outbox-1', '2026-10-01T00:01:00.000Z').publishedAt, '2026-10-01T00:01:00.000Z');
+assert.equal(outbox.pending().length, 0);
+assert.throws(() => outbox.enqueue({ ...outboxEvent, payload: { qcbMinor: '101' } }), /OUTBOX_IDEMPOTENCY_CONFLICT/);
+assert.throws(() => outbox.markFailed('outbox-1', 'late failure'), /OUTBOX_EVENT_ALREADY_PUBLISHED/);
 
 // Double-entry ledger is balanced, idempotent and projects wallet buckets.
 const ledger = new ImmutableLedger();

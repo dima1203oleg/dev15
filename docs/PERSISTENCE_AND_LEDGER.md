@@ -6,4 +6,6 @@ The schema stores money in integer minor units, separates subscription/payment/q
 
 Wallet values are read from the `wallet_projections` view. A payout lock and settlement are compensating ledger moves; an API handler must never set a balance column directly. `idempotency_records` and provider-scoped `webhook_events` protect retry paths, while `audit_logs` and `financial_rule_versions` preserve the explanation and rule version for every administrative change.
 
+The domain `TransactionalOutbox` mirrors `event_outbox`: producers enqueue payment, payout, refund, rank, and notification events transactionally, workers retry un-published events, and a published event is immutable. The in-memory implementation is acceptance-tested; production must persist the same contract in the database transaction that changes the aggregate.
+
 Before enabling the migration in production, run it through the selected migration tool against an isolated staging database and add application-level transaction tests for concurrent payout locks, webhook retries, refund reversals and reconciliation mismatches.

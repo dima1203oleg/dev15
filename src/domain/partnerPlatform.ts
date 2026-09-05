@@ -856,6 +856,79 @@ export class IdempotencyStore {
   }
 }
 
+export interface OutboxEvent<T = unknown> {
+  id: string;
+  type: string;
+  aggregateType: string;
+  aggregateId: string;
+  payload: T;
+  occurredAt: string;
+  attempts: number;
+  publishedAt?: string;
+  lastError?: string;
+}
+
+function outboxFingerprint(event: Pick<OutboxEvent, 'type' | 'aggregateType' | 'aggregateId' | 'payload' | 'occurredAt'>): string {
+  let payload: string;
+  try {
+    payload = JSON.stringify(event.payload);
+  } catch {
+    throw new Error('INVALID_OUTBOX_PAYLOAD');
+  }
+  return JSON.stringify([event.type, event.aggregateType, event.aggregateId, payload, event.occurredAt]);
+}
+
+function cloneOutboxEvent<T>(event: OutboxEvent<T>): OutboxEvent<T> {
+  let payload: T;
+  try {
+    payload = typeof structuredClone === 'function' ? structuredClone(event.payload) : event.payload;
+  } catch {
+    payload = event.payload;
+  }
+  return { ...event, payload };
+}
+
+export class TransactionalOutbox {
+  private readonly events = new Map<string, OutboxEvent>();
+  private readonly fingerprints = new Map<string, string>();
+
+  enqueue<T>(event: { id: string; type: string; aggregateType: string; aggregateId: string; payload: T; occurredAt: string }): OutboxEvent<T> {
+    if (!event || !event.id || !event.type || !event.aggregateType || !event.aggregateId || !event.occurredAt) throw new Error('INVALID_OUTBOX_EVENT');
+    const fingerprint = outboxFingerprint(event);
+    const existing = this.events.get(event.id);
+    if (existing) {
+      if (this.fingerprints.get(event.id) !== fingerprint) throw new Error('OUTBOX_IDEMPOTENCY_CONFLICT');
+      return cloneOutboxEvent(existing as OutboxEvent<T>);
+    }
+    const stored: OutboxEvent<T> = { ...event, attempts: 0 };
+    this.events.set(event.id, stored);
+    this.fingerprints.set(event.id, fingerprint);
+    return cloneOutboxEvent(stored);
+  }
+
+  pending(limit = 100): readonly OutboxEvent[] {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 1000) throw new Error('INVALID_OUTBOX_LIMIT');
+    return [...this.events.values()].filter((event) => !event.publishedAt).slice(0, limit).map(cloneOutboxEvent);
+  }
+
+  markPublished(id: string, publishedAt: string): OutboxEvent {
+    const event = this.events.get(id);
+    if (!event) throw new Error('OUTBOX_EVENT_NOT_FOUND');
+    if (!event.publishedAt) event.publishedAt = publishedAt;
+    return cloneOutboxEvent(event);
+  }
+
+  markFailed(id: string, error: string): OutboxEvent {
+    const event = this.events.get(id);
+    if (!event) throw new Error('OUTBOX_EVENT_NOT_FOUND');
+    if (event.publishedAt) throw new Error('OUTBOX_EVENT_ALREADY_PUBLISHED');
+    if (!error || error.length > 2000) throw new Error('INVALID_OUTBOX_ERROR');
+    event.attempts += 1;
+    event.lastError = error;
+    return cloneOutboxEvent(event);
+  }
+}
+
 export class WebhookInbox {
   private readonly eventIds = new Set<string>();
 
