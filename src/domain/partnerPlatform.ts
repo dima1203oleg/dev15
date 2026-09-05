@@ -789,10 +789,16 @@ export class InMemoryPartnerPlatform {
     if (!direct) throw new Error('DIRECT_PARTNER_NOT_FOUND');
     const second = input.attribution.secondLevelPartnerId ? this.partners.get(input.attribution.secondLevelPartnerId) : undefined;
     const previousDirect = { ...direct };
-    direct.qualifiedActivePaidL1 += 1;
+    // Renewals pay commission but must not count the same attributed user as
+    // another qualified personal L1. The first qualified payment is the only
+    // event that changes the rank counter.
+    const firstQualifiedPayment = !input.attribution.qualifiedAt;
+    if (firstQualifiedPayment) direct.qualifiedActivePaidL1 += 1;
     const directRule = resolveRank(direct.qualifiedActivePaidL1, this.rankRules) ?? this.rankRules[0];
-    direct.rank = directRule.rank;
-    direct.rankState = 'ACTIVE';
+    if (firstQualifiedPayment) {
+      direct.rank = directRule.rank;
+      direct.rankState = 'ACTIVE';
+    }
     const secondRule = second ? (resolveRank(second.qualifiedActivePaidL1, this.rankRules) ?? this.rankRules[0]) : undefined;
     const snapshots = createCommissionSnapshots({
       id: input.id,
