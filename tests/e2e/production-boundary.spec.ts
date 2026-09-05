@@ -235,13 +235,16 @@ test.describe('SIREN UA production boundary', () => {
         })
       });
     });
-    await page.route('**/api/partner/network', async (route) => {
+    await page.route('**/api/partner/network**', async (route) => {
+      const requestUrl = new URL(route.request().url());
+      const offset = Number(requestUrl.searchParams.get('offset') ?? '0');
+      const firstPage = offset === 0;
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          l1: { count: 1, activePaidCount: 1, offset: 0, limit: 20, hasMore: false, items: [{ id: 'l1-test', userId: 'u1', userAnonymousLabel: 'Користувач #L1-TEST', referrerL1Id: 'partner-test', sourceChannel: 'TELEGRAM', utmCampaign: 'test', isQualifiedPaid: true, subscriptionPlan: 'PREMIUM_MONTHLY', monthlyQcbMinor: 100, registeredAt: '2026-09-01T00:00:00.000Z', lastPaymentAt: '2026-09-01T00:00:00.000Z', status: 'ACTIVE' }] },
-          l2: { count: 1, activePaidCount: 1, offset: 0, limit: 20, hasMore: false, items: [{ id: 'l2-test', userId: 'u2', userAnonymousLabel: 'Користувач #L2-TEST', referrerL1Id: 'partner-child', referrerL2Id: 'partner-test', sourceChannel: 'QR', utmCampaign: 'test', isQualifiedPaid: true, subscriptionPlan: 'PREMIUM_MONTHLY', monthlyQcbMinor: 100, registeredAt: '2026-09-01T00:00:00.000Z', lastPaymentAt: '2026-09-01T00:00:00.000Z', status: 'ACTIVE' }] }
+          l1: { count: 11, activePaidCount: 11, offset, limit: 10, hasMore: firstPage, items: [{ id: firstPage ? 'l1-test' : 'l1-page-2', userAnonymousLabel: firstPage ? 'Користувач #L1-TEST' : 'Користувач #L1-PAGE-2', sourceChannel: 'TELEGRAM', utmCampaign: 'test', isQualifiedPaid: true, subscriptionPlan: 'PREMIUM_MONTHLY', monthlyQcbMinor: 100, registeredAt: '2026-09-01T00:00:00.000Z', lastPaymentAt: '2026-09-01T00:00:00.000Z', status: 'ACTIVE' }] },
+          l2: { count: 1, activePaidCount: 1, offset, limit: 10, hasMore: false, items: [{ id: 'l2-test', userAnonymousLabel: 'Користувач #L2-TEST', sourceChannel: 'QR', utmCampaign: 'test', isQualifiedPaid: true, subscriptionPlan: 'PREMIUM_MONTHLY', monthlyQcbMinor: 100, registeredAt: '2026-09-01T00:00:00.000Z', lastPaymentAt: '2026-09-01T00:00:00.000Z', status: 'ACTIVE' }] }
         })
       });
     });
@@ -261,6 +264,11 @@ test.describe('SIREN UA production boundary', () => {
     await expect(page.getByText('Користувач #L1-TEST')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'L2 · Мережа першого рівня' })).toBeVisible();
     await expect(page.getByText('Користувач #L2-TEST')).toBeVisible();
+    await expect(page.getByText('+0.20 грн/міс', { exact: true }).first()).toBeVisible();
+    await page.getByRole('button', { name: 'Далі' }).click();
+    await expect(page.getByText('Користувач #L1-PAGE-2')).toBeVisible();
+    await expect(page.getByText('Користувач #L1-TEST')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Далі' })).toBeDisabled();
 
     await page.getByRole('button', { name: 'Огляд & Фінанси' }).click();
     await page.getByRole('button', { name: 'Створити QR-код' }).click();

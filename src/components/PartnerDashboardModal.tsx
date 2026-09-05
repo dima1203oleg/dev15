@@ -15,6 +15,13 @@ function parseMinorUnits(value: string): number {
   return Number.isSafeInteger(minor) ? minor : 0;
 }
 
+function formatCommissionMinor(qcbMinor: number, rateBps: number): string {
+  if (!Number.isSafeInteger(qcbMinor) || qcbMinor < 0 || !Number.isSafeInteger(rateBps) || rateBps < 0) return '—';
+  const roundedMinor = (BigInt(qcbMinor) * BigInt(rateBps) + 5000n) / 10000n;
+  const minorText = roundedMinor.toString().padStart(3, '0');
+  return `${minorText.slice(0, -2)}.${minorText.slice(-2)} грн/міс`;
+}
+
 interface PartnerDashboardModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -55,6 +62,35 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [payoutsList, setPayoutsList] = useState<PayoutRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [networkOffset, setNetworkOffset] = useState(0);
+  const [networkHasMore, setNetworkHasMore] = useState(false);
+  const [networkLoading, setNetworkLoading] = useState(false);
+
+  const applyNetworkResponse = (body: any, offset: number) => {
+    const l1Items = Array.isArray(body?.l1?.items) ? body.l1.items : [];
+    const l2Items = Array.isArray(body?.l2?.items) ? body.l2.items : [];
+    const l1Count = Number.isSafeInteger(body?.l1?.count) ? body.l1.count : l1Items.length;
+    const l2Count = Number.isSafeInteger(body?.l2?.count) ? body.l2.count : l2Items.length;
+    setNetworkData({ l1: l1Items, l2: l2Items, l1Count, l2Count });
+    setNetworkOffset(offset);
+    setNetworkHasMore(body?.l1?.hasMore === true || body?.l2?.hasMore === true);
+  };
+
+  const fetchNetworkPage = async (offset: number) => {
+    setNetworkLoading(true);
+    try {
+      const response = await fetch(`/api/partner/network?limit=10&offset=${offset}`);
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) throw new Error('PARTNER_NETWORK_NON_JSON_RESPONSE');
+      const body = await response.json();
+      if (!response.ok) throw new Error(body?.error || body?.status || 'PARTNER_NETWORK_UNAVAILABLE');
+      applyNetworkResponse(body, offset);
+    } catch (error) {
+      console.error('Error fetching partner network page:', error);
+    } finally {
+      setNetworkLoading(false);
+    }
+  };
 
   const fetchPartnerData = async () => {
     try {
@@ -78,12 +114,8 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
       // unavailable independently; never turn a provider gap into empty
       // financial data that looks authoritative.
       setDashboardData(dashRes.body);
-      setNetworkData(netRes.ok ? {
-        l1: Array.isArray(netRes.body.l1?.items) ? netRes.body.l1.items : [],
-        l2: Array.isArray(netRes.body.l2?.items) ? netRes.body.l2.items : [],
-        l1Count: Number.isSafeInteger(netRes.body.l1?.count) ? netRes.body.l1.count : (Array.isArray(netRes.body.l1?.items) ? netRes.body.l1.items.length : 0),
-        l2Count: Number.isSafeInteger(netRes.body.l2?.count) ? netRes.body.l2.count : (Array.isArray(netRes.body.l2?.items) ? netRes.body.l2.items.length : 0)
-      } : { l1: [], l2: [], l1Count: 0, l2Count: 0 });
+      if (netRes.ok) applyNetworkResponse(netRes.body, 0);
+      else setNetworkData({ l1: [], l2: [], l1Count: 0, l2Count: 0 });
       setLedgerEntries(ledRes.ok ? ledRes.body.entries || [] : []);
       setPayoutsList(poRes.ok ? poRes.body.payouts || [] : []);
     } catch (e) {
@@ -94,6 +126,8 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
         message: 'Партнерський backend не підтвердив повний набір даних. Баланси, мережа та виплати приховано.'
       });
       setNetworkData({ l1: [], l2: [], l1Count: 0, l2Count: 0 });
+      setNetworkOffset(0);
+      setNetworkHasMore(false);
       setLedgerEntries([]);
       setPayoutsList([]);
     } finally {
@@ -109,6 +143,8 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
       setQrDataUrl(null);
       setQrError(null);
       setUtmUrl(null);
+      setNetworkOffset(0);
+      setNetworkHasMore(false);
       fetchPartnerData();
     }
   }, [isOpen]);
@@ -537,16 +573,23 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                 <section key={group.level} aria-labelledby={`network-${group.level}`}>
                   <div className="mb-2 flex items-center justify-between"><h4 id={`network-${group.level}`} className="text-sm font-bold text-white">{group.label}</h4><span className="font-mono text-xs text-slate-400">{group.total} записів</span></div>
                   <div className="divide-y divide-slate-800/80 rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden text-xs">
-                    {group.items.length ? group.items.slice(0, 10).map((u) => (
+                    {group.items.length ? group.items.map((u) => (
                       <div key={u.id} className="p-3.5 flex items-center justify-between hover:bg-slate-800/50 transition-colors">
                         <div className="flex items-center gap-3"><div className={`w-7 h-7 rounded-lg ${group.tone === 'amber' ? 'bg-amber-500/20 text-amber-300' : 'bg-cyan-500/20 text-cyan-300'} flex items-center justify-center font-bold font-mono`}>{group.level}</div><div><div className="font-bold text-white">{u.userAnonymousLabel}</div><div className="text-[11px] text-slate-400 font-mono">Канал: {u.sourceChannel} • {u.subscriptionPlan}</div></div></div>
-                        <div className="text-right"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.isQualifiedPaid ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>{u.isQualifiedPaid ? 'Кваліфікований платний' : 'Безкоштовний'}</span><div className="text-[11px] text-amber-400 font-mono font-bold mt-1">+{(u.monthlyQcbMinor * (partner.partnerRateBps / 10000) / 100).toFixed(2)} грн/міс</div></div>
+                        <div className="text-right"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.isQualifiedPaid ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>{u.isQualifiedPaid ? 'Кваліфікований платний' : 'Безкоштовний'}</span><div className="text-[11px] text-amber-400 font-mono font-bold mt-1">+{formatCommissionMinor(u.monthlyQcbMinor, partner.partnerRateBps)}</div></div>
                       </div>
                     )) : <div className="p-4 text-center text-slate-500">Записів ще немає.</div>}
                   </div>
                   {group.total > group.items.length && <p className="mt-2 text-[11px] text-slate-500">Показано {group.items.length} із {group.total}. Для повного списку використовується pagination partner API.</p>}
                 </section>
               ))}
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/70 p-3 text-xs">
+                <span className="font-mono text-slate-500">Сторінка {Math.floor(networkOffset / 10) + 1}</span>
+                <div className="flex items-center gap-2">
+                  <button type="button" disabled={networkOffset === 0 || networkLoading} onClick={() => fetchNetworkPage(Math.max(0, networkOffset - 10))} className="rounded-xl border border-slate-700 px-3 py-2 font-bold text-slate-300 disabled:cursor-not-allowed disabled:opacity-40">Назад</button>
+                  <button type="button" disabled={!networkHasMore || networkLoading} onClick={() => fetchNetworkPage(networkOffset + 10)} className="rounded-xl border border-cyan-300/30 px-3 py-2 font-bold text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40">{networkLoading ? 'Завантаження…' : 'Далі'}</button>
+                </div>
+              </div>
             </div>
           )}
 

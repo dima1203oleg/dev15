@@ -14,8 +14,8 @@ Date: 2026-09-05
 - CI: GitHub Actions verification workflow is present for type, domain, boundary, browser/accessibility, build, performance and dependency checks; staging deployment, migrations, observability and external payment provider remain missing/unverified.
 - Partner Platform 4.0: exact minor-unit/QCB/cap/rank/ledger/FX/payout-gate primitives and acceptance suite exist; database, billing, KYC/AML, FX and payout adapters remain unconnected.
 - Production data guard: enabled. Bundled fixtures are only served by the development server; production ignores demo flags and keeps safety/financial APIs `NOT_CONNECTED` until authoritative integrations exist.
-- Browser safety gate: Playwright covers 13 production-boundary tests, including mobile/desktop interaction flows, public partner/admin dialogs, nine public-route axe scans, golden screenshots, stale-feed clearing, malformed-payload rejection, referral fail-closed behavior, demo partner L1/L2/QR/UTM flow, and critical-content timing in explicit `NOT_CONNECTED` mode.
-- Performance gate: production main bundle is approximately 402 KiB JavaScript and 176 KiB CSS, within the 450/200 KiB budgets; spatial routes are split into lazy chunks.
+- Browser safety gate: Playwright covers 14 production-boundary tests, including mobile/desktop interaction flows, public partner/admin dialogs, nine public-route axe scans, golden screenshots, stale-feed clearing, malformed-payload rejection, referral fail-closed behavior, paged demo partner L1/L2/QR/UTM flow, and critical-content timing in explicit `NOT_CONNECTED` mode.
+- Performance gate: production main bundle is approximately 429 KiB JavaScript and 178 KiB CSS, within the 450/200 KiB budgets; spatial routes are split into lazy chunks.
 - Dependency security: `npm audit --omit=dev` passes with zero reported vulnerabilities after the Express 5 upgrade.
 
 ## Verification
