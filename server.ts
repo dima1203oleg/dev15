@@ -20,7 +20,8 @@ import {
   NotConnectedPayoutProvider,
   percentHalfUp,
   validateAllocationCap,
-  verifyWebhookSignature
+  verifyWebhookSignature,
+  type SubscriptionTransitionEvent
 } from './src/domain/partnerPlatform';
 import { createPostgresBoundary, DatabaseRuntimeStatus } from './src/server/postgresBoundary';
 import { createOidcIdentityVerifier, IdentityRole } from './src/server/identityBoundary';
@@ -527,6 +528,49 @@ function webhookToleranceSeconds(): number {
   return Number.isInteger(configured) && configured >= 0 && configured <= 900 ? configured : 300;
 }
 
+function parseNormalizedSubscriptionWebhook(value: unknown): {
+  subscriptionId: string;
+  event: SubscriptionTransitionEvent;
+  occurredAt: string;
+  providerSubscriptionId?: string;
+  billingConsentAt?: string;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+} {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('INVALID_SUBSCRIPTION_WEBHOOK');
+  const payload = value as Record<string, unknown>;
+  const required = (field: string): string => {
+    const item = payload[field];
+    if (typeof item !== 'string' || item.trim().length === 0 || item.length > 256) throw new Error(`INVALID_SUBSCRIPTION_WEBHOOK:${field}`);
+    return item.trim();
+  };
+  const events: readonly SubscriptionTransitionEvent[] = [
+    'TRIAL_STARTED', 'TRIAL_ENDING', 'TRIAL_EXPIRED', 'PAYMENT_REQUESTED', 'PAYMENT_SUCCEEDED',
+    'PAYMENT_FAILED', 'SUBSCRIPTION_PAST_DUE', 'SUBSCRIPTION_GRACE', 'CANCEL_AT_PERIOD_END',
+    'SUBSCRIPTION_CANCELED', 'SUBSCRIPTION_EXPIRED', 'SUBSCRIPTION_REFUNDED', 'SUBSCRIPTION_SUSPENDED',
+    'SUBSCRIPTION_RESTORED'
+  ];
+  const event = payload.event;
+  if (typeof event !== 'string' || !events.includes(event as SubscriptionTransitionEvent)) throw new Error('INVALID_SUBSCRIPTION_WEBHOOK:event');
+  const optionalDate = (field: string): string | undefined => {
+    if (payload[field] === undefined || payload[field] === null) return undefined;
+    const valueForDate = required(field);
+    if (!Number.isFinite(new Date(valueForDate).getTime())) throw new Error(`INVALID_SUBSCRIPTION_WEBHOOK:${field}`);
+    return new Date(valueForDate).toISOString();
+  };
+  const occurredAt = required('occurredAt');
+  if (!Number.isFinite(new Date(occurredAt).getTime())) throw new Error('INVALID_SUBSCRIPTION_WEBHOOK:occurredAt');
+  return {
+    subscriptionId: required('subscriptionId'),
+    event: event as SubscriptionTransitionEvent,
+    occurredAt: new Date(occurredAt).toISOString(),
+    providerSubscriptionId: payload.providerSubscriptionId === undefined ? undefined : required('providerSubscriptionId'),
+    billingConsentAt: optionalDate('billingConsentAt'),
+    currentPeriodStart: optionalDate('currentPeriodStart'),
+    currentPeriodEnd: optionalDate('currentPeriodEnd')
+  };
+}
+
 async function transitionFinancialRule(
   req: express.Request,
   res: express.Response,
@@ -715,6 +759,60 @@ async function startServer() {
       const status = code === 'PAYOUT_NOT_FOUND' ? 404 : code === 'PAYOUT_STATE_CONFLICT' || code === 'PAYOUT_PROVIDER_ID_CONFLICT' || code === 'WEBHOOK_IDEMPOTENCY_CONFLICT' ? 409 : 503;
       console.error('[SIREN UA] payout webhook settlement failure', { requestId: res.locals.requestId, provider, eventId, code });
       return res.status(status).json({ error: code, message: 'Не вдалося завершити payout settlement.' });
+    }
+  });
+
+  // Billing providers use the same signed transport but a separate secret and
+  // normalized subscription envelope. This route changes only the durable
+  // subscription state; payment qualification/commission creation remains a
+  // separate post-verification boundary and is never inferred from a browser
+  // request or from a trial record.
+  app.post('/api/webhooks/:provider/subscription', async (req, res) => {
+    const provider = typeof req.params.provider === 'string' ? req.params.provider : '';
+    const secret = (process.env.PAYMENT_WEBHOOK_SECRET ?? '').trim();
+    const rawBody = (req as express.Request & { rawBody?: string }).rawBody;
+    const eventId = req.get('x-siren-event-id') ?? '';
+    const timestamp = req.get('x-siren-timestamp') ?? '';
+    const signature = req.get('x-siren-signature') ?? '';
+    if (!['WEB', 'APPLE', 'GOOGLE'].includes(provider) || !secret || databaseRuntimeStatus !== 'CONNECTED') {
+      return res.status(503).json({ error: 'PAYMENT_WEBHOOK_NOT_CONNECTED', status: 'NOT_CONNECTED', message: 'Billing webhook gateway не підключений.' });
+    }
+    if (!rawBody || !/^[A-Za-z0-9._:-]{1,128}$/.test(eventId) || !/^\d+$/.test(timestamp)) {
+      return res.status(400).json({ error: 'INVALID_SUBSCRIPTION_WEBHOOK', message: 'Webhook envelope не пройшов базову перевірку.' });
+    }
+    try {
+      verifyWebhookSignature({ provider, eventId, rawBody, signature, timestamp, secret }, Date.now(), webhookToleranceSeconds());
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'WEBHOOK_SIGNATURE_INVALID';
+      return res.status(401).json({ error: code, status: 'UNAUTHORIZED', message: 'Webhook signature не підтверджено.' });
+    }
+    let payload: ReturnType<typeof parseNormalizedSubscriptionWebhook>;
+    try {
+      payload = parseNormalizedSubscriptionWebhook(req.body);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'INVALID_SUBSCRIPTION_WEBHOOK';
+      return res.status(400).json({ error: code, message: 'Нормалізований subscription webhook має некоректну структуру.' });
+    }
+    try {
+      const result = await subscriptionRepository.applyVerifiedProviderEvent({
+        subscriptionId: payload.subscriptionId,
+        providerEventId: eventId,
+        event: payload.event,
+        payload: req.body as Record<string, unknown>,
+        occurredAt: payload.occurredAt,
+        provider: provider as 'WEB' | 'APPLE' | 'GOOGLE',
+        rawBody,
+        providerSubscriptionId: payload.providerSubscriptionId,
+        billingConsentAt: payload.billingConsentAt,
+        currentPeriodStart: payload.currentPeriodStart,
+        currentPeriodEnd: payload.currentPeriodEnd
+      });
+      return res.json({ status: result, provider, providerEventId: eventId });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'SUBSCRIPTION_WEBHOOK_FAILED';
+      const status = code === 'SUBSCRIPTION_NOT_FOUND' ? 404 : code === 'INVALID_SUBSCRIPTION_TRANSITION' || code === 'WEBHOOK_IDEMPOTENCY_CONFLICT' ? 409 : 503;
+      console.error('[SIREN UA] subscription webhook failure', { requestId: res.locals.requestId, provider, eventId, code });
+      return res.status(status).json({ error: code, message: 'Не вдалося застосувати subscription event.' });
     }
   });
 

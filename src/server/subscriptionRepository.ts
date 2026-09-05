@@ -189,13 +189,40 @@ export class SubscriptionRepository {
   }
 
   /** Apply only a signature-verified, normalized provider event. */
-  async applyVerifiedProviderEvent(input: { subscriptionId: string; providerEventId: string; event: SubscriptionTransitionEvent; payload: Record<string, unknown>; occurredAt: string }): Promise<'APPLIED' | 'DUPLICATE'> {
+  async applyVerifiedProviderEvent(input: {
+    subscriptionId: string;
+    providerEventId: string;
+    event: SubscriptionTransitionEvent;
+    payload: Record<string, unknown>;
+    occurredAt: string;
+    provider?: 'WEB' | 'APPLE' | 'GOOGLE';
+    rawBody?: string;
+    providerSubscriptionId?: string;
+    billingConsentAt?: string;
+    currentPeriodStart?: string;
+    currentPeriodEnd?: string;
+  }): Promise<'APPLIED' | 'DUPLICATE'> {
     const subscriptionId = requiredString(input.subscriptionId, 'subscription_id');
     const providerEventId = requiredString(input.providerEventId, 'provider_event_id');
     const occurredAt = requiredIso(input.occurredAt, 'occurred_at');
+    const rawBody = input.rawBody ?? '';
+    if (rawBody.length > 100_000) throw new Error('INVALID_SUBSCRIPTION_VALUE:raw_body');
+    if (input.provider && !['WEB', 'APPLE', 'GOOGLE'].includes(input.provider)) throw new Error('INVALID_SUBSCRIPTION_VALUE:provider');
+    const providerSubscriptionId = input.providerSubscriptionId === undefined ? null : requiredString(input.providerSubscriptionId, 'provider_subscription_id');
+    const billingConsentAt = input.billingConsentAt === undefined ? null : requiredIso(input.billingConsentAt, 'billing_consent_at');
+    const currentPeriodStart = input.currentPeriodStart === undefined ? null : requiredIso(input.currentPeriodStart, 'current_period_start');
+    const currentPeriodEnd = input.currentPeriodEnd === undefined ? null : requiredIso(input.currentPeriodEnd, 'current_period_end');
     return this.database.withTransaction(async (client) => {
-      const existing = await client.query('SELECT id FROM subscription_events WHERE provider_event_id = $1 FOR UPDATE', [providerEventId]);
-      if (existing.rows[0]) return 'DUPLICATE';
+      const existing = await client.query('SELECT id, raw_body FROM subscription_events WHERE provider_event_id = $1 FOR UPDATE', [providerEventId]);
+      if (existing.rows[0]) {
+        if (rawBody && existing.rows[0].raw_body) {
+          const storedRawBody = Buffer.isBuffer(existing.rows[0].raw_body)
+            ? existing.rows[0].raw_body
+            : Buffer.from(String(existing.rows[0].raw_body), 'utf8');
+          if (!storedRawBody.equals(Buffer.from(rawBody, 'utf8'))) throw new Error('WEBHOOK_IDEMPOTENCY_CONFLICT');
+        }
+        return 'DUPLICATE';
+      }
       const result = await client.query(`
         SELECT id, user_id, plan_code, state, trial_ends_at, current_period_start, current_period_end,
                provider, billing_consent_at, created_at, updated_at
@@ -205,12 +232,20 @@ export class SubscriptionRepository {
       const current = mapSubscription(result.rows[0]);
       const nextState = transitionSubscriptionState(current.state, input.event);
       await client.query(`
-        UPDATE subscriptions SET state = $2, updated_at = $3 WHERE id = $1
-      `, [subscriptionId, nextState, occurredAt]);
+        UPDATE subscriptions
+        SET state = $2,
+            provider = COALESCE($3, provider),
+            provider_subscription_id = COALESCE($4, provider_subscription_id),
+            billing_consent_at = COALESCE($5, billing_consent_at),
+            current_period_start = COALESCE($6, current_period_start),
+            current_period_end = COALESCE($7, current_period_end),
+            updated_at = $8
+        WHERE id = $1
+      `, [subscriptionId, nextState, input.provider ?? null, providerSubscriptionId, billingConsentAt, currentPeriodStart, currentPeriodEnd, occurredAt]);
       await client.query(`
-        INSERT INTO subscription_events (id, subscription_id, event_type, provider_event_id, payload, occurred_at)
-        VALUES ($1, $2, $3, $4, $5::jsonb, $6)
-      `, [randomUUID(), subscriptionId, input.event, providerEventId, JSON.stringify(input.payload), occurredAt]);
+        INSERT INTO subscription_events (id, subscription_id, event_type, provider_event_id, payload, raw_body, occurred_at)
+        VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)
+      `, [randomUUID(), subscriptionId, input.event, providerEventId, JSON.stringify(input.payload), rawBody ? Buffer.from(rawBody, 'utf8') : null, occurredAt]);
       return 'APPLIED';
     });
   }

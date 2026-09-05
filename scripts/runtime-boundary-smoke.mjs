@@ -69,6 +69,14 @@ try {
   assert.equal(payoutWebhook.status, 503);
   assert.equal((await payoutWebhook.json()).error, 'PAYOUT_WEBHOOK_NOT_CONNECTED');
 
+  const subscriptionWebhook = await fetch(`http://127.0.0.1:${port}/api/webhooks/WEB/subscription`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ subscriptionId: 'subscription-1', event: 'PAYMENT_SUCCEEDED', occurredAt: new Date().toISOString() })
+  });
+  assert.equal(subscriptionWebhook.status, 503);
+  assert.equal((await subscriptionWebhook.json()).error, 'PAYMENT_WEBHOOK_NOT_CONNECTED');
+
   const session = await getJson('/api/auth/session');
   assert.equal(session.response.status, 503);
   assert.equal(session.body.error, 'FINANCIAL_DATA_NOT_CONNECTED');
