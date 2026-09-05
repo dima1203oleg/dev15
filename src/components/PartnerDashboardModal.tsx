@@ -184,6 +184,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
     : null;
 
   const rankProgress = dashboardData.rankProgress;
+  const isDemoData = dashboardData.status === 'DEMO_DATA';
 
   const referralUrl = `${window.location.origin}/r/${encodeURIComponent(partner.referralCode)}`;
 
@@ -302,7 +303,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            {isDemoData && <button
               onClick={() => {
                 onSimulateNewSubscriber();
                 setTimeout(fetchPartnerData, 400);
@@ -312,7 +313,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
             >
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
               <span>+1 Платний підписник</span>
-            </button>
+            </button>}
 
             <button
               onClick={onClose}

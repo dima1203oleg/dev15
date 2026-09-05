@@ -837,6 +837,7 @@ async function startServer() {
       return partnerRepository.getDashboardForUser(principal.subject).then((dashboard) => {
         if (!dashboard) return res.status(404).json({ error: 'PARTNER_NOT_FOUND', message: 'Partner profile не знайдено.' });
         return res.json({
+          status: 'LIVE',
           ...dashboard,
           payoutEligibility: {
             canRequestPayout: false,
@@ -884,6 +885,7 @@ async function startServer() {
     }
 
     res.json({
+      status: 'DEMO_DATA',
       partner,
       wallet,
       rankProgress: {

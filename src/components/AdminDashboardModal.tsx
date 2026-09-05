@@ -35,6 +35,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
 
   // Overview stats fetched from backend
   const [overviewStats, setOverviewStats] = useState<any>(null);
+  const isDemoData = overviewStats?.financialDataMode === 'DEMO_DATA';
 
   const fetchAdminStats = async () => {
     try {
@@ -75,9 +76,12 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       fetchAdminStats();
-      handleValidateCap();
     }
-  }, [isOpen, testL1Rate, testL2Rate, testCampaignBonus]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && isDemoData) handleValidateCap();
+  }, [isOpen, isDemoData, testL1Rate, testL2Rate, testCampaignBonus]);
 
   if (!isOpen) return null;
 
@@ -120,7 +124,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
           >
             Огляд системи
           </button>
-          <button
+          {isDemoData && <button
             onClick={() => setActiveAdminTab('CAP_VALIDATOR')}
             className={`py-3.5 px-4 border-b-2 transition-all flex items-center gap-1.5 ${
               activeAdminTab === 'CAP_VALIDATOR' ? 'border-rose-400 text-rose-300' : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -128,7 +132,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
           >
             <Scale className="w-4 h-4" />
             50% Hard Cap Валідатор
-          </button>
+          </button>}
           <button
             onClick={() => setActiveAdminTab('THREAT_SETTINGS')}
             className={`py-3.5 px-4 border-b-2 transition-all flex items-center gap-1.5 ${
@@ -138,7 +142,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
             <Radio className="w-4 h-4" />
             ThreatServer інтеграція
           </button>
-          <button
+          {isDemoData && <button
             onClick={() => setActiveAdminTab('ROLES')}
             className={`py-3.5 px-4 border-b-2 transition-all flex items-center gap-1.5 ${
               activeAdminTab === 'ROLES' ? 'border-rose-400 text-rose-300' : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -146,7 +150,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
           >
             <Users className="w-4 h-4" />
             Тестовий перемикач ролей
-          </button>
+          </button>}
         </div>
 
         {/* Body Content */}
