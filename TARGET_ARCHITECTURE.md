@@ -36,7 +36,8 @@
 - [x] Domain primitives: strict L1/L2, rank thresholds, QCB, 50% cap, minor units, HALF_UP rounding.
 - [x] Domain/test ledger: append-only balanced transactions and wallet projection.
 - [x] Explicit `DEMO_DATA` / `NOT_CONNECTED` threat and financial boundaries.
-- [ ] Persistent database, migrations and transactional outbox.
+- [ ] Persistent database connection, migrations and transactional outbox.
+- [x] PostgreSQL persistence/immutable-ledger contract drafted in `db/001_partner_platform.sql` (not connected or executed).
 - [ ] Real identity/authentication, server-side RBAC and MFA for finance admins.
 - [ ] Signed payment/payout webhooks, KYC/AML/tax and provider reconciliation.
 - [ ] Authoritative ThreatServer, geography and real-time resilience.

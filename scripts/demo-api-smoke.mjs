@@ -9,7 +9,8 @@ const server = spawn(process.execPath, ['dist/server.cjs'], {
     NODE_ENV: 'development',
     PORT: String(port),
     SIREN_DATA_MODE: 'NOT_CONNECTED',
-    SIREN_FINANCIAL_MODE: 'DEMO_DATA'
+    SIREN_FINANCIAL_MODE: 'DEMO_DATA',
+    SIREN_PUBLIC_ORIGIN: 'https://demo.sirenua.test'
   },
   stdio: ['ignore', 'pipe', 'pipe']
 });
@@ -49,7 +50,7 @@ try {
   const referralLink = await getJson('/api/partner/referral-link');
   assert.equal(referralLink.response.status, 200);
   assert.equal(referralLink.body.referralCode, 'SIREN_ATLAS');
-  assert.match(referralLink.body.referralUrl, /\/r\/SIREN_ATLAS$/);
+  assert.equal(referralLink.body.referralUrl, 'https://demo.sirenua.test/r/SIREN_ATLAS');
 
   const networkResponse = await fetch(`http://127.0.0.1:${port}/api/partner/network?limit=1&offset=1`);
   const network = await networkResponse.json();

@@ -432,6 +432,25 @@ function maskSensitiveDestination(value: string): string {
   return normalized.length >= 4 ? `•••• ${normalized.slice(-4)}` : '••••';
 }
 
+function configuredPublicOrigin(req: express.Request): string | null {
+  const configured = (process.env.SIREN_PUBLIC_ORIGIN ?? process.env.APP_URL ?? '').trim();
+  if (configured) {
+    try {
+      const parsed = new URL(configured);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
+      return parsed.origin;
+    } catch {
+      return null;
+    }
+  }
+  // Host-derived URLs are acceptable only for local demo links. Production
+  // must supply an allowlisted canonical origin to prevent host-header link
+  // injection in referral messages and QR codes.
+  if (isProductionLike) return null;
+  const host = req.get('host');
+  return host ? `${req.protocol}://${host}` : null;
+}
+
 // ============================================================================
 // EXPRESS APPLICATION INITIALIZATION
 // ============================================================================
@@ -715,7 +734,8 @@ async function startServer() {
     if (!financialDemoEnabled) return financialUnavailable(res);
     const partner = partners.get(demoPartnerId);
     if (!partner) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
-    const origin = `${req.protocol}://${req.get('host')}`;
+    const origin = configuredPublicOrigin(req);
+    if (!origin) return res.status(503).json({ error: 'PUBLIC_ORIGIN_NOT_CONFIGURED', status: 'NOT_CONNECTED', message: 'Канонічний public origin не налаштований на сервері.' });
     res.json({
       status: 'DEMO_DATA',
       referralCode: partner.referralCode,
@@ -946,7 +966,8 @@ async function startServer() {
     if (!partner) return res.status(404).json({ error: 'REFERRAL_CODE_NOT_FOUND', message: 'Referral-код не знайдено.' });
 
     partner.totalClicks += 1;
-    res.setHeader('Set-Cookie', `siren_referral=${encodeURIComponent(partner.referralCode)}; Max-Age=2592000; Path=/; HttpOnly; SameSite=Lax`);
+    const secureCookie = isProductionLike ? '; Secure' : '';
+    res.setHeader('Set-Cookie', `siren_referral=${encodeURIComponent(partner.referralCode)}; Max-Age=2592000; Path=/; HttpOnly; SameSite=Lax${secureCookie}`);
     return res.redirect(302, `/?ref=${encodeURIComponent(partner.referralCode)}`);
   });
 
