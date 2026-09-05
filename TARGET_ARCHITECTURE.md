@@ -36,8 +36,9 @@
 - [x] Domain primitives: strict L1/L2, rank thresholds, QCB, 50% cap, minor units, HALF_UP rounding.
 - [x] Domain/test ledger: append-only balanced transactions and wallet projection.
 - [x] Explicit `DEMO_DATA` / `NOT_CONNECTED` threat and financial boundaries.
-- [ ] Persistent database connection, migrations and transactional outbox.
-- [x] PostgreSQL persistence/immutable-ledger contract drafted in `db/001_partner_platform.sql` (not connected or executed).
+- [ ] Production transactional outbox and write-side repository wiring.
+- [x] PostgreSQL connection probe, idempotent migration runner and immutable-ledger contract in `db/001_partner_platform.sql` / `db/002_partner_campaign_links.sql`.
+- [x] Authenticated PostgreSQL partner read projection for dashboard, network, ledger and payout history.
 - [ ] Real identity/authentication, server-side RBAC and MFA for finance admins.
 - [ ] Signed payment/payout webhooks, KYC/AML/tax and provider reconciliation.
 - [ ] Authoritative ThreatServer, geography and real-time resilience.

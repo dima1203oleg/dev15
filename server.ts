@@ -23,6 +23,7 @@ import {
 } from './src/domain/partnerPlatform';
 import { createPostgresBoundary, DatabaseRuntimeStatus } from './src/server/postgresBoundary';
 import { createOidcIdentityVerifier, IdentityRole } from './src/server/identityBoundary';
+import { PostgresPartnerRepository } from './src/server/postgresPartnerRepository';
 
 // ============================================================================
 // IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
@@ -497,6 +498,7 @@ async function startServer() {
   const app = express();
   const database = createPostgresBoundary();
   const identityVerifier = createOidcIdentityVerifier();
+  const partnerRepository = new PostgresPartnerRepository(database);
   databaseRuntimeStatus = database.status();
   if (database.configured) await database.probe();
   databaseRuntimeStatus = database.status();
@@ -755,7 +757,27 @@ async function startServer() {
 
   // Partner Dashboard Summary
   app.get('/api/partner/dashboard', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
-    if (!financialDemoEnabled) return financialUnavailable(res);
+    if (!financialDemoEnabled) {
+      if (databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+      const principal = res.locals.principal as { subject?: unknown } | undefined;
+      if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+      return partnerRepository.getDashboardForUser(principal.subject).then((dashboard) => {
+        if (!dashboard) return res.status(404).json({ error: 'PARTNER_NOT_FOUND', message: 'Partner profile не знайдено.' });
+        return res.json({
+          ...dashboard,
+          payoutEligibility: {
+            canRequestPayout: false,
+            minimumPayout: { baseCurrency: 'USD', baseAmount: '10.00', payoutCurrency: dashboard.wallet.currency, amountMinor: null, status: 'FX_SOURCE_NOT_CONNECTED' },
+            minimumPayoutMinor: null,
+            feesPaidBy: 'PARTNER',
+            providerStatus: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED'
+          }
+        });
+      }).catch((error) => {
+        console.error('[SIREN UA] partner dashboard repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+        return res.status(503).json({ error: 'PARTNER_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Partner data temporarily unavailable.' });
+      });
+    }
     const partner = partners.get(demoPartnerId);
     if (!partner) return res.status(404).json({ error: 'Partner not found' });
 
@@ -827,8 +849,22 @@ async function startServer() {
     });
   });
 
-  app.get('/api/partner/referral-link', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
-    if (!financialDemoEnabled) return financialUnavailable(res);
+  app.get('/api/partner/referral-link', requireRoles('PARTNER', 'AMBASSADOR'), async (req, res) => {
+    if (!financialDemoEnabled) {
+      if (databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+      const principal = res.locals.principal as { subject?: unknown } | undefined;
+      if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+      try {
+        const dashboard = await partnerRepository.getDashboardForUser(principal.subject);
+        if (!dashboard) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
+        const origin = configuredPublicOrigin(req);
+        if (!origin) return res.status(503).json({ error: 'PUBLIC_ORIGIN_NOT_CONFIGURED', status: 'NOT_CONNECTED', message: 'Канонічний public origin не налаштований на сервері.' });
+        return res.json({ status: 'LIVE', referralCode: dashboard.partner.referralCode, referralUrl: `${origin}/r/${encodeURIComponent(dashboard.partner.referralCode)}` });
+      } catch (error) {
+        console.error('[SIREN UA] referral link repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+        return res.status(503).json({ error: 'PARTNER_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Partner data temporarily unavailable.' });
+      }
+    }
     const partner = partners.get(demoPartnerId);
     if (!partner) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
     const origin = configuredPublicOrigin(req);
@@ -844,10 +880,7 @@ async function startServer() {
   // attribution parameters cannot be forged by a browser-only helper. This is
   // still demo-only until identity, durable attribution storage and auth are
   // connected in production.
-  app.post('/api/partner/share', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
-    if (!financialDemoEnabled) return financialUnavailable(res);
-    const partner = partners.get(demoPartnerId);
-    if (!partner) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
+  app.post('/api/partner/share', requireRoles('PARTNER', 'AMBASSADOR'), async (req, res) => {
     const payload = req.body && typeof req.body === 'object' && !Array.isArray(req.body)
       ? req.body as { campaign?: unknown; content?: unknown }
       : {};
@@ -859,6 +892,29 @@ async function startServer() {
         message: 'Назва кампанії та content можуть містити лише безпечні символи й до 64 знаків.'
       });
     }
+    if (!financialDemoEnabled) {
+      if (databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+      const principal = res.locals.principal as { subject?: unknown } | undefined;
+      if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+      try {
+        const dashboard = await partnerRepository.getDashboardForUser(principal.subject);
+        if (!dashboard) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
+        const origin = configuredPublicOrigin(req);
+        if (!origin) return res.status(503).json({ error: 'PUBLIC_ORIGIN_NOT_CONFIGURED', status: 'NOT_CONNECTED', message: 'Канонічний public origin не налаштований на сервері.' });
+        const campaignLink = await partnerRepository.createCampaignLink(dashboard.partner.id, campaign, content ?? '');
+        const url = new URL(`/r/${encodeURIComponent(dashboard.partner.referralCode)}`, origin);
+        url.searchParams.set('utm_source', 'partner');
+        url.searchParams.set('utm_medium', 'referral');
+        url.searchParams.set('utm_campaign', campaign);
+        if (content) url.searchParams.set('utm_content', content);
+        return res.json({ status: 'LIVE', referralCode: dashboard.partner.referralCode, campaign, content, campaignLinkId: campaignLink.id, referralUrl: url.toString() });
+      } catch (error) {
+        console.error('[SIREN UA] campaign link repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+        return res.status(503).json({ error: 'PARTNER_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Partner data temporarily unavailable.' });
+      }
+    }
+    const partner = partners.get(demoPartnerId);
+    if (!partner) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
     const origin = configuredPublicOrigin(req);
     if (!origin) return res.status(503).json({ error: 'PUBLIC_ORIGIN_NOT_CONFIGURED', status: 'NOT_CONNECTED', message: 'Канонічний public origin не налаштований на сервері.' });
 
@@ -888,8 +944,31 @@ async function startServer() {
   });
 
   // Network (L1 and L2 referrals list with privacy masking)
-  app.get('/api/partner/network', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
-    if (!financialDemoEnabled) return financialUnavailable(res);
+  app.get('/api/partner/network', requireRoles('PARTNER', 'AMBASSADOR'), async (req, res) => {
+    if (!financialDemoEnabled) {
+      if (databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+      const principal = res.locals.principal as { subject?: unknown } | undefined;
+      if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+      const parseQueryInteger = (value: unknown, fallback: number) => {
+        if (typeof value !== 'string' || !/^\d+$/.test(value)) return fallback;
+        const parsed = Number(value);
+        return Number.isSafeInteger(parsed) ? parsed : fallback;
+      };
+      const limit = Math.min(50, Math.max(1, parseQueryInteger(req.query.limit, 20)));
+      const offset = parseQueryInteger(req.query.offset, 0);
+      try {
+        const partnerId = await partnerRepository.getPartnerIdForUser(principal.subject);
+        if (!partnerId) return res.status(404).json({ error: 'PARTNER_NOT_FOUND', message: 'Partner profile не знайдено.' });
+        const [l1, l2] = await Promise.all([
+          partnerRepository.listNetwork(partnerId, 'L1', limit, offset),
+          partnerRepository.listNetwork(partnerId, 'L2', limit, offset)
+        ]);
+        return res.json({ l1, l2, depthLimitNotice: 'Глибина партнерської моделі суворо обмежена 2 рівнями (L1 + L2). L3+ не оплачується.' });
+      } catch (error) {
+        console.error('[SIREN UA] partner network repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+        return res.status(503).json({ error: 'PARTNER_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Partner data temporarily unavailable.' });
+      }
+    }
     const l1List = attributions.filter(a => a.referrerL1Id === demoPartnerId);
     const l2List = attributions.filter(a => a.referrerL2Id === demoPartnerId);
     const parseQueryInteger = (value: unknown, fallback: number) => {
@@ -928,8 +1007,21 @@ async function startServer() {
   });
 
   // Earnings & Immutable Ledger Projection
-  app.get('/api/partner/ledger', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
-    if (!financialDemoEnabled) return financialUnavailable(res);
+  app.get('/api/partner/ledger', requireRoles('PARTNER', 'AMBASSADOR'), async (req, res) => {
+    if (!financialDemoEnabled) {
+      if (databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+      const principal = res.locals.principal as { subject?: unknown } | undefined;
+      if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+      try {
+        const dashboard = await partnerRepository.getDashboardForUser(principal.subject);
+        if (!dashboard) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
+        const entries = await partnerRepository.listLedger(dashboard.partner.id);
+        return res.json({ wallet: dashboard.wallet, entries, totalEntriesCount: entries.length, integrityCheck: 'DATABASE_PROJECTION' });
+      } catch (error) {
+        console.error('[SIREN UA] ledger repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+        return res.status(503).json({ error: 'PARTNER_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Partner data temporarily unavailable.' });
+      }
+    }
     const entries = ledgerEntries.filter(e => e.partnerId === demoPartnerId);
     const wallet = calculateWallet(demoPartnerId);
 
@@ -951,8 +1043,20 @@ async function startServer() {
   });
 
   // Payout History
-  app.get('/api/partner/payouts', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
-    if (!financialDemoEnabled) return financialUnavailable(res);
+  app.get('/api/partner/payouts', requireRoles('PARTNER', 'AMBASSADOR'), async (req, res) => {
+    if (!financialDemoEnabled) {
+      if (databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+      const principal = res.locals.principal as { subject?: unknown } | undefined;
+      if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+      try {
+        const dashboard = await partnerRepository.getDashboardForUser(principal.subject);
+        if (!dashboard) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
+        return res.json({ payouts: await partnerRepository.listPayouts(dashboard.partner.id) });
+      } catch (error) {
+        console.error('[SIREN UA] payouts repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+        return res.status(503).json({ error: 'PARTNER_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Partner data temporarily unavailable.' });
+      }
+    }
     const list = payoutRequests.filter(p => p.partnerId === demoPartnerId);
     res.json({
       payouts: list.slice().reverse().map((payout) => ({
@@ -1093,34 +1197,61 @@ async function startServer() {
   // record the click and hand the referral code to the next page through an
   // HttpOnly cookie. Without an attribution/identity backend, production must
   // fail closed instead of pretending that a click was tracked.
-  app.get('/r/:referralCode', (req, res) => {
+  app.get('/r/:referralCode', async (req, res) => {
     const referralCode = req.params.referralCode;
     if (!/^[A-Za-z0-9_-]{3,64}$/.test(referralCode)) {
       return res.status(400).json({ error: 'INVALID_REFERRAL_CODE', message: 'Некоректний referral-код.' });
     }
+    let resolvedPartner: { id: string; referralCode: string } | undefined;
     if (!financialDemoEnabled) {
-      return res.status(503).json({
-        error: 'REFERRAL_ATTRIBUTION_NOT_CONNECTED',
-        status: 'NOT_CONNECTED',
-        message: 'Referral attribution ще не підключено до production identity/database.'
-      });
+      if (databaseRuntimeStatus !== 'CONNECTED') {
+        return res.status(503).json({
+          error: 'REFERRAL_ATTRIBUTION_NOT_CONNECTED',
+          status: 'NOT_CONNECTED',
+          message: 'Referral attribution ще не підключено до production identity/database.'
+        });
+      }
+      try {
+        resolvedPartner = (await partnerRepository.findPartnerByReferralCode(referralCode)) ?? undefined;
+        if (!resolvedPartner) return res.status(404).json({ error: 'REFERRAL_CODE_NOT_FOUND', message: 'Referral-код не знайдено.' });
+      } catch (error) {
+        console.error('[SIREN UA] referral click repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+        return res.status(503).json({ error: 'REFERRAL_ATTRIBUTION_NOT_CONNECTED', status: 'NOT_CONNECTED', message: 'Referral attribution temporarily unavailable.' });
+      }
+    } else {
+      const partner = Array.from(partners.values()).find((candidate) => candidate.referralCode === referralCode || candidate.vanitySlug === referralCode);
+      if (!partner) return res.status(404).json({ error: 'REFERRAL_CODE_NOT_FOUND', message: 'Referral-код не знайдено.' });
+      partner.totalClicks += 1;
+      resolvedPartner = { id: partner.id, referralCode: partner.referralCode };
     }
 
-    const partner = Array.from(partners.values()).find((candidate) => candidate.referralCode === referralCode || candidate.vanitySlug === referralCode);
-    if (!partner) return res.status(404).json({ error: 'REFERRAL_CODE_NOT_FOUND', message: 'Referral-код не знайдено.' });
-
-    partner.totalClicks += 1;
     const secureCookie = isProductionLike ? '; Secure' : '';
     const referralContext = readReferralContext(req);
+    if (!financialDemoEnabled && resolvedPartner) {
+      try {
+        await partnerRepository.recordClick({
+          partnerId: resolvedPartner.id,
+          referralCode: resolvedPartner.referralCode,
+          utmSource: referralContext.utm_source,
+          utmMedium: referralContext.utm_medium,
+          utmCampaign: referralContext.utm_campaign,
+          utmContent: referralContext.utm_content,
+          requestId: res.locals.requestId
+        });
+      } catch (error) {
+        console.error('[SIREN UA] referral click persistence failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+        return res.status(503).json({ error: 'REFERRAL_ATTRIBUTION_NOT_CONNECTED', status: 'NOT_CONNECTED', message: 'Referral attribution temporarily unavailable.' });
+      }
+    }
     const contextCookie = encodeURIComponent(JSON.stringify({
-      referralCode: partner.referralCode,
+      referralCode: resolvedPartner!.referralCode,
       ...referralContext
     }));
     res.setHeader('Set-Cookie', [
-      `siren_referral=${encodeURIComponent(partner.referralCode)}; Max-Age=2592000; Path=/; HttpOnly; SameSite=Lax${secureCookie}`,
+      `siren_referral=${encodeURIComponent(resolvedPartner!.referralCode)}; Max-Age=2592000; Path=/; HttpOnly; SameSite=Lax${secureCookie}`,
       `siren_referral_context=${contextCookie}; Max-Age=2592000; Path=/; HttpOnly; SameSite=Lax${secureCookie}`
     ]);
-    const redirectParams = new URLSearchParams({ ref: partner.referralCode });
+    const redirectParams = new URLSearchParams({ ref: resolvedPartner!.referralCode });
     for (const [key, value] of Object.entries(referralContext)) redirectParams.set(key, value);
     return res.redirect(302, `/?${redirectParams.toString()}`);
   });

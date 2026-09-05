@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { QueryResultRow } from 'pg';
 import { DEFAULT_RANK_RULES, resolveRank } from '../domain/partnerPlatform';
 import type { PostgresBoundary } from './postgresBoundary';
@@ -67,6 +68,33 @@ export interface PersistedNetworkPage {
   items: PersistedNetworkItem[];
 }
 
+export interface PersistedLedgerEntry {
+  id: string;
+  transactionId: string;
+  timestamp: string;
+  debitAccount: string;
+  creditAccount: string;
+  amountMinor: number;
+  currency: string;
+  partnerId: string;
+  description: string;
+  idempotencyKey: string;
+}
+
+export interface PersistedPayout {
+  id: string;
+  partnerId: string;
+  amountMinor: number;
+  currency: string;
+  provider: string;
+  destinationAccount: string;
+  status: string;
+  idempotencyKey: string;
+  requestedAt: string;
+  completedAt?: string;
+  failureReason?: string;
+}
+
 function requiredString(value: unknown, field: string): string {
   if (typeof value !== 'string' || value.length === 0) throw new Error(`INVALID_DATABASE_VALUE:${field}`);
   return value;
@@ -97,41 +125,32 @@ function networkStatus(row: Record<string, unknown>): string {
 }
 
 /**
- * Read-only PostgreSQL projection for authenticated partner surfaces. It
- * deliberately contains no writes or balance mutation; all financial truth is
- * read from wallet_projections and immutable ledger tables.
+ * PostgreSQL boundary for authenticated partner surfaces. Financial values are
+ * read from wallet_projections and immutable ledger tables; the only writes in
+ * this class are non-financial campaign attribution records.
  */
 export class PostgresPartnerRepository {
   constructor(private readonly database: PostgresBoundary) {}
 
-  async getDashboard(partnerId: string): Promise<PersistedPartnerDashboard | null> {
+  private async getDashboardBy(field: 'p.id' | 'p.user_id', value: string): Promise<PersistedPartnerDashboard | null> {
     const result = await this.database.query<Record<string, unknown>>(`
-      WITH network_counts AS (
-        SELECT
-          COUNT(*) FILTER (WHERE direct_partner_id = $1 AND status <> 'REJECTED')::bigint AS l1_total,
-          COUNT(*) FILTER (WHERE second_level_partner_id = $1 AND status <> 'REJECTED')::bigint AS l2_total,
-          COUNT(*) FILTER (WHERE direct_partner_id = $1 AND qualified_at IS NOT NULL AND status = 'LOCKED')::bigint AS l1_paid,
-          COUNT(*) FILTER (WHERE second_level_partner_id = $1 AND qualified_at IS NOT NULL AND status = 'LOCKED')::bigint AS l2_paid
-        FROM referral_attributions
-      )
       SELECT
         p.id, p.user_id, p.referral_code, p.rank, p.rank_state,
         p.qualified_active_paid_l1, p.quality_status, p.created_at,
         COALESCE(a.tier, 'NONE') AS ambassador_tier,
         COALESCE(a.approved, false) AS ambassador_approved,
-        COALESCE(n.l1_total, 0)::bigint AS l1_total,
-        COALESCE(n.l2_total, 0)::bigint AS l2_total,
-        COALESCE(n.l1_paid, 0)::bigint AS l1_paid,
-        COALESCE(n.l2_paid, 0)::bigint AS l2_paid,
+        COALESCE((SELECT COUNT(*) FROM referral_attributions ra WHERE ra.direct_partner_id = p.id AND ra.status <> 'REJECTED'), 0)::bigint AS l1_total,
+        COALESCE((SELECT COUNT(*) FROM referral_attributions ra WHERE ra.second_level_partner_id = p.id AND ra.status <> 'REJECTED'), 0)::bigint AS l2_total,
+        COALESCE((SELECT COUNT(*) FROM referral_attributions ra WHERE ra.direct_partner_id = p.id AND ra.qualified_at IS NOT NULL AND ra.status = 'LOCKED'), 0)::bigint AS l1_paid,
+        COALESCE((SELECT COUNT(*) FROM referral_attributions ra WHERE ra.second_level_partner_id = p.id AND ra.qualified_at IS NOT NULL AND ra.status = 'LOCKED'), 0)::bigint AS l2_paid,
         COALESCE((SELECT COUNT(*) FROM partner_link_clicks c WHERE c.partner_id = p.id), 0)::bigint AS total_clicks,
         w.currency, w.pending_minor, w.held_minor, w.available_minor,
         w.locked_for_payout_minor, w.paid_minor, w.reversed_minor, w.debt_minor
       FROM partners p
-      CROSS JOIN network_counts n
       LEFT JOIN ambassador_profiles a ON a.partner_id = p.id
       LEFT JOIN wallet_projections w ON w.partner_id = p.id
-      WHERE p.id = $1
-    `, [partnerId]);
+      WHERE ${field} = $1
+    `, [value]);
     const row = result.rows[0];
     if (!row) return null;
 
@@ -161,7 +180,7 @@ export class PostgresPartnerRepository {
         createdAt: requiredIso(row.created_at, 'created_at')
       },
       wallet: {
-        partnerId,
+        partnerId: requiredString(row.id, 'id'),
         pendingMinor: safeInteger(row.pending_minor ?? 0, 'pending_minor'),
         heldMinor: safeInteger(row.held_minor ?? 0, 'held_minor'),
         availableMinor: safeInteger(row.available_minor ?? 0, 'available_minor'),
@@ -179,6 +198,110 @@ export class PostgresPartnerRepository {
         percentageToNext: nextRule ? Math.min(100, Math.round((activeL1PaidCount / nextRule.minQualifiedActivePaidL1) * 100)) : 100
       }
     };
+  }
+
+  async getDashboard(partnerId: string): Promise<PersistedPartnerDashboard | null> {
+    return this.getDashboardBy('p.id', partnerId);
+  }
+
+  async getDashboardForUser(userId: string): Promise<PersistedPartnerDashboard | null> {
+    return this.getDashboardBy('p.user_id', userId);
+  }
+
+  async getPartnerIdForUser(userId: string): Promise<string | null> {
+    const result = await this.database.query<Record<string, unknown>>('SELECT id FROM partners WHERE user_id = $1', [userId]);
+    return result.rows[0] ? requiredString(result.rows[0].id, 'partner_id') : null;
+  }
+
+  async findPartnerByReferralCode(referralCode: string): Promise<{ id: string; referralCode: string } | null> {
+    const result = await this.database.query<Record<string, unknown>>(
+      'SELECT id, referral_code FROM partners WHERE referral_code = $1',
+      [referralCode]
+    );
+    const row = result.rows[0];
+    return row ? { id: requiredString(row.id, 'partner_id'), referralCode: requiredString(row.referral_code, 'referral_code') } : null;
+  }
+
+  async createCampaignLink(partnerId: string, campaign: string, content = ''): Promise<{ id: string }> {
+    if (!/^[A-Za-z0-9._~-]{1,64}$/.test(campaign) || !/^[A-Za-z0-9._~-]{0,64}$/.test(content)) throw new Error('INVALID_CAMPAIGN_PARAMETERS');
+    const id = randomUUID();
+    const result = await this.database.query<Record<string, unknown>>(`
+      INSERT INTO partner_campaign_links (id, partner_id, campaign, content)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (partner_id, campaign, content)
+      DO UPDATE SET campaign = EXCLUDED.campaign
+      RETURNING id
+    `, [id, partnerId, campaign, content]);
+    return { id: requiredString(result.rows[0]?.id, 'campaign_link_id') };
+  }
+
+  async recordClick(input: { partnerId: string; referralCode: string; campaignLinkId?: string; utmSource?: string; utmMedium?: string; utmCampaign?: string; utmContent?: string; requestId?: string; ipHash?: string }): Promise<void> {
+    await this.database.query(`
+      INSERT INTO partner_link_clicks (partner_id, campaign_link_id, referral_code, utm_source, utm_medium, utm_campaign, utm_content, request_id, ip_hash)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `, [input.partnerId, input.campaignLinkId ?? null, input.referralCode, input.utmSource ?? null, input.utmMedium ?? null, input.utmCampaign ?? null, input.utmContent ?? null, input.requestId ?? null, input.ipHash ?? null]);
+  }
+
+  async listLedger(partnerId: string, limit = 100): Promise<PersistedLedgerEntry[]> {
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 500) throw new Error('INVALID_LEDGER_PAGE');
+    const result = await this.database.query<Record<string, unknown>>(`
+      SELECT
+        lt.id,
+        lt.id AS transaction_id,
+        lt.created_at,
+        MAX(CASE WHEN other_line.direction = 'DEBIT' THEN other_line.account_code END) AS debit_account,
+        MAX(CASE WHEN other_line.direction = 'CREDIT' THEN other_line.account_code END) AS credit_account,
+        partner_line.amount_minor,
+        partner_line.currency,
+        partner_line.partner_id,
+        lt.source,
+        lt.idempotency_key
+      FROM ledger_transactions lt
+      JOIN ledger_lines partner_line ON partner_line.transaction_id = lt.id AND partner_line.partner_id = $1
+      JOIN ledger_lines other_line ON other_line.transaction_id = lt.id
+      GROUP BY lt.id, lt.created_at, partner_line.amount_minor, partner_line.currency, partner_line.partner_id, lt.source, lt.idempotency_key
+      ORDER BY lt.created_at DESC, lt.id DESC
+      LIMIT $2
+    `, [partnerId, limit]);
+    return result.rows.map((row) => ({
+      id: requiredString(row.id, 'ledger_id'),
+      transactionId: requiredString(row.transaction_id, 'transaction_id'),
+      timestamp: requiredIso(row.created_at, 'ledger_created_at'),
+      debitAccount: requiredString(row.debit_account, 'debit_account'),
+      creditAccount: requiredString(row.credit_account, 'credit_account'),
+      amountMinor: safeInteger(row.amount_minor, 'ledger_amount_minor'),
+      currency: requiredString(row.currency, 'ledger_currency'),
+      partnerId: requiredString(row.partner_id, 'ledger_partner_id'),
+      description: requiredString(row.source, 'ledger_source'),
+      idempotencyKey: requiredString(row.idempotency_key, 'ledger_idempotency_key')
+    }));
+  }
+
+  async listPayouts(partnerId: string, limit = 100): Promise<PersistedPayout[]> {
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 500) throw new Error('INVALID_PAYOUT_PAGE');
+    const result = await this.database.query<Record<string, unknown>>(`
+      SELECT pr.id, pr.partner_id, pr.requested_amount_minor, pr.currency,
+             pm.provider, pm.destination_last4, pr.status, pr.idempotency_key,
+             pr.created_at, pr.updated_at, pr.failure_reason
+      FROM payout_requests pr
+      JOIN payout_methods pm ON pm.id = pr.payout_method_id
+      WHERE pr.partner_id = $1
+      ORDER BY pr.created_at DESC, pr.id DESC
+      LIMIT $2
+    `, [partnerId, limit]);
+    return result.rows.map((row) => ({
+      id: requiredString(row.id, 'payout_id'),
+      partnerId: requiredString(row.partner_id, 'payout_partner_id'),
+      amountMinor: safeInteger(row.requested_amount_minor, 'payout_amount_minor'),
+      currency: requiredString(row.currency, 'payout_currency'),
+      provider: requiredString(row.provider, 'payout_provider'),
+      destinationAccount: `•••• ${requiredString(row.destination_last4, 'payout_destination_last4')}`,
+      status: requiredString(row.status, 'payout_status'),
+      idempotencyKey: requiredString(row.idempotency_key, 'payout_idempotency_key'),
+      requestedAt: requiredIso(row.created_at, 'payout_created_at'),
+      completedAt: row.status === 'PAID' ? optionalIso(row.updated_at) : undefined,
+      failureReason: row.failure_reason ? String(row.failure_reason) : undefined
+    }));
   }
 
   async listNetwork(partnerId: string, level: 'L1' | 'L2', limit: number, offset: number): Promise<PersistedNetworkPage> {

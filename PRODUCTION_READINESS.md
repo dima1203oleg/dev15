@@ -13,5 +13,5 @@
 ## 2. Production Readiness Assessment
 - **Status**: BLOCKED — this repository is a prototype and does not contain the external ThreatServer, identity, billing, KYC/AML or payout adapters.
 - **Implemented locally**: explicit `DEMO_DATA` / `NOT_CONNECTED` threat boundary, typed financial primitives, immutable in-memory demo projection, cap validation and local acceptance tests.
-- **Not proven by this repository**: production RBAC/authentication, persistent database, signed payment/payout webhooks, KYC/AML, tax handling, reconciliation, authoritative geography and real-time provider stability.
+- **Not proven by this repository**: connected production identity/RBAC deployment, full write-side database orchestration, signed payment/payout webhooks, KYC/AML, tax handling, reconciliation, authoritative geography and real-time provider stability. PostgreSQL migrations/probe and authenticated partner read projections are implemented and locally verified.
 - **Release rule**: do not enable real money movement or operational threat claims until the missing integrations are supplied and staging/security tests pass.
