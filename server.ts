@@ -19,7 +19,8 @@ import {
 import {
   NotConnectedPayoutProvider,
   percentHalfUp,
-  validateAllocationCap
+  validateAllocationCap,
+  verifyWebhookSignature
 } from './src/domain/partnerPlatform';
 import { createPostgresBoundary, DatabaseRuntimeStatus } from './src/server/postgresBoundary';
 import { createOidcIdentityVerifier, IdentityRole } from './src/server/identityBoundary';
@@ -29,6 +30,7 @@ import { SubscriptionRepository } from './src/server/subscriptionRepository';
 import { PartnerEngagementRepository } from './src/server/partnerEngagementRepository';
 import { AdminRepository } from './src/server/adminRepository';
 import { AutoPayoutRepository } from './src/server/autoPayoutRepository';
+import { PayoutRepository } from './src/server/payoutRepository';
 
 // ============================================================================
 // IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
@@ -495,6 +497,36 @@ function readReferralContext(req: express.Request): Record<string, string> {
   return context;
 }
 
+function parseNormalizedPayoutWebhook(value: unknown): {
+  payoutId: string;
+  providerPayoutId: string;
+  status: 'PAID' | 'FAILED';
+  occurredAt: string;
+} {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('INVALID_PAYOUT_WEBHOOK');
+  const payload = value as Record<string, unknown>;
+  const required = (field: string): string => {
+    const item = payload[field];
+    if (typeof item !== 'string' || item.trim().length === 0 || item.length > 256) throw new Error(`INVALID_PAYOUT_WEBHOOK:${field}`);
+    return item.trim();
+  };
+  const status = payload.status;
+  if (status !== 'PAID' && status !== 'FAILED') throw new Error('INVALID_PAYOUT_WEBHOOK:status');
+  const occurredAt = required('occurredAt');
+  if (!Number.isFinite(new Date(occurredAt).getTime())) throw new Error('INVALID_PAYOUT_WEBHOOK:occurredAt');
+  return {
+    payoutId: required('payoutId'),
+    providerPayoutId: required('providerPayoutId'),
+    status,
+    occurredAt: new Date(occurredAt).toISOString()
+  };
+}
+
+function webhookToleranceSeconds(): number {
+  const configured = Number.parseInt(process.env.PAYOUT_WEBHOOK_TOLERANCE_SECONDS ?? '300', 10);
+  return Number.isInteger(configured) && configured >= 0 && configured <= 900 ? configured : 300;
+}
+
 async function transitionFinancialRule(
   req: express.Request,
   res: express.Response,
@@ -537,6 +569,7 @@ async function startServer() {
   const partnerEngagementRepository = new PartnerEngagementRepository(database);
   const adminRepository = new AdminRepository(database);
   const autoPayoutRepository = new AutoPayoutRepository(database);
+  const payoutRepository = new PayoutRepository(database);
   databaseRuntimeStatus = database.status();
   if (database.configured) await database.probe();
   databaseRuntimeStatus = database.status();
@@ -547,7 +580,12 @@ async function startServer() {
   const PORT = configuredPort;
 
   app.disable('x-powered-by');
-  app.use(express.json({ limit: '100kb' }));
+  app.use(express.json({
+    limit: '100kb',
+    verify: (req, _res, buffer) => {
+      (req as express.Request & { rawBody?: string }).rawBody = buffer.toString('utf8');
+    }
+  }));
   app.use((_req, res, next) => {
     const suppliedRequestId = _req.get('x-request-id');
     const requestId = suppliedRequestId && /^[A-Za-z0-9._:-]{1,128}$/.test(suppliedRequestId) ? suppliedRequestId : randomUUID();
@@ -627,6 +665,57 @@ async function startServer() {
       runtime: { database: databaseRuntimeStatus },
       message: ready ? 'Production dependencies are connected.' : 'Потрібні production-інтеграції ще не підключені.'
     });
+  });
+
+  // Provider adapters must normalize their provider-specific payload to this
+  // small envelope before calling the durable settlement boundary. The raw
+  // request body is signed and retained; parsed/re-serialized JSON is never
+  // used for verification. Without both a database and webhook secret this
+  // route fails closed and cannot move money.
+  app.post('/api/webhooks/:provider/payout', async (req, res) => {
+    const provider = typeof req.params.provider === 'string' ? req.params.provider : '';
+    const secret = (process.env.PAYOUT_WEBHOOK_SECRET ?? '').trim();
+    const rawBody = (req as express.Request & { rawBody?: string }).rawBody;
+    const eventId = req.get('x-siren-event-id') ?? '';
+    const timestamp = req.get('x-siren-timestamp') ?? '';
+    const signature = req.get('x-siren-signature') ?? '';
+    if (!/^[A-Za-z0-9._-]{1,64}$/.test(provider) || !secret || databaseRuntimeStatus !== 'CONNECTED') {
+      return res.status(503).json({ error: 'PAYOUT_WEBHOOK_NOT_CONNECTED', status: 'NOT_CONNECTED', message: 'Payout webhook gateway не підключений.' });
+    }
+    if (!rawBody || !/^[A-Za-z0-9._:-]{1,128}$/.test(eventId) || !/^\d+$/.test(timestamp)) {
+      return res.status(400).json({ error: 'INVALID_PAYOUT_WEBHOOK', message: 'Webhook envelope не пройшов базову перевірку.' });
+    }
+    try {
+      verifyWebhookSignature({ provider, eventId, rawBody, signature, timestamp, secret }, Date.now(), webhookToleranceSeconds());
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'WEBHOOK_SIGNATURE_INVALID';
+      return res.status(401).json({ error: code, status: 'UNAUTHORIZED', message: 'Webhook signature не підтверджено.' });
+    }
+    let payload: ReturnType<typeof parseNormalizedPayoutWebhook>;
+    try {
+      payload = parseNormalizedPayoutWebhook(req.body);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'INVALID_PAYOUT_WEBHOOK';
+      return res.status(400).json({ error: code, message: 'Нормалізований payout webhook має некоректну структуру.' });
+    }
+    try {
+      const result = await payoutRepository.settle({
+        payoutId: payload.payoutId,
+        provider,
+        providerEventId: eventId,
+        providerPayoutId: payload.providerPayoutId,
+        status: payload.status,
+        rawBody,
+        signatureVerifiedAt: new Date().toISOString(),
+        occurredAt: payload.occurredAt
+      });
+      return res.json({ status: result, provider, providerEventId: eventId });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'PAYOUT_SETTLEMENT_FAILED';
+      const status = code === 'PAYOUT_NOT_FOUND' ? 404 : code === 'PAYOUT_STATE_CONFLICT' || code === 'PAYOUT_PROVIDER_ID_CONFLICT' ? 409 : 503;
+      console.error('[SIREN UA] payout webhook settlement failure', { requestId: res.locals.requestId, provider, eventId, code });
+      return res.status(status).json({ error: code, message: 'Не вдалося завершити payout settlement.' });
+    }
   });
 
   // --------------------------------------------------------------------------

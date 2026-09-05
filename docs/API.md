@@ -26,6 +26,8 @@ The durable read model is implemented in `src/server/postgresPartnerRepository.t
 
 `GET`/`PUT /api/partner/auto-payout` persist the partner's monthly/threshold preference and write an audit record. The response always exposes provider execution state; with no connected provider the preference is stored but no payout is scheduled, locked or simulated.
 
+`POST /api/webhooks/:provider/payout` is the signed payout settlement gateway. The caller must send the exact normalized JSON envelope `{ payoutId, providerPayoutId, status: "PAID" | "FAILED", occurredAt }` plus `x-siren-event-id`, `x-siren-timestamp` and an HMAC-SHA256 `x-siren-signature` over `timestamp.rawBody` using `PAYOUT_WEBHOOK_SECRET`. The gateway verifies the signature before parsing the payload, stores the raw event, applies provider-event idempotency and settles the durable ledger exactly once. It returns `503 PAYOUT_WEBHOOK_NOT_CONNECTED` until the database and webhook secret are configured.
+
 `GET /api/admin/financial-rules` and `POST /api/admin/financial-rules` plus `/validate`, `/approve` and `/schedule` expose the authenticated maker/checker rule lifecycle. They require PostgreSQL + OIDC roles and never mutate wallet balances; each transition is audited transactionally.
 
 `GET /api/admin/overview` exposes a read-only durable operational projection: trials, qualified paid users, qualified revenue, partner commission liabilities, pending payouts, fraud/quality review counts, chargebacks and privacy-safe partner ranking. MRR and contribution margin remain explicitly unavailable until a real price book and settlement-cost sources are connected.
