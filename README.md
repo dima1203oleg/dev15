@@ -36,6 +36,8 @@ npm run test:performance
 npm audit --omit=dev
 ```
 
+PostgreSQL-backed boundaries require an explicit `DATABASE_URL`; in an isolated PostgreSQL test database also run `npm run db:migrate`, `npm run test:postgres-subscription`, `npm run test:postgres-qualified-payment`, `npm run test:postgres-repository` and `npm run test:postgres-http`.
+
 `npm run test:e2e` starts the app in an explicit `NOT_CONNECTED` boundary and covers health/readiness contracts, public shells, mobile and desktop interactions, axe checks, golden screenshots, and critical-content timing. `npm run test:performance` enforces the main JavaScript/CSS bundle budgets after a production build.
 
 See [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md) for the exact blockers before production use.
