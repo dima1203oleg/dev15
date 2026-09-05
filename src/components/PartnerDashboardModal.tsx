@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 import { 
   X, Users, DollarSign, TrendingUp, Share2, Copy, Check, QrCode, 
   ArrowUpRight, ShieldCheck, Clock, Layers, AlertCircle, RefreshCw, 
@@ -28,6 +29,10 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'TOOLKIT' | 'NETWORK' | 'LEDGER' | 'PAYOUTS'>('OVERVIEW');
   const [copiedLink, setCopiedLink] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const [utmCampaign, setUtmCampaign] = useState('siren_share');
+  const [utmUrl, setUtmUrl] = useState<string | null>(null);
   const [payoutAmount, setPayoutAmount] = useState<string>('0');
   const [payoutProvider, setPayoutProvider] = useState<'MONOBANK' | 'LIQPAY' | 'IBAN_SEPA'>('MONOBANK');
   const [payoutCardNumber, setPayoutCardNumber] = useState<string>('');
@@ -87,6 +92,9 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
       setDashboardData(null);
       setPayoutSuccessMsg(null);
       setPayoutErrorMsg(null);
+      setQrDataUrl(null);
+      setQrError(null);
+      setUtmUrl(null);
       fetchPartnerData();
     }
   }, [isOpen]);
@@ -128,6 +136,36 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
     } catch {
       setCopyError('Не вдалося скопіювати посилання. Скопіюйте його вручну.');
     }
+  };
+
+  const handleToggleQr = async () => {
+    if (qrDataUrl) {
+      setShowQrModal((visible) => !visible);
+      return;
+    }
+    try {
+      const dataUrl = await QRCode.toDataURL(referralUrl, {
+        errorCorrectionLevel: 'M',
+        margin: 2,
+        width: 240,
+        color: { dark: '#07111f', light: '#e9fbff' }
+      });
+      setQrDataUrl(dataUrl);
+      setQrError(null);
+      setShowQrModal(true);
+    } catch {
+      setQrError('Не вдалося створити QR-код. Скопіюйте referral-посилання вручну.');
+      setShowQrModal(true);
+    }
+  };
+
+  const handleGenerateUtm = () => {
+    const url = new URL(referralUrl);
+    const campaign = utmCampaign.trim().replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'siren_share';
+    url.searchParams.set('utm_source', 'partner');
+    url.searchParams.set('utm_medium', 'referral');
+    url.searchParams.set('utm_campaign', campaign);
+    setUtmUrl(url.toString());
   };
 
   const handleRequestPayout = async (e: React.FormEvent) => {
@@ -375,9 +413,10 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                   </button>
 
                   <button
-                    onClick={() => setShowQrModal(!showQrModal)}
+                    onClick={handleToggleQr}
                     className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
-                    title="Показати QR-код"
+                    title="Створити QR-код"
+                    aria-label="Створити QR-код"
                   >
                     <QrCode className="w-4 h-4" />
                   </button>
@@ -388,10 +427,11 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
               {/* Quick QR Code Display if toggled */}
               {showQrModal && (
                 <div className="p-6 rounded-2xl bg-slate-900 border border-slate-700 flex flex-col items-center text-center animate-fadeIn">
-                  <QrCode className="h-16 w-16 text-slate-500" aria-hidden="true" />
-                  <div className="mt-3 text-sm font-bold text-white">QR ще не генерується</div>
+                  {qrDataUrl ? <img src={qrDataUrl} alt="QR-код персонального referral-посилання" className="h-60 w-60 rounded-xl bg-cyan-50 p-2" /> : <QrCode className="h-16 w-16 text-amber-300" aria-hidden="true" />}
+                  <div className="mt-3 text-sm font-bold text-white">QR-код referral-посилання</div>
                   <span className="text-xs font-bold text-white font-mono">{referralUrl}</span>
-                  <p className="text-[11px] text-slate-400 mt-1">Потрібен підключений attribution endpoint і production QR encoder. Не показуємо декоративний QR як робочий.</p>
+                  <p className="text-[11px] text-slate-400 mt-1">Код містить лише ваше посилання. Attribution відбувається server-side після переходу та реєстрації.</p>
+                  {qrError && <p className="mt-2 text-xs text-amber-200" role="alert">{qrError}</p>}
                 </div>
               )}
 
@@ -412,7 +452,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                     <p className="text-xs text-slate-400">Швидка публікація з готовим текстом</p>
                   </div>
                   <button
-                    onClick={() => window.open(`https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent('Дізнавайся точну ситуацію по загрозах у своєму районі з SIREN UA:')}`, '_blank')}
+                    onClick={() => window.open(`https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent('Дізнавайся точну ситуацію по загрозах у своєму районі з SIREN UA:')}`, '_blank', 'noopener,noreferrer')}
                     className="px-3 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 text-xs font-bold"
                   >
                     Поділитися в TG
@@ -440,7 +480,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                     <p className="text-xs text-slate-400">Надіслати родичам та колегам</p>
                   </div>
                   <button
-                    onClick={() => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('Встанови корисний застосунок SIREN UA: ' + referralUrl)}`, '_blank')}
+                    onClick={() => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('Встанови корисний застосунок SIREN UA: ' + referralUrl)}`, '_blank', 'noopener,noreferrer')}
                     className="px-3 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold"
                   >
                     Поділитися
@@ -453,13 +493,14 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                     <h4 className="text-sm font-bold text-white">UTM Генератор</h4>
                     <p className="text-xs text-slate-400">Відстеження окремих відео та кампаній</p>
                   </div>
-                  <button
-                    onClick={() => alert(`Посилання з UTM: ${referralUrl}?utm_source=tiktok_video_1`)}
-                    className="px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-bold"
-                  >
-                    Згенерувати UTM
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <input aria-label="Назва UTM кампанії" value={utmCampaign} onChange={(event) => setUtmCampaign(event.target.value)} className="w-32 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white" />
+                    <button type="button" onClick={handleGenerateUtm} className="px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-bold">
+                      Згенерувати UTM
+                    </button>
+                  </div>
                 </div>
+                {utmUrl && <div className="rounded-2xl border border-purple-400/20 bg-purple-400/[0.06] p-4 text-xs"><div className="font-mono break-all text-purple-100">{utmUrl}</div><button type="button" onClick={async () => { try { await navigator.clipboard.writeText(utmUrl); } catch { setCopyError('Не вдалося скопіювати UTM-посилання. Скопіюйте його вручну.'); } }} className="mt-3 rounded-xl border border-purple-300/30 px-3 py-2 font-bold text-purple-100">Копіювати UTM-посилання</button></div>}
 
               </div>
             </div>
@@ -475,30 +516,23 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                 <span className="font-mono text-amber-300">L1: {networkData.l1.length} • L2: {networkData.l2.length}</span>
               </div>
 
-              <div className="divide-y divide-slate-800/80 rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden text-xs">
-                {networkData.l1.slice(0, 10).map((u) => (
-                  <div key={u.id} className="p-3.5 flex items-center justify-between hover:bg-slate-800/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold font-mono">
-                        L1
+              {([
+                { level: 'L1', label: 'L1 · Особисті запрошення', items: networkData.l1, tone: 'amber' },
+                { level: 'L2', label: 'L2 · Мережа першого рівня', items: networkData.l2, tone: 'cyan' }
+              ] as const).map((group) => (
+                <section key={group.level} aria-labelledby={`network-${group.level}`}>
+                  <div className="mb-2 flex items-center justify-between"><h4 id={`network-${group.level}`} className="text-sm font-bold text-white">{group.label}</h4><span className="font-mono text-xs text-slate-400">{group.items.length} записів</span></div>
+                  <div className="divide-y divide-slate-800/80 rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden text-xs">
+                    {group.items.length ? group.items.slice(0, 10).map((u) => (
+                      <div key={u.id} className="p-3.5 flex items-center justify-between hover:bg-slate-800/50 transition-colors">
+                        <div className="flex items-center gap-3"><div className={`w-7 h-7 rounded-lg ${group.tone === 'amber' ? 'bg-amber-500/20 text-amber-300' : 'bg-cyan-500/20 text-cyan-300'} flex items-center justify-center font-bold font-mono`}>{group.level}</div><div><div className="font-bold text-white">{u.userAnonymousLabel}</div><div className="text-[11px] text-slate-400 font-mono">Канал: {u.sourceChannel} • {u.subscriptionPlan}</div></div></div>
+                        <div className="text-right"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.isQualifiedPaid ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>{u.isQualifiedPaid ? 'Кваліфікований платний' : 'Безкоштовний'}</span><div className="text-[11px] text-amber-400 font-mono font-bold mt-1">+{(u.monthlyQcbMinor * (partner.partnerRateBps / 10000) / 100).toFixed(2)} грн/міс</div></div>
                       </div>
-                      <div>
-                        <div className="font-bold text-white">{u.userAnonymousLabel}</div>
-                        <div className="text-[11px] text-slate-400 font-mono">Канал: {u.sourceChannel} • {u.subscriptionPlan}</div>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.isQualifiedPaid ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
-                        {u.isQualifiedPaid ? 'Кваліфікований платний' : 'Безкоштовний'}
-                      </span>
-                      <div className="text-[11px] text-amber-400 font-mono font-bold mt-1">
-                        +{(u.monthlyQcbMinor * (partner.partnerRateBps / 10000) / 100).toFixed(2)} грн/міс
-                      </div>
-                    </div>
+                    )) : <div className="p-4 text-center text-slate-500">Записів ще немає.</div>}
                   </div>
-                ))}
-              </div>
+                  {group.items.length > 10 && <p className="mt-2 text-[11px] text-slate-500">Показано 10 із {group.items.length}. Повний список потребує pagination у partner API.</p>}
+                </section>
+              ))}
             </div>
           )}
 

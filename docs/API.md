@@ -5,3 +5,5 @@ The current Express routes are prototype contracts, not a stable public API. `GE
 All `/api/*` responses are marked `Cache-Control: no-store` because safety and financial state must not be served from an intermediary cache. Every response carries a bounded `X-Request-Id`; valid caller IDs are echoed and invalid/missing IDs are replaced with a server-generated ID for log correlation. Admin validation routes fail closed outside explicitly enabled demo mode until production authentication and authorization are installed.
 
 Unknown `/api/*` routes return a JSON `404` (`API_NOT_FOUND`) instead of the SPA document. The listening port is configured with `PORT` and defaults to `3000`; invalid values fail startup.
+
+Referral links use `GET /r/:referralCode`. In the development financial demo this validates the code, increments the demo click projection, sets a short-lived HttpOnly attribution cookie and redirects to the SPA. When identity/database are not connected, the route returns `503 REFERRAL_ATTRIBUTION_NOT_CONNECTED`; it never claims that a production click was tracked.

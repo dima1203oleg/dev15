@@ -883,6 +883,31 @@ async function startServer() {
     });
   });
 
+  // Referral links are a server-side attribution boundary. In demo mode we
+  // record the click and hand the referral code to the next page through an
+  // HttpOnly cookie. Without an attribution/identity backend, production must
+  // fail closed instead of pretending that a click was tracked.
+  app.get('/r/:referralCode', (req, res) => {
+    const referralCode = req.params.referralCode;
+    if (!/^[A-Za-z0-9_-]{3,64}$/.test(referralCode)) {
+      return res.status(400).json({ error: 'INVALID_REFERRAL_CODE', message: 'Некоректний referral-код.' });
+    }
+    if (!financialDemoEnabled) {
+      return res.status(503).json({
+        error: 'REFERRAL_ATTRIBUTION_NOT_CONNECTED',
+        status: 'NOT_CONNECTED',
+        message: 'Referral attribution ще не підключено до production identity/database.'
+      });
+    }
+
+    const partner = Array.from(partners.values()).find((candidate) => candidate.referralCode === referralCode || candidate.vanitySlug === referralCode);
+    if (!partner) return res.status(404).json({ error: 'REFERRAL_CODE_NOT_FOUND', message: 'Referral-код не знайдено.' });
+
+    partner.totalClicks += 1;
+    res.setHeader('Set-Cookie', `siren_referral=${encodeURIComponent(partner.referralCode)}; Max-Age=2592000; Path=/; HttpOnly; SameSite=Lax`);
+    return res.redirect(302, `/?ref=${encodeURIComponent(partner.referralCode)}`);
+  });
+
   // Do not let the SPA fallback turn an unknown API call into HTML. Clients
   // need a deterministic JSON error so retries and monitoring can classify it.
   app.use('/api', (_req, res) => {
