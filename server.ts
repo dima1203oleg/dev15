@@ -22,7 +22,7 @@ import {
   validateAllocationCap
 } from './src/domain/partnerPlatform';
 import { createPostgresBoundary, DatabaseRuntimeStatus } from './src/server/postgresBoundary';
-import { createOidcIdentityVerifier } from './src/server/identityBoundary';
+import { createOidcIdentityVerifier, IdentityRole } from './src/server/identityBoundary';
 
 // ============================================================================
 // IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
@@ -532,6 +532,31 @@ async function startServer() {
     message: 'Фінансові дані, автентифікація та partner provider ще не підключені.'
   });
 
+  const requireRoles = (...roles: IdentityRole[]) => async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    // Demo fixtures are only enabled in development. This bypass cannot be
+    // activated by a production environment variable.
+    if (financialDemoEnabled) return next();
+    // Preserve the existing dependency boundary while identity is absent; a
+    // configured identity provider is required before any production handler
+    // can inspect partner/admin state.
+    if (identityVerifier.status() !== 'CONFIGURED') return next();
+    try {
+      const principal = await identityVerifier.authenticate(req.get('authorization'));
+      if (roles.length && !roles.some((role) => principal.roles.includes(role))) {
+        return res.status(403).json({ error: 'IDENTITY_FORBIDDEN', status: 'FORBIDDEN', message: 'Недостатньо прав для цього ресурсу.' });
+      }
+      res.locals.principal = principal;
+      return next();
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'IDENTITY_UNAUTHORIZED';
+      return res.status(code === 'IDENTITY_FORBIDDEN' ? 403 : 401).json({
+        error: code,
+        status: code === 'IDENTITY_FORBIDDEN' ? 'FORBIDDEN' : 'UNAUTHORIZED',
+        message: code === 'IDENTITY_FORBIDDEN' ? 'Недостатньо прав для цього ресурсу.' : 'Потрібен дійсний bearer token.'
+      });
+    }
+  };
+
   app.get('/api/health', (_req, res) => {
     res.json({
       status: 'ok',
@@ -729,7 +754,7 @@ async function startServer() {
   // --------------------------------------------------------------------------
 
   // Partner Dashboard Summary
-  app.get('/api/partner/dashboard', (req, res) => {
+  app.get('/api/partner/dashboard', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
     if (!financialDemoEnabled) return financialUnavailable(res);
     const partner = partners.get(demoPartnerId);
     if (!partner) return res.status(404).json({ error: 'Partner not found' });
@@ -789,7 +814,7 @@ async function startServer() {
   // Financial platform capability/status boundary. This is intentionally
   // explicit: UI may explain what is configured, but cannot infer a live
   // payment, FX, KYC or payout connection from demo fixtures.
-  app.get('/api/partner/platform-status', (req, res) => {
+  app.get('/api/partner/platform-status', requireRoles(), (req, res) => {
     res.json({
       subscriptionBilling: 'NOT_CONNECTED',
       fx: 'NOT_CONNECTED',
@@ -802,7 +827,7 @@ async function startServer() {
     });
   });
 
-  app.get('/api/partner/referral-link', (req, res) => {
+  app.get('/api/partner/referral-link', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
     if (!financialDemoEnabled) return financialUnavailable(res);
     const partner = partners.get(demoPartnerId);
     if (!partner) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
@@ -819,7 +844,7 @@ async function startServer() {
   // attribution parameters cannot be forged by a browser-only helper. This is
   // still demo-only until identity, durable attribution storage and auth are
   // connected in production.
-  app.post('/api/partner/share', (req, res) => {
+  app.post('/api/partner/share', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
     if (!financialDemoEnabled) return financialUnavailable(res);
     const partner = partners.get(demoPartnerId);
     if (!partner) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
@@ -863,7 +888,7 @@ async function startServer() {
   });
 
   // Network (L1 and L2 referrals list with privacy masking)
-  app.get('/api/partner/network', (req, res) => {
+  app.get('/api/partner/network', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
     if (!financialDemoEnabled) return financialUnavailable(res);
     const l1List = attributions.filter(a => a.referrerL1Id === demoPartnerId);
     const l2List = attributions.filter(a => a.referrerL2Id === demoPartnerId);
@@ -903,7 +928,7 @@ async function startServer() {
   });
 
   // Earnings & Immutable Ledger Projection
-  app.get('/api/partner/ledger', (req, res) => {
+  app.get('/api/partner/ledger', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
     if (!financialDemoEnabled) return financialUnavailable(res);
     const entries = ledgerEntries.filter(e => e.partnerId === demoPartnerId);
     const wallet = calculateWallet(demoPartnerId);
@@ -917,7 +942,7 @@ async function startServer() {
   });
 
   // Payout Request Submission
-  app.post('/api/partner/payouts', (req, res) => {
+  app.post('/api/partner/payouts', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
     return res.status(503).json({
       error: payoutProvider.connected ? 'PAYOUT_PROVIDER_NOT_IMPLEMENTED' : 'PAYOUT_PROVIDER_NOT_CONNECTED',
       message: 'Провайдер виплат не підключений. Реальні кошти не переміщуються.',
@@ -926,7 +951,7 @@ async function startServer() {
   });
 
   // Payout History
-  app.get('/api/partner/payouts', (req, res) => {
+  app.get('/api/partner/payouts', requireRoles('PARTNER', 'AMBASSADOR'), (req, res) => {
     if (!financialDemoEnabled) return financialUnavailable(res);
     const list = payoutRequests.filter(p => p.partnerId === demoPartnerId);
     res.json({
@@ -942,7 +967,7 @@ async function startServer() {
   // --------------------------------------------------------------------------
 
   // Admin Overview
-  app.get('/api/admin/overview', (req, res) => {
+  app.get('/api/admin/overview', requireRoles('ADMIN', 'SUPER_ADMIN', 'FINANCE_ADMIN', 'RISK_ADMIN', 'QUALITY_ADMIN', 'SUPPORT', 'CAMPAIGN_ADMIN', 'CONTRACT_ADMIN'), (req, res) => {
     if (!financialDemoEnabled) return financialUnavailable(res);
     const allPartners = Array.from(partners.values());
     let totalPaidMinor = 0;
@@ -968,7 +993,7 @@ async function startServer() {
   });
 
   // Admin Validate Cap
-  app.post('/api/admin/validate-cap', (req, res) => {
+  app.post('/api/admin/validate-cap', requireRoles('ADMIN', 'SUPER_ADMIN', 'FINANCE_ADMIN', 'CONTRACT_ADMIN'), (req, res) => {
     if (!financialDemoEnabled) return financialUnavailable(res);
     const { l1RateBps, l2RateBps, campaignBonusBps } = req.body ?? {};
     const parseRate = (value: unknown): number | null => {
@@ -991,7 +1016,7 @@ async function startServer() {
   });
 
   // Admin Toggle Threat Server Connection
-  app.post('/api/admin/toggle-threat-server', (req, res) => {
+  app.post('/api/admin/toggle-threat-server', requireRoles('ADMIN', 'SUPER_ADMIN', 'RISK_ADMIN'), (req, res) => {
     if (!demoDataEnabled) {
       return res.status(409).json({ connected: false, error: 'NOT_CONNECTED', message: 'Спочатку підключіть авторитетний ThreatServer.' });
     }

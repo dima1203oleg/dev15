@@ -10,7 +10,10 @@ const server = spawn(process.execPath, ['dist/server.cjs'], {
     PORT: String(port),
     SIREN_DATA_MODE: 'NOT_CONNECTED',
     SIREN_FINANCIAL_MODE: 'NOT_CONNECTED',
-    DATABASE_URL: 'postgresql://siren:test@127.0.0.1:1/siren'
+    DATABASE_URL: 'postgresql://siren:test@127.0.0.1:1/siren',
+    IDENTITY_ISSUER_URL: 'https://identity.example.test',
+    IDENTITY_AUDIENCE: 'siren-api',
+    IDENTITY_JWKS_URL: 'https://identity.example.test/.well-known/jwks.json'
   },
   stdio: ['ignore', 'pipe', 'pipe']
 });
@@ -38,6 +41,10 @@ try {
   assert.equal(readiness.response.status, 503);
   assert.equal(readiness.body.checks.database, 'ERROR');
   assert.equal(readiness.body.runtime.database, 'ERROR');
+
+  const protectedPartner = await getJson('/api/partner/dashboard');
+  assert.equal(protectedPartner.response.status, 401);
+  assert.equal(protectedPartner.body.error, 'IDENTITY_UNAUTHORIZED');
 
   console.log('Database boundary smoke: PASS');
 } finally {
