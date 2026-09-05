@@ -157,7 +157,10 @@ export function evaluateRank(
   if (resolved && resolved.minQualifiedActivePaidL1 >= (currentRule?.minQualifiedActivePaidL1 ?? 0)) {
     return { state: 'ACTIVE', rank: resolved.rank, rateBps: resolved.rateBps, reason: 'THRESHOLD_MET' };
   }
-  if (current.state === 'GRACE' && current.graceCyclesInWindow <= policy.maxCycles) {
+  if (current.state === 'ACTIVE') {
+    return { state: 'BELOW_THRESHOLD', rank: current.rank, rateBps: currentRule?.rateBps ?? 0, reason: 'THRESHOLD_NOT_MET' };
+  }
+  if ((current.state === 'BELOW_THRESHOLD' || current.state === 'GRACE') && current.graceCyclesInWindow < policy.maxCycles) {
     return { state: 'GRACE', rank: current.rank, rateBps: currentRule?.rateBps ?? 0, reason: 'GRACE_RATE_FROZEN' };
   }
   return { state: 'BELOW_THRESHOLD', rank: resolved?.rank ?? null, rateBps: resolved?.rateBps ?? 0, reason: 'THRESHOLD_NOT_MET' };
@@ -299,6 +302,8 @@ export interface QualifiedPayment {
   secondLevelPartnerRank?: RankRule;
   ruleVersion: string;
   createdAt: string;
+  /** Versioned compensation policy may override the default 50% cap. */
+  maxAllocationBps?: number;
   isTestPayment?: boolean;
   fraudStatus?: 'OK' | 'REVIEW' | 'BLOCKED';
 }
@@ -322,7 +327,7 @@ export function createCommissionSnapshots(input: QualifiedPayment, hold: boolean
   if (input.secondLevelPartnerRank && input.attribution.secondLevelPartnerId && input.attribution.secondLevelPartnerId !== input.attribution.directPartnerId) {
     allocations.push({ partnerId: input.attribution.secondLevelPartnerId, referralLevel: 'L2', rateBps: input.secondLevelPartnerRank.rateBps });
   }
-  const calculation = calculateCommissions(qualification.qcb, allocations);
+  const calculation = calculateCommissions(qualification.qcb, allocations, input.maxAllocationBps ?? 5000);
   if (!calculation.cap.passed) return [];
   return calculation.commissions.filter((commission) => commission.roundedCommissionMinor > 0n).map((commission, index) => ({
     id: `${input.id}-commission-${index + 1}`,
@@ -586,6 +591,7 @@ function paymentFingerprint(input: {
   attribution: Attribution;
   createdAt: string;
   ruleVersion: string;
+  maxAllocationBps?: number;
   isTestPayment?: boolean;
   fraudStatus?: 'OK' | 'REVIEW' | 'BLOCKED';
 }, qcbPolicyVersion: string): string {
@@ -594,6 +600,7 @@ function paymentFingerprint(input: {
     input.userId,
     input.createdAt,
     input.ruleVersion,
+    input.maxAllocationBps ?? 5000,
     input.isTestPayment === true,
     input.fraudStatus ?? null,
     qcbPolicyVersion,
@@ -683,6 +690,7 @@ export class InMemoryPartnerPlatform {
     attribution: Attribution;
     createdAt: string;
     ruleVersion: string;
+    maxAllocationBps?: number;
     isTestPayment?: boolean;
     fraudStatus?: 'OK' | 'REVIEW' | 'BLOCKED';
   }): PaymentProcessingResult {
@@ -718,6 +726,7 @@ export class InMemoryPartnerPlatform {
       secondLevelPartnerRank: secondRule,
       ruleVersion: input.ruleVersion,
       createdAt: input.createdAt,
+      maxAllocationBps: input.maxAllocationBps,
       isTestPayment: input.isTestPayment,
       fraudStatus: input.fraudStatus
     }, this.hold);
@@ -978,13 +987,13 @@ export function newlyUnlockedAchievements(previous: number, current: number): Ac
   return thresholds.filter((threshold) => previous < threshold && current >= threshold);
 }
 
-export type AmbassadorTier = 'NONE' | 'CANDIDATE' | 'PRO' | 'ELITE' | 'LEGEND';
+export type AmbassadorTier = 'NONE' | 'CANDIDATE' | 'AMBASSADOR' | 'PRO' | 'ELITE' | 'LEGEND';
 
 export function ambassadorTierForQualifiedL1(count: number, approved: boolean): AmbassadorTier {
   if (count >= 2500 && approved) return 'LEGEND';
   if (count >= 1000 && approved) return 'ELITE';
   if (count >= 750 && approved) return 'PRO';
-  if (count >= 500 && approved) return 'CANDIDATE';
+  if (count >= 500 && approved) return 'AMBASSADOR';
   if (count >= 500) return 'CANDIDATE';
   return 'NONE';
 }

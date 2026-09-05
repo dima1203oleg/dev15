@@ -14,6 +14,7 @@ import {
   convertWithFx,
   checkPayoutEligibility,
   createCommissionSnapshots,
+  evaluateRank,
   newlyUnlockedAchievements,
   resolveRank,
   startTrial,
@@ -54,6 +55,12 @@ const platinum = resolveRank(200);
 assert.equal(starter?.rank, 'STARTER');
 assert.equal(starter?.rateBps, 500);
 assert.equal(platinum?.rateBps, 2500);
+const rankDrop = evaluateRank(5, { rank: 'BRONZE', state: 'ACTIVE', graceCyclesInWindow: 0 });
+assert.deepEqual(rankDrop, { state: 'BELOW_THRESHOLD', rank: 'BRONZE', rateBps: 1000, reason: 'THRESHOLD_NOT_MET' });
+const rankGrace = evaluateRank(5, { rank: 'BRONZE', state: 'BELOW_THRESHOLD', graceCyclesInWindow: 0 });
+assert.deepEqual(rankGrace, { state: 'GRACE', rank: 'BRONZE', rateBps: 1000, reason: 'GRACE_RATE_FROZEN' });
+const exhaustedGrace = evaluateRank(5, { rank: 'BRONZE', state: 'GRACE', graceCyclesInWindow: 2 });
+assert.equal(exhaustedGrace.state, 'BELOW_THRESHOLD');
 
 const standard = calculateCommissions(usd(100n), [
   { partnerId: 'p1', referralLevel: 'L1', rateBps: 2500 },
@@ -105,6 +112,14 @@ const selfReferralSnapshots = createCommissionSnapshots({
   ruleVersion: 'comp-v1', createdAt: trial.endsAt
 }, true);
 assert.equal(selfReferralSnapshots.length, 0, 'self-referrals cannot create commissions even if attribution is marked locked');
+const customCapSnapshots = createCommissionSnapshots({
+  id: 'custom-cap-payment', userId: 'user-1', attribution,
+  payment: { gross: usd(100n) },
+  qcbPolicy: { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true },
+  directPartnerRank: DEFAULT_RANK_RULES[4], secondLevelPartnerRank: DEFAULT_RANK_RULES[4],
+  maxAllocationBps: 3000, ruleVersion: 'comp-v2', createdAt: trial.endsAt
+}, true);
+assert.equal(customCapSnapshots.length, 0, 'versioned compensation cap must be applied before ledger creation');
 assert.equal(validateAllocationCap([], 10001).passed, false);
 assert.throws(() => calculateCommissions({ amountMinor: -1n, currency: 'USD' }, []), /INVALID_MONEY/);
 assert.throws(() => assessFraud([{ name: 'negative-weight', weight: -1, present: true }]), /INVALID_FRAUD_SIGNAL/);
@@ -214,6 +229,7 @@ await assert.rejects(() => disconnectedPayoutProvider.calculateFee(uah(42000n)),
 
 assert.deepEqual(newlyUnlockedAchievements(99, 100), [100]);
 assert.equal(ambassadorTierForQualifiedL1(500, false), 'CANDIDATE');
+assert.equal(ambassadorTierForQualifiedL1(500, true), 'AMBASSADOR');
 assert.equal(ambassadorTierForQualifiedL1(1000, true), 'ELITE');
 const leaderboardInput = [
   { partnerId: 'private', score: 999n, publicProfileOptIn: false },
