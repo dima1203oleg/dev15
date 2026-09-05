@@ -556,6 +556,47 @@ export interface PaymentProcessingResult {
   commissions: CommissionSnapshot[];
 }
 
+function moneyFingerprint(value: Money | undefined): string {
+  return value ? `${value.currency}:${value.amountMinor.toString()}` : '-';
+}
+
+function paymentFingerprint(input: {
+  userId: string;
+  payment: QualifiedPaymentInput;
+  attribution: Attribution;
+  createdAt: string;
+  ruleVersion: string;
+  isTestPayment?: boolean;
+  fraudStatus?: 'OK' | 'REVIEW' | 'BLOCKED';
+}, qcbPolicyVersion: string): string {
+  const { payment, attribution } = input;
+  return JSON.stringify([
+    input.userId,
+    input.createdAt,
+    input.ruleVersion,
+    input.isTestPayment === true,
+    input.fraudStatus ?? null,
+    qcbPolicyVersion,
+    attribution.id,
+    attribution.userId,
+    attribution.directPartnerId,
+    attribution.secondLevelPartnerId ?? null,
+    attribution.status,
+    attribution.sourceChannel,
+    attribution.campaign ?? null,
+    attribution.attributedAt,
+    attribution.qualifiedAt ?? null,
+    moneyFingerprint(payment.gross),
+    moneyFingerprint(payment.refunds),
+    moneyFingerprint(payment.chargebacks),
+    moneyFingerprint(payment.nonCommissionableTaxes),
+    moneyFingerprint(payment.storeCosts),
+    moneyFingerprint(payment.processingCosts),
+    moneyFingerprint(payment.nonCommissionableDiscounts),
+    moneyFingerprint(payment.promoCredits)
+  ]);
+}
+
 /**
  * Small orchestration boundary for workers/API handlers. Persistence is
  * intentionally injected later; the class still demonstrates the automatic
@@ -565,6 +606,7 @@ export class InMemoryPartnerPlatform {
   readonly ledger: ImmutableLedger;
   private readonly partners = new Map<string, PartnerAccount>();
   private readonly payments = new Map<string, PaymentProcessingResult>();
+  private readonly paymentFingerprints = new Map<string, string>();
   private readonly commissions = new Map<string, CommissionSnapshot>();
 
   constructor(
@@ -622,14 +664,18 @@ export class InMemoryPartnerPlatform {
     isTestPayment?: boolean;
     fraudStatus?: 'OK' | 'REVIEW' | 'BLOCKED';
   }): PaymentProcessingResult {
+    const fingerprint = paymentFingerprint(input, this.qcbPolicy.version);
     const previous = this.payments.get(input.id);
-    if (previous) return { ...previous, status: 'DUPLICATE' };
-    if (input.userId !== input.attribution.userId) return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'ATTRIBUTION_USER_MISMATCH', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] });
-    if (input.attribution.status === 'REJECTED') return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'REJECTED_ATTRIBUTION', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] });
-    if (isSelfReferral(input.attribution)) return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'SELF_REFERRAL', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] });
+    if (previous) {
+      if (this.paymentFingerprints.get(input.id) !== fingerprint) throw new Error('PAYMENT_IDEMPOTENCY_CONFLICT');
+      return { ...previous, status: 'DUPLICATE' };
+    }
+    if (input.userId !== input.attribution.userId) return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'ATTRIBUTION_USER_MISMATCH', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] }, fingerprint);
+    if (input.attribution.status === 'REJECTED') return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'REJECTED_ATTRIBUTION', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] }, fingerprint);
+    if (isSelfReferral(input.attribution)) return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: 'SELF_REFERRAL', qcb: { amountMinor: 0n, currency: input.payment.gross.currency }, commissions: [] }, fingerprint);
     const qcb = calculateQcb(input.payment, this.qcbPolicy);
     if (input.isTestPayment || (input.fraudStatus && input.fraudStatus !== 'OK') || qcb.amountMinor === 0n) {
-      return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: input.isTestPayment ? 'TEST_PAYMENT' : input.fraudStatus && input.fraudStatus !== 'OK' ? 'FRAUD_REVIEW' : 'ZERO_QCB', qcb, commissions: [] });
+      return this.storeResult({ paymentId: input.id, status: 'NOT_QUALIFIED', reason: input.isTestPayment ? 'TEST_PAYMENT' : input.fraudStatus && input.fraudStatus !== 'OK' ? 'FRAUD_REVIEW' : 'ZERO_QCB', qcb, commissions: [] }, fingerprint);
     }
 
     const direct = this.partners.get(input.attribution.directPartnerId);
@@ -655,7 +701,7 @@ export class InMemoryPartnerPlatform {
     }, this.hold);
     if (!snapshots.length) {
       direct.qualifiedActivePaidL1 -= 1;
-      return this.storeResult({ paymentId: input.id, status: 'CAP_VALIDATION_FAILED', reason: 'CAP_VALIDATION_FAILED', qcb, commissions: [] });
+      return this.storeResult({ paymentId: input.id, status: 'CAP_VALIDATION_FAILED', reason: 'CAP_VALIDATION_FAILED', qcb, commissions: [] }, fingerprint);
     }
     const ledgerTransactions = snapshots.map((snapshot) => this.ledger.commissionTransaction({
         id: snapshot.id,
@@ -677,11 +723,12 @@ export class InMemoryPartnerPlatform {
     for (const snapshot of snapshots) {
       this.commissions.set(snapshot.id, snapshot);
     }
-    return this.storeResult({ paymentId: input.id, status: 'QUALIFIED', reason: 'PAYMENT_QUALIFIED', qcb, commissions: snapshots });
+    return this.storeResult({ paymentId: input.id, status: 'QUALIFIED', reason: 'PAYMENT_QUALIFIED', qcb, commissions: snapshots }, fingerprint);
   }
 
-  private storeResult(result: PaymentProcessingResult): PaymentProcessingResult {
+  private storeResult(result: PaymentProcessingResult, fingerprint: string): PaymentProcessingResult {
     this.payments.set(result.paymentId, result);
+    this.paymentFingerprints.set(result.paymentId, fingerprint);
     return result;
   }
 }

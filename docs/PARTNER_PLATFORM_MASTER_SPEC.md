@@ -36,7 +36,7 @@ The implementation boundary is `src/domain/partnerPlatform.ts`. It is framework-
 10. Minimum payout defaults to USD 10 equivalent using an expiring FX snapshot. No UAH threshold is hardcoded.
 11. Provider fee, FX fee and withholding are shown before confirmation and are borne by the partner according to policy.
 12. Auto-payout is allowed only after KYC, payout-method, compliance and fraud gates pass.
-13. Duplicate payment, commission, payout and webhook deliveries must be idempotent.
+13. Duplicate payment, commission, payout and webhook deliveries must be idempotent. A duplicate payment id with a changed normalized payload is an explicit idempotency conflict, not a successful retry.
 14. Rank, achievements, Ambassador status and leaderboard position are separate entities. Achievements do not change compensation by default.
 
 ## Core lifecycle
@@ -70,4 +70,3 @@ npm run test:financial
 ```
 
 The suite covers trial exclusion, attribution after trial, rank thresholds, QCB deductions, L1/L2 and cap, rounding, ledger idempotency/projection, FX minimum, KYC/fraud auto-payout gates, achievements, privacy-safe Top-100 and Ambassador status. Real provider, KYC, FX and database integration tests remain staging gates.
-

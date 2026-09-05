@@ -118,6 +118,7 @@ const paidResult = platform.processPaidPayment({ id: 'paid-payment', userId: 'pa
 assert.equal(paidResult.status, 'QUALIFIED');
 assert.equal(platform.getPartner('p1')?.qualifiedActivePaidL1, 1);
 assert.equal(platform.processPaidPayment({ id: 'paid-payment', userId: 'paid-user', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'paid-user' }, createdAt: trial.endsAt, ruleVersion: 'comp-v1', fraudStatus: 'OK' }).status, 'DUPLICATE');
+assert.throws(() => platform.processPaidPayment({ id: 'paid-payment', userId: 'paid-user', payment: { gross: usd(101n) }, attribution: { ...attribution, userId: 'paid-user' }, createdAt: trial.endsAt, ruleVersion: 'comp-v1', fraudStatus: 'OK' }), /PAYMENT_IDEMPOTENCY_CONFLICT/);
 platform.releaseHold(paidResult.commissions[0].id, '2026-10-02T00:00:00.000Z');
 assert.equal(platform.getCommission(paidResult.commissions[0].id)?.state, 'AVAILABLE');
 platform.reversePayment('paid-payment', 'REFUND', '2026-10-03T00:00:00.000Z');

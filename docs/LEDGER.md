@@ -4,4 +4,4 @@ The production source of truth must be an immutable, double-entry ledger using i
 
 Refunds and chargebacks create compensating entries; they never delete history. The current in-memory ledger is a contract prototype only and is not durable.
 
-The domain boundary validates a complete batch before mutating the append-only collections. Commission sets and multi-bucket reversals therefore commit all-or-nothing, and retries are checked against both the idempotency key and transaction id for payload conflicts.
+The domain boundary validates a complete batch before mutating the append-only collections. Commission sets and multi-bucket reversals therefore commit all-or-nothing, and retries are checked against both the idempotency key and transaction id for payload conflicts. Payment orchestration also fingerprints the complete normalized payment input: the same payment id may be replayed only with the same payload; a changed retry fails with `PAYMENT_IDEMPOTENCY_CONFLICT` instead of being silently accepted.
