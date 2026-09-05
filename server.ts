@@ -26,14 +26,15 @@ import {
 // ============================================================================
 
 // 1. Threat & Situational Intelligence Data
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isProductionLike = !isDevelopment;
 // Development defaults to fixtures for local UI work, but an explicit
 // NOT_CONNECTED mode must always be respected so disconnected behavior can be
 // tested locally before deployment.
 // Synthetic fixtures are a development-only aid. An explicit DEMO flag must
 // never be able to turn fake safety or financial data on in production.
-const demoDataEnabled = isDevelopment && process.env.SIREN_DATA_MODE !== 'NOT_CONNECTED';
-const financialDemoEnabled = isDevelopment && process.env.SIREN_FINANCIAL_MODE !== 'NOT_CONNECTED';
+const demoDataEnabled = isDevelopment && (!process.env.SIREN_DATA_MODE || process.env.SIREN_DATA_MODE === 'DEMO_DATA');
+const financialDemoEnabled = isDevelopment && (!process.env.SIREN_FINANCIAL_MODE || process.env.SIREN_FINANCIAL_MODE === 'DEMO_DATA');
 let isThreatServerConnected = demoDataEnabled;
 let threatDataMode: 'DEMO_DATA' | 'NOT_CONNECTED' = demoDataEnabled ? 'DEMO_DATA' : 'NOT_CONNECTED';
 
@@ -874,7 +875,7 @@ async function startServer() {
   // VITE & STATIC SPA MIDDLEWARE
   // --------------------------------------------------------------------------
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProductionLike) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',

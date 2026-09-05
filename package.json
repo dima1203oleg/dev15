@@ -10,6 +10,7 @@
     "lint": "tsc --noEmit",
     "test:financial": "tsx scripts/financial-acceptance-tests.ts",
     "test:spatial": "tsx scripts/spatial-acceptance-tests.ts",
+    "test:runtime-boundary": "npm run build && node scripts/runtime-boundary-smoke.mjs",
     "test:e2e": "playwright test",
     "test:performance": "npm run build && node scripts/performance-budget.mjs"
   },
