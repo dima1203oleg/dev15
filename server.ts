@@ -24,6 +24,7 @@ import {
 import { createPostgresBoundary, DatabaseRuntimeStatus } from './src/server/postgresBoundary';
 import { createOidcIdentityVerifier, IdentityRole } from './src/server/identityBoundary';
 import { PostgresPartnerRepository } from './src/server/postgresPartnerRepository';
+import { FinancialRuleRepository } from './src/server/financialRuleRepository';
 
 // ============================================================================
 // IN-MEMORY DEMO STATE. It is never exposed as live production telemetry.
@@ -490,6 +491,34 @@ function readReferralContext(req: express.Request): Record<string, string> {
   return context;
 }
 
+async function transitionFinancialRule(
+  req: express.Request,
+  res: express.Response,
+  repository: FinancialRuleRepository,
+  action: 'VALIDATE' | 'APPROVE' | 'SCHEDULE',
+  effectiveFrom?: unknown
+) {
+  if (financialDemoEnabled || databaseRuntimeStatus !== 'CONNECTED') return financialUnavailableResponse(res);
+  const principal = res.locals.principal as { subject?: unknown } | undefined;
+  if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+  try {
+    const version = typeof req.params.version === 'string' ? req.params.version : '';
+    return res.json({ rule: await repository.transition(version, action, principal.subject, typeof effectiveFrom === 'string' ? effectiveFrom : undefined) });
+  } catch (error) {
+    const code = error instanceof Error ? error.message : 'FINANCIAL_RULE_TRANSITION_FAILED';
+    const status = code === 'FINANCIAL_RULE_NOT_FOUND' ? 404 : code === 'INVALID_FINANCIAL_RULE_TRANSITION' || code === 'MAKER_CHECKER_REQUIRED' || code === 'INVALID_RULE_VALUE:effective_from' ? 409 : 503;
+    return res.status(status).json({ error: code, message: 'Не вдалося змінити стан financial rule.' });
+  }
+}
+
+function financialUnavailableResponse(res: express.Response) {
+  return res.status(503).json({
+    error: 'FINANCIAL_DATA_NOT_CONNECTED',
+    status: 'NOT_CONNECTED',
+    message: 'Фінансові дані, автентифікація та partner provider ще не підключені.'
+  });
+}
+
 // ============================================================================
 // EXPRESS APPLICATION INITIALIZATION
 // ============================================================================
@@ -499,6 +528,7 @@ async function startServer() {
   const database = createPostgresBoundary();
   const identityVerifier = createOidcIdentityVerifier();
   const partnerRepository = new PostgresPartnerRepository(database);
+  const financialRuleRepository = new FinancialRuleRepository(database);
   databaseRuntimeStatus = database.status();
   if (database.configured) await database.probe();
   databaseRuntimeStatus = database.status();
@@ -1117,6 +1147,48 @@ async function startServer() {
       { partnerId: 'CAMPAIGN', referralLevel: 'L1', rateBps: campaign }
     ]);
     res.json({ ...result, l1RateBps: l1, l2RateBps: l2, campaignBonusBps: campaign });
+  });
+
+  // Financial configuration is a durable maker/checker workflow. It is not
+  // available in the in-memory demo and never mutates balances directly.
+  app.get('/api/admin/financial-rules', requireRoles('ADMIN', 'SUPER_ADMIN', 'FINANCE_ADMIN', 'CONTRACT_ADMIN'), async (req, res) => {
+    if (financialDemoEnabled || databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+    try {
+      const ruleType = typeof req.query.ruleType === 'string' ? req.query.ruleType : undefined;
+      return res.json({ rules: await financialRuleRepository.list(ruleType) });
+    } catch (error) {
+      console.error('[SIREN UA] financial rules list failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
+      return res.status(503).json({ error: 'FINANCIAL_RULES_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Financial rule configuration temporarily unavailable.' });
+    }
+  });
+
+  app.post('/api/admin/financial-rules', requireRoles('ADMIN', 'SUPER_ADMIN', 'FINANCE_ADMIN', 'CONTRACT_ADMIN'), async (req, res) => {
+    if (financialDemoEnabled || databaseRuntimeStatus !== 'CONNECTED') return financialUnavailable(res);
+    const principal = res.locals.principal as { subject?: unknown } | undefined;
+    if (!principal || typeof principal.subject !== 'string') return res.status(401).json({ error: 'IDENTITY_UNAUTHORIZED', status: 'UNAUTHORIZED' });
+    const payload = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body as { version?: unknown; ruleType?: unknown; value?: unknown; reason?: unknown } : {};
+    if (typeof payload.version !== 'string' || typeof payload.ruleType !== 'string' || !payload.value || typeof payload.value !== 'object' || Array.isArray(payload.value) || typeof payload.reason !== 'string') {
+      return res.status(400).json({ error: 'INVALID_FINANCIAL_RULE', message: 'Потрібні version, ruleType, value та reason.' });
+    }
+    try {
+      return res.status(201).json({ rule: await financialRuleRepository.createDraft({ version: payload.version, ruleType: payload.ruleType, value: payload.value as Record<string, unknown>, createdBy: principal.subject, reason: payload.reason }) });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'FINANCIAL_RULE_CREATE_FAILED';
+      return res.status(code === 'INVALID_RULE_VALUE:value' ? 400 : 409).json({ error: code, message: 'Не вдалося створити financial rule draft.' });
+    }
+  });
+
+  app.post('/api/admin/financial-rules/:version/validate', requireRoles('ADMIN', 'SUPER_ADMIN', 'FINANCE_ADMIN', 'CONTRACT_ADMIN'), async (req, res) => {
+    return transitionFinancialRule(req, res, financialRuleRepository, 'VALIDATE');
+  });
+
+  app.post('/api/admin/financial-rules/:version/approve', requireRoles('ADMIN', 'SUPER_ADMIN', 'FINANCE_ADMIN', 'CONTRACT_ADMIN'), async (req, res) => {
+    return transitionFinancialRule(req, res, financialRuleRepository, 'APPROVE');
+  });
+
+  app.post('/api/admin/financial-rules/:version/schedule', requireRoles('ADMIN', 'SUPER_ADMIN', 'FINANCE_ADMIN', 'CONTRACT_ADMIN'), async (req, res) => {
+    const effectiveFrom = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body.effectiveFrom : undefined;
+    return transitionFinancialRule(req, res, financialRuleRepository, 'SCHEDULE', effectiveFrom);
   });
 
   // Admin Toggle Threat Server Connection

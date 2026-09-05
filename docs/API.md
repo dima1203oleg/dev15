@@ -20,4 +20,6 @@ The durable read model is implemented in `src/server/postgresPartnerRepository.t
 
 `GET /api/partner/payouts` returns payout history with masked destinations only (for example `•••• 6789`); full payout instruments must remain server-side and provider-scoped.
 
+`GET /api/admin/financial-rules` and `POST /api/admin/financial-rules` plus `/validate`, `/approve` and `/schedule` expose the authenticated maker/checker rule lifecycle. They require PostgreSQL + OIDC roles and never mutate wallet balances; each transition is audited transactionally.
+
 The built-server demo contract is covered by `npm run test:demo-api`: it checks the referral URL, bounded network response, privacy stripping and attribution cookie/redirect.

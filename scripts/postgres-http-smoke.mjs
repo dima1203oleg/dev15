@@ -16,6 +16,7 @@ const partnerId = `http-partner-${suffix}`;
 const referralCode = `HTTP_${suffix}`;
 const payoutMethodId = `payout-method-${suffix}`;
 const payoutRequestId = `payout-request-${suffix}`;
+const ruleVersion = `comp-http-${suffix}`;
 const now = new Date().toISOString();
 
 const { privateKey, publicKey } = await generateKeyPair('RS256');
@@ -60,6 +61,22 @@ const token = await new SignJWT({ roles: ['PARTNER'] })
   .setIssuer(issuer)
   .setAudience('siren-api')
   .setSubject(userId)
+  .setIssuedAt()
+  .setExpirationTime('5m')
+  .sign(privateKey);
+const adminToken = await new SignJWT({ roles: ['FINANCE_ADMIN', 'CONTRACT_ADMIN'] })
+  .setProtectedHeader({ alg: 'RS256', kid: 'siren-http-test-key' })
+  .setIssuer(issuer)
+  .setAudience('siren-api')
+  .setSubject(`admin-${suffix}`)
+  .setIssuedAt()
+  .setExpirationTime('5m')
+  .sign(privateKey);
+const reviewerToken = await new SignJWT({ roles: ['FINANCE_ADMIN', 'CONTRACT_ADMIN'] })
+  .setProtectedHeader({ alg: 'RS256', kid: 'siren-http-test-key' })
+  .setIssuer(issuer)
+  .setAudience('siren-api')
+  .setSubject(`reviewer-${suffix}`)
   .setIssuedAt()
   .setExpirationTime('5m')
   .sign(privateKey);
@@ -115,6 +132,51 @@ try {
   assert.equal(payouts.body.payouts.length, 1);
   assert.equal(payouts.body.payouts[0].destinationAccount, '•••• 6789');
 
+  const partnerAdminAccess = await request('/api/admin/financial-rules');
+  assert.equal(partnerAdminAccess.response.status, 403);
+
+  const draft = await request('/api/admin/financial-rules', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      version: ruleVersion,
+      ruleType: 'COMPENSATION',
+      value: { maxAllocationBps: 5000, ratesBps: { STARTER: 500, PLATINUM: 2500 } },
+      reason: 'HTTP smoke maker-checker test'
+    })
+  });
+  assert.equal(draft.response.status, 201);
+  assert.equal(draft.body.rule.state, 'DRAFT');
+
+  const validated = await request(`/api/admin/financial-rules/${ruleVersion}/validate`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${adminToken}` }
+  });
+  assert.equal(validated.response.status, 200);
+  assert.equal(validated.body.rule.state, 'VALIDATED');
+
+  const sameMakerApproval = await request(`/api/admin/financial-rules/${ruleVersion}/approve`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${adminToken}` }
+  });
+  assert.equal(sameMakerApproval.response.status, 409);
+  assert.equal(sameMakerApproval.body.error, 'MAKER_CHECKER_REQUIRED');
+
+  const approved = await request(`/api/admin/financial-rules/${ruleVersion}/approve`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${reviewerToken}` }
+  });
+  assert.equal(approved.response.status, 200);
+  assert.equal(approved.body.rule.state, 'APPROVED');
+
+  const scheduled = await request(`/api/admin/financial-rules/${ruleVersion}/schedule`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${reviewerToken}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ effectiveFrom: '2027-01-01T00:00:00.000Z' })
+  });
+  assert.equal(scheduled.response.status, 200);
+  assert.equal(scheduled.body.rule.state, 'SCHEDULED');
+
   const referralLink = await request('/api/partner/referral-link');
   assert.equal(referralLink.response.status, 200);
   assert.equal(referralLink.body.status, 'LIVE');
@@ -142,6 +204,8 @@ try {
   await db.query('DELETE FROM partner_campaign_links WHERE partner_id = $1', [partnerId]).catch(() => {});
   await db.query('DELETE FROM payout_requests WHERE id = $1', [payoutRequestId]).catch(() => {});
   await db.query('DELETE FROM payout_methods WHERE id = $1', [payoutMethodId]).catch(() => {});
+  await db.query('DELETE FROM audit_logs WHERE target_entity = $1 AND target_id = $2', ['FINANCIAL_RULE_VERSION', ruleVersion]).catch(() => {});
+  await db.query('DELETE FROM financial_rule_versions WHERE version = $1', [ruleVersion]).catch(() => {});
   await db.query('DELETE FROM partners WHERE id = $1', [partnerId]).catch(() => {});
   await db.query('DELETE FROM users WHERE id = $1', [userId]).catch(() => {});
   await db.end();
