@@ -7,3 +7,5 @@ All `/api/*` responses are marked `Cache-Control: no-store` because safety and f
 Unknown `/api/*` routes return a JSON `404` (`API_NOT_FOUND`) instead of the SPA document. The listening port is configured with `PORT` and defaults to `3000`; invalid values fail startup.
 
 Referral links use `GET /r/:referralCode`. In the development financial demo this validates the code, increments the demo click projection, sets a short-lived HttpOnly attribution cookie and redirects to the SPA. When identity/database are not connected, the route returns `503 REFERRAL_ATTRIBUTION_NOT_CONNECTED`; it never claims that a production click was tracked.
+
+`GET /api/partner/referral-link` is the authenticated partner-link boundary in the eventual production contract. The current demo implementation returns the seeded demo link only in development financial demo mode; production-like mode returns `503 FINANCIAL_DATA_NOT_CONNECTED` until identity, attribution storage and database are connected.

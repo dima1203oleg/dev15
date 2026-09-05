@@ -54,6 +54,10 @@ test.describe('SIREN UA production boundary', () => {
     const referral = await request.get('/r/SIREN_ATLAS', { maxRedirects: 0 });
     expect(referral.status()).toBe(503);
     await expect(referral.json()).resolves.toMatchObject({ error: 'REFERRAL_ATTRIBUTION_NOT_CONNECTED', status: 'NOT_CONNECTED' });
+
+    const referralLink = await request.get('/api/partner/referral-link');
+    expect(referralLink.status()).toBe(503);
+    await expect(referralLink.json()).resolves.toMatchObject({ error: 'FINANCIAL_DATA_NOT_CONNECTED' });
   });
 
   test('all public experience routes render without a document error', async ({ page }) => {
@@ -265,5 +269,16 @@ test.describe('SIREN UA production boundary', () => {
     await page.getByRole('button', { name: 'Інструменти поширення' }).click();
     await page.getByRole('button', { name: 'Згенерувати UTM' }).click();
     await expect(page.getByText(/utm_source=partner/)).toBeVisible();
+  });
+
+  test('mobile partner invite does not use an untracked placeholder link', async ({ page }) => {
+    await page.route('**/api/partner/referral-link', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'FINANCIAL_DATA_NOT_CONNECTED', message: 'Партнерський backend не підключений.' }) });
+    });
+    await page.goto('/mobile', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Партнер' }).click();
+    await page.getByRole('button', { name: 'Запросити' }).click();
+    await expect(page.getByRole('status')).toContainText('Партнерські дані недоступні');
+    await expect(page.getByText('/join/sirenua', { exact: true })).toHaveCount(0);
   });
 });

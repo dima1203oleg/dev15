@@ -703,6 +703,18 @@ async function startServer() {
     });
   });
 
+  app.get('/api/partner/referral-link', (req, res) => {
+    if (!financialDemoEnabled) return financialUnavailable(res);
+    const partner = partners.get(demoPartnerId);
+    if (!partner) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
+    const origin = `${req.protocol}://${req.get('host')}`;
+    res.json({
+      status: 'DEMO_DATA',
+      referralCode: partner.referralCode,
+      referralUrl: `${origin}/r/${encodeURIComponent(partner.referralCode)}`
+    });
+  });
+
   // Network (L1 and L2 referrals list with privacy masking)
   app.get('/api/partner/network', (req, res) => {
     if (!financialDemoEnabled) return financialUnavailable(res);

@@ -92,6 +92,7 @@ export const MobileExperience: React.FC<{ model: ThreatSceneModel; onDownload?: 
   const [activeLayer, setActiveLayer] = useState(0);
   const [selectedRegion, setSelectedRegion] = useState(false);
   const [isAlertFocus, setIsAlertFocus] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const isLive = model.dataMode === 'LIVE' || model.dataMode === 'DEMO_DATA';
   const layerCount = useMemo(() => Math.max(1, mobileLayerOrder.filter((layer) => model.layers.some((source) => source.id === layer.id)).length), [model.layers]);
 
@@ -99,20 +100,27 @@ export const MobileExperience: React.FC<{ model: ThreatSceneModel; onDownload?: 
   const openDetails = (state: BottomSheetState = 'HALF') => { setSelectedRegion(true); setSheetState(state); };
   const swipeLayer = (direction: 'up' | 'down') => setActiveLayer((current) => direction === 'up' ? (current + 1) % layerCount : (current + layerCount - 1) % layerCount);
   const handleInvite = async () => {
-    const referralUrl = `${window.location.origin}/join/sirenua`;
-    if (navigator.share) {
-      await navigator.share({ title: 'SIREN UA', text: 'Розумій ситуацію.', url: referralUrl }).catch(() => undefined);
-      return;
-    }
     try {
-      if (navigator.clipboard) await navigator.clipboard.writeText(referralUrl);
+      const response = await fetch('/api/partner/referral-link');
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) throw new Error('NON_JSON_RESPONSE');
+      const body = await response.json() as { referralUrl?: unknown; message?: unknown };
+      if (!response.ok || typeof body.referralUrl !== 'string') throw new Error(typeof body.message === 'string' ? body.message : 'REFERRAL_LINK_UNAVAILABLE');
+      if (navigator.share) {
+        await navigator.share({ title: 'SIREN UA', text: 'Розумій ситуацію.', url: body.referralUrl }).catch(() => undefined);
+        setInviteMessage('Referral-посилання готове до поширення.');
+        return;
+      }
+      if (!navigator.clipboard) throw new Error('CLIPBOARD_UNAVAILABLE');
+      await navigator.clipboard.writeText(body.referralUrl);
+      setInviteMessage('Referral-посилання скопійовано.');
     } catch {
-      // Clipboard may be unavailable outside a secure context.
+      setInviteMessage(model.dataMode === 'NOT_CONNECTED' ? 'Партнерські дані недоступні: identity/backend ще не підключені.' : 'Не вдалося підготувати referral-посилання.');
     }
   };
   const handleDownload = onDownload ?? (() => { window.location.href = '/#download-section'; });
 
-  return <main className={`mobile-experience ${isAlertFocus ? 'mobile-experience--alert-focus' : ''}`} aria-label="SIREN UA smartphone experience"><MobileHeader dataMode={model.dataMode} onMenu={() => setMode('PROFILE')} /><div className="mobile-experience__content">{activeMode === 'HOME' && <><div className="mobile-freshness"><span className={`mobile-freshness__dot mobile-freshness__dot--${model.dataMode.toLowerCase()}`} /><span>{statusLabel(model.dataMode)}</span></div><MobileRiskCard model={model} focused={isAlertFocus} onRegion={() => openDetails('PEEK')} onFocus={() => { setIsAlertFocus(true); openDetails('HALF'); }} /><div className="mobile-map-label"><span>PERSONAL REGION STACK</span><span>01 / 04</span></div><MobileSpatialMap model={model} activeLayer={activeLayer} selectedRegion={selectedRegion} onSwipe={swipeLayer} onTap={() => openDetails('HALF')} /><div className="mobile-eta-card"><div className="flex items-center gap-2 text-cyan-200"><Clock3 className="h-4 w-4" /><span className="mobile-eyebrow">ОРІЄНТОВНИЙ ЧАС</span></div><div className="mt-2 flex items-end justify-between gap-3"><strong>{model.events[0]?.eta ?? '—'}</strong><span>{model.dataMode === 'NOT_CONNECTED' ? 'За поточними даними недоступно' : 'за поточними даними · не гарантія'}</span></div></div><MobileQuickActions model={model} onShelters={() => setMode('SHELTER')} onTimeline={() => setMode('TIMELINE')} />{!isAlertFocus && <div className="mobile-download-card"><div><div className="mobile-eyebrow">SIREN UA APP</div><div className="mt-1 text-sm font-bold text-white">Завантажте персональну версію</div></div><button type="button" onClick={handleDownload} className="mobile-primary-button">Завантажити <ArrowRight className="h-4 w-4" /></button></div>}</>}{activeMode === 'TIMELINE' && <MobileTimeline model={model} isLive={isLive} onLive={() => setMode('HOME')} />}{activeMode === 'SHELTER' && <MobileShelters model={model} />}{activeMode === 'PARTNER' && <MobilePartnerHome model={model} onInvite={handleInvite} />}{activeMode === 'PROFILE' && <MobileProfile />}</div><MobileBottomSheet state={sheetState} model={model} onClose={() => setSheetState('CLOSED')} onState={setSheetState} onShelters={() => setMode('SHELTER')} onTimeline={() => setMode('TIMELINE')} /><MobileBottomNav activeMode={activeMode} onChange={(mode) => { setIsAlertFocus(false); setMode(mode); }} /></main>;
+  return <main className={`mobile-experience ${isAlertFocus ? 'mobile-experience--alert-focus' : ''}`} aria-label="SIREN UA smartphone experience"><MobileHeader dataMode={model.dataMode} onMenu={() => setMode('PROFILE')} /><div className="mobile-experience__content">{activeMode === 'HOME' && <><div className="mobile-freshness"><span className={`mobile-freshness__dot mobile-freshness__dot--${model.dataMode.toLowerCase()}`} /><span>{statusLabel(model.dataMode)}</span></div><MobileRiskCard model={model} focused={isAlertFocus} onRegion={() => openDetails('PEEK')} onFocus={() => { setIsAlertFocus(true); openDetails('HALF'); }} /><div className="mobile-map-label"><span>PERSONAL REGION STACK</span><span>01 / 04</span></div><MobileSpatialMap model={model} activeLayer={activeLayer} selectedRegion={selectedRegion} onSwipe={swipeLayer} onTap={() => openDetails('HALF')} /><div className="mobile-eta-card"><div className="flex items-center gap-2 text-cyan-200"><Clock3 className="h-4 w-4" /><span className="mobile-eyebrow">ОРІЄНТОВНИЙ ЧАС</span></div><div className="mt-2 flex items-end justify-between gap-3"><strong>{model.events[0]?.eta ?? '—'}</strong><span>{model.dataMode === 'NOT_CONNECTED' ? 'За поточними даними недоступно' : 'за поточними даними · не гарантія'}</span></div></div><MobileQuickActions model={model} onShelters={() => setMode('SHELTER')} onTimeline={() => setMode('TIMELINE')} />{!isAlertFocus && <div className="mobile-download-card"><div><div className="mobile-eyebrow">SIREN UA APP</div><div className="mt-1 text-sm font-bold text-white">Завантажте персональну версію</div></div><button type="button" onClick={handleDownload} className="mobile-primary-button">Завантажити <ArrowRight className="h-4 w-4" /></button></div>}</>}{activeMode === 'TIMELINE' && <MobileTimeline model={model} isLive={isLive} onLive={() => setMode('HOME')} />}{activeMode === 'SHELTER' && <MobileShelters model={model} />}{activeMode === 'PARTNER' && <><MobilePartnerHome model={model} onInvite={handleInvite} />{inviteMessage && <p className="mobile-empty-state" role="status">{inviteMessage}</p>}</>}{activeMode === 'PROFILE' && <MobileProfile />}</div><MobileBottomSheet state={sheetState} model={model} onClose={() => setSheetState('CLOSED')} onState={setSheetState} onShelters={() => setMode('SHELTER')} onTimeline={() => setMode('TIMELINE')} /><MobileBottomNav activeMode={activeMode} onChange={(mode) => { setIsAlertFocus(false); setInviteMessage(null); setMode(mode); }} /></main>;
 };
 
 export const MobileModeShell: React.FC<{ model: ThreatSceneModel; onDownload?: () => void }> = ({ model, onDownload }) => <div className="mobile-mode-shell"><MobileExperience model={model} onDownload={onDownload} /></div>;
