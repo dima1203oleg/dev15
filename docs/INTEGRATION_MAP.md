@@ -10,4 +10,4 @@ Expected future boundary: shared identity, subscription status, region preferenc
 
 ## Payments and payouts
 
-Expected future boundary: recipient verification, KYC/AML, payout creation, provider webhook and reconciliation. The current implementation has no settlement path: it returns `PAYOUT_PROVIDER_NOT_CONNECTED` and never simulates a paid payout.
+The local production-like boundary now includes signed, provider-scoped subscription and payment webhooks, durable QCB/qualification/commission/ledger processing, payout locking, signed payout settlement, refunds and chargeback adjustments. Provider adapters still must normalize Apple/Google/Web billing, provide real FX/KYC/AML/tax decisions, dispatch payouts and reconcile settlement statements. Until those external contracts and credentials are supplied, money movement remains fail-closed with `NOT_CONNECTED` and no payout is simulated.

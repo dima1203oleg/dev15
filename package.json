@@ -20,6 +20,7 @@
     "test:postgres-auto-payout": "tsx scripts/postgres-auto-payout-smoke.ts",
     "test:postgres-qualified-payment": "tsx scripts/postgres-qualified-payment-smoke.ts",
     "test:postgres-payout": "tsx scripts/postgres-payout-smoke.ts",
+    "test:postgres-payout-dispatch": "tsx scripts/postgres-payout-dispatch-smoke.ts",
     "test:postgres-payout-webhook": "node scripts/postgres-payout-webhook-smoke.mjs",
     "test:postgres-subscription-webhook": "node scripts/postgres-subscription-webhook-smoke.mjs",
     "test:postgres-payment-webhook": "node scripts/postgres-payment-webhook-smoke.mjs",

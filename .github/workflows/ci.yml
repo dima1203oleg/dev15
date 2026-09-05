@@ -23,6 +23,21 @@ jobs:
       SIREN_DATA_MODE: NOT_CONNECTED
       SIREN_FINANCIAL_MODE: NOT_CONNECTED
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: siren
+          POSTGRES_PASSWORD: siren
+          POSTGRES_DB: siren_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U siren -d siren_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -50,6 +65,24 @@ jobs:
 
       - name: Production build and boundary smoke
         run: npm run test:runtime-boundary
+
+      - name: PostgreSQL migrations and financial acceptance suite
+        env:
+          DATABASE_URL: postgresql://siren:siren@127.0.0.1:5432/siren_ci
+        run: |
+          npm run db:migrate
+          npm run test:postgres-subscription
+          npm run test:postgres-qualified-payment
+          npm run test:postgres-payment-webhook
+          npm run test:postgres-payout
+          npm run test:postgres-payout-dispatch
+          npm run test:postgres-payout-webhook
+          npm run test:postgres-payment-adjustment
+          npm run test:postgres-partner-engagement
+          npm run test:postgres-auto-payout
+          npm run test:postgres-financial-rule
+          npm run test:postgres-repository
+          npm run test:postgres-http
 
       - name: Demo API contract smoke
         run: npm run test:demo-api
