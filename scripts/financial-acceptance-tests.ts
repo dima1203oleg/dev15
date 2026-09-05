@@ -21,6 +21,7 @@ import {
   trialReminderSchedule,
   topLeaderboard,
   validateAllocationCap,
+  validateRankRules,
   type FxSnapshot
 } from '../src/domain/partnerPlatform';
 
@@ -183,6 +184,14 @@ assert.throws(() => convertWithFx(usd(1000n), 'UAH', expiredFx, '2026-09-03T00:0
 
 assert.equal(shouldRunAutoPayout({ enabled: true, threshold: uah(42000n), cadence: 'THRESHOLD' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' }), true);
 assert.equal(shouldRunAutoPayout({ enabled: true, threshold: uah(42000n), cadence: 'THRESHOLD' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'REVIEW', payoutMethod: 'VERIFIED' }), false);
+assert.equal(shouldRunAutoPayout({ enabled: true, threshold: uah(42000n), cadence: 'MONTHLY' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' }), false);
+assert.equal(shouldRunAutoPayout({ enabled: true, threshold: uah(42000n), cadence: 'MONTHLY' }, uah(50000n), { kyc: 'VERIFIED', compliance: 'OK', fraud: 'OK', payoutMethod: 'VERIFIED' }, { cadenceDue: true }), true);
+assert.throws(() => validateRankRules([{ rank: 'GOLD', minQualifiedActivePaidL1: 1, rateBps: 2000 }, { rank: 'GOLD', minQualifiedActivePaidL1: 75, rateBps: 2000 }]), /INVALID_RANK_RULES/);
+const customRankRules = [{ rank: 'STARTER' as const, minQualifiedActivePaidL1: 1, rateBps: 700 }];
+const customRankPlatform = new InMemoryPartnerPlatform(new ImmutableLedger(), { version: 'web-v1', includeStoreCosts: false, includeProcessingCosts: false, includeTaxes: true }, true, customRankRules);
+customRankPlatform.addPartner({ id: 'custom-p1', qualifiedActivePaidL1: 0, rank: 'STARTER', rankState: 'ACTIVE' });
+const customRankResult = customRankPlatform.processPaidPayment({ id: 'custom-rank-payment', userId: 'custom-user', payment: { gross: usd(100n) }, attribution: { ...attribution, userId: 'custom-user', directPartnerId: 'custom-p1', secondLevelPartnerId: undefined }, createdAt: trial.endsAt, ruleVersion: 'comp-custom-v1', fraudStatus: 'OK' });
+assert.equal(customRankResult.commissions[0]?.rateBps, 700);
 const disconnectedPayoutProvider = new NotConnectedPayoutProvider();
 assert.equal(disconnectedPayoutProvider.connected, false);
 await assert.rejects(() => disconnectedPayoutProvider.calculateFee(uah(42000n)), /PAYOUT_PROVIDER_NOT_CONNECTED/);

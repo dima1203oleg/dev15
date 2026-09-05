@@ -39,6 +39,21 @@ export const DEFAULT_RANK_RULES: readonly RankRule[] = [
   { rank: 'PLATINUM', minQualifiedActivePaidL1: 200, rateBps: 2500 }
 ];
 
+export function validateRankRules(rules: readonly RankRule[]): void {
+  if (!rules.length) throw new Error('INVALID_RANK_RULES');
+  const ranks = new Set<Rank>();
+  const thresholds = new Set<number>();
+  for (const rule of rules) {
+    if (ranks.has(rule.rank) || thresholds.has(rule.minQualifiedActivePaidL1)
+      || !Number.isInteger(rule.minQualifiedActivePaidL1) || rule.minQualifiedActivePaidL1 < 0
+      || !Number.isInteger(rule.rateBps) || rule.rateBps < 0 || rule.rateBps > 10000) {
+      throw new Error('INVALID_RANK_RULES');
+    }
+    ranks.add(rule.rank);
+    thresholds.add(rule.minQualifiedActivePaidL1);
+  }
+}
+
 export interface Trial {
   userId: string;
   startedAt: string;
@@ -612,8 +627,10 @@ export class InMemoryPartnerPlatform {
   constructor(
     ledger = new ImmutableLedger(),
     private readonly qcbPolicy: QcbPolicy = { version: 'web-v1', includeStoreCosts: true, includeProcessingCosts: true, includeTaxes: true },
-    private readonly hold = true
+    private readonly hold = true,
+    private readonly rankRules: readonly RankRule[] = DEFAULT_RANK_RULES
   ) {
+    validateRankRules(rankRules);
     this.ledger = ledger;
   }
 
@@ -682,10 +699,10 @@ export class InMemoryPartnerPlatform {
     if (!direct) throw new Error('DIRECT_PARTNER_NOT_FOUND');
     const second = input.attribution.secondLevelPartnerId ? this.partners.get(input.attribution.secondLevelPartnerId) : undefined;
     direct.qualifiedActivePaidL1 += 1;
-    const directRule = resolveRank(direct.qualifiedActivePaidL1) ?? DEFAULT_RANK_RULES[0];
+    const directRule = resolveRank(direct.qualifiedActivePaidL1, this.rankRules) ?? this.rankRules[0];
     direct.rank = directRule.rank;
     direct.rankState = 'ACTIVE';
-    const secondRule = second ? (resolveRank(second.qualifiedActivePaidL1) ?? DEFAULT_RANK_RULES[0]) : undefined;
+    const secondRule = second ? (resolveRank(second.qualifiedActivePaidL1, this.rankRules) ?? this.rankRules[0]) : undefined;
     const snapshots = createCommissionSnapshots({
       id: input.id,
       userId: input.userId,
@@ -856,8 +873,14 @@ export interface AutoPayoutPolicy {
   cadence: 'MONTHLY' | 'THRESHOLD';
 }
 
-export function shouldRunAutoPayout(policy: AutoPayoutPolicy, available: Money, checks: Pick<PayoutEligibilityInput, 'kyc' | 'compliance' | 'fraud' | 'payoutMethod'>): boolean {
-  return policy.enabled && available.currency === policy.threshold.currency && available.amountMinor >= policy.threshold.amountMinor &&
+export function shouldRunAutoPayout(
+  policy: AutoPayoutPolicy,
+  available: Money,
+  checks: Pick<PayoutEligibilityInput, 'kyc' | 'compliance' | 'fraud' | 'payoutMethod'>,
+  context: { cadenceDue?: boolean } = {}
+): boolean {
+  const cadenceSatisfied = policy.cadence === 'THRESHOLD' ? available.amountMinor >= policy.threshold.amountMinor : context.cadenceDue === true;
+  return policy.enabled && available.currency === policy.threshold.currency && cadenceSatisfied &&
     checks.kyc === 'VERIFIED' && checks.compliance === 'OK' && checks.fraud === 'OK' && checks.payoutMethod === 'VERIFIED';
 }
 
