@@ -230,6 +230,25 @@ let auditLogs: AuditLogItem[] = [];
 let sandboxSequence = 0;
 const payoutProvider = new NotConnectedPayoutProvider();
 
+type ConfigurationState = 'CONFIGURED' | 'NOT_CONFIGURED';
+
+function hasConfiguration(...keys: string[]): ConfigurationState {
+  return keys.every((key) => typeof process.env[key] === 'string' && process.env[key]!.trim().length > 0) ? 'CONFIGURED' : 'NOT_CONFIGURED';
+}
+
+function integrationConfiguration(): Record<'threatServer' | 'identity' | 'database' | 'queue' | 'billing' | 'fx' | 'kyc' | 'payout', ConfigurationState> {
+  return {
+    threatServer: hasConfiguration('THREAT_SERVER_URL', 'THREAT_SERVER_AUTH_SECRET'),
+    identity: hasConfiguration('IDENTITY_ISSUER_URL', 'IDENTITY_AUDIENCE', 'SESSION_SECRET', 'PII_ENCRYPTION_KEY'),
+    database: hasConfiguration('DATABASE_URL'),
+    queue: hasConfiguration('QUEUE_URL'),
+    billing: hasConfiguration('PAYMENT_PROVIDER', 'PAYMENT_WEBHOOK_SECRET'),
+    fx: hasConfiguration('FX_PROVIDER', 'FX_PROVIDER_API_KEY'),
+    kyc: hasConfiguration('KYC_PROVIDER', 'KYC_PROVIDER_API_KEY'),
+    payout: hasConfiguration('PAYOUT_PROVIDER', 'PAYOUT_PROVIDER_API_KEY', 'PAYOUT_WEBHOOK_SECRET')
+  };
+}
+
 // Seed Demo Partner (Gold Rank with realistic 154 Active L1s)
 const demoPartnerId = 'partner-demo-01';
 partners.set(demoPartnerId, {
@@ -494,7 +513,8 @@ async function startServer() {
       status: 'ok',
       threatDataMode,
       financialDataMode: financialDemoEnabled ? 'DEMO_DATA' : 'NOT_CONNECTED',
-      payoutProvider: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED'
+      payoutProvider: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED',
+      integrationConfiguration: integrationConfiguration()
     });
   });
 
@@ -504,12 +524,15 @@ async function startServer() {
       financialData: financialDemoEnabled ? 'DEMO_DATA' : 'NOT_CONNECTED',
       payoutProvider: payoutProvider.connected ? 'CONNECTED' : 'NOT_CONNECTED'
     };
+    const configuration = integrationConfiguration();
     const ready = checks.threatData === 'LIVE'
       && checks.financialData === 'CONNECTED'
-      && checks.payoutProvider === 'CONNECTED';
+      && checks.payoutProvider === 'CONNECTED'
+      && Object.values(configuration).every((state) => state === 'CONFIGURED');
     res.status(ready ? 200 : 503).json({
       status: ready ? 'ready' : 'not_ready',
       checks,
+      configuration,
       message: ready ? 'Production dependencies are connected.' : 'Потрібні production-інтеграції ще не підключені.'
     });
   });

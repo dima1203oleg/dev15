@@ -38,7 +38,17 @@ try {
     status: 'ok',
     threatDataMode: 'NOT_CONNECTED',
     financialDataMode: 'NOT_CONNECTED',
-    payoutProvider: 'NOT_CONNECTED'
+    payoutProvider: 'NOT_CONNECTED',
+    integrationConfiguration: {
+      threatServer: 'NOT_CONFIGURED',
+      identity: 'NOT_CONFIGURED',
+      database: 'NOT_CONFIGURED',
+      queue: 'NOT_CONFIGURED',
+      billing: 'NOT_CONFIGURED',
+      fx: 'NOT_CONFIGURED',
+      kyc: 'NOT_CONFIGURED',
+      payout: 'NOT_CONFIGURED'
+    }
   });
 
   const threats = await getJson('/api/threats/live');
