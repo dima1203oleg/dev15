@@ -515,21 +515,33 @@ async function startServer() {
 
   // Regions & Alert States
   app.get('/api/threats/regions', (req, res) => {
+    if (!demoDataEnabled || !isThreatServerConnected) {
+      return res.status(503).json({
+        error: 'NOT_CONNECTED',
+        message: 'Дані регіонів тимчасово недоступні. Потрібне авторитетне джерело ThreatServer.'
+      });
+    }
     res.json({
-      regions: demoDataEnabled && isThreatServerConnected ? mockRegions : [],
+      regions: mockRegions,
       timestamp: new Date().toISOString(),
-      dataMode: demoDataEnabled && isThreatServerConnected ? 'DEMO_DATA' : 'NOT_CONNECTED'
+      dataMode: 'DEMO_DATA'
     });
   });
 
   // Shelters Finder API
   app.get('/api/threats/shelters', (req, res) => {
+    if (!demoDataEnabled || !isThreatServerConnected) {
+      return res.status(503).json({
+        error: 'NOT_CONNECTED',
+        message: 'Дані про укриття тимчасово недоступні. Потрібне авторитетне джерело.'
+      });
+    }
     const { district } = req.query;
     res.json({
-      shelters: demoDataEnabled && isThreatServerConnected ? mockShelters : [],
-      count: demoDataEnabled && isThreatServerConnected ? mockShelters.length : 0,
-      nearestDistance: demoDataEnabled && isThreatServerConnected ? '340 м' : null,
-      dataMode: demoDataEnabled && isThreatServerConnected ? 'DEMO_DATA' : 'NOT_CONNECTED'
+      shelters: mockShelters,
+      count: mockShelters.length,
+      nearestDistance: '340 м',
+      dataMode: 'DEMO_DATA'
     });
   });
 

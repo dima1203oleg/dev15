@@ -33,10 +33,11 @@ test.describe('SIREN UA production boundary', () => {
     expect(safety.status()).toBe(200);
     await expect(safety.json()).resolves.toMatchObject({ connected: false, mode: 'NOT_CONNECTED' });
 
-    for (const endpoint of ['/api/partner/dashboard', '/api/partner/ledger', '/api/partner/payouts']) {
+    for (const endpoint of ['/api/threats/live', '/api/threats/regions', '/api/threats/shelters', '/api/partner/dashboard', '/api/partner/ledger', '/api/partner/payouts']) {
       const response = await request.get(endpoint);
       expect(response.status(), endpoint).toBe(503);
-      await expect(response.json()).resolves.toMatchObject({ error: 'FINANCIAL_DATA_NOT_CONNECTED' });
+      const body = await response.json();
+      expect(body.error, endpoint).toMatch(/NOT_CONNECTED/);
     }
 
     const cap = await request.post('/api/admin/validate-cap', {
