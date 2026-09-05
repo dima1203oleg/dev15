@@ -210,8 +210,14 @@ export class PayoutRepository {
     const occurredAt = requiredIso(input.occurredAt, 'occurred_at');
     const signatureVerifiedAt = requiredIso(input.signatureVerifiedAt, 'signature_verified_at');
     return this.database.withTransaction(async (client) => {
-      const duplicate = await client.query('SELECT id FROM webhook_events WHERE provider = $1 AND provider_event_id = $2 FOR UPDATE', [provider, providerEventId]);
-      if (duplicate.rows[0]) return 'DUPLICATE';
+      const duplicate = await client.query('SELECT id, raw_body FROM webhook_events WHERE provider = $1 AND provider_event_id = $2 FOR UPDATE', [provider, providerEventId]);
+      if (duplicate.rows[0]) {
+        const storedRawBody = Buffer.isBuffer(duplicate.rows[0].raw_body)
+          ? duplicate.rows[0].raw_body
+          : Buffer.from(String(duplicate.rows[0].raw_body ?? ''), 'utf8');
+        if (!storedRawBody.equals(Buffer.from(input.rawBody, 'utf8'))) throw new Error('WEBHOOK_IDEMPOTENCY_CONFLICT');
+        return 'DUPLICATE';
+      }
       await client.query(`
         INSERT INTO webhook_events (id, provider, provider_event_id, signature_verified_at, raw_body, processing_status)
         VALUES ($1, $2, $3, $4, $5, 'PROCESSING')

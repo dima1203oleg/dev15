@@ -712,7 +712,7 @@ async function startServer() {
       return res.json({ status: result, provider, providerEventId: eventId });
     } catch (error) {
       const code = error instanceof Error ? error.message : 'PAYOUT_SETTLEMENT_FAILED';
-      const status = code === 'PAYOUT_NOT_FOUND' ? 404 : code === 'PAYOUT_STATE_CONFLICT' || code === 'PAYOUT_PROVIDER_ID_CONFLICT' ? 409 : 503;
+      const status = code === 'PAYOUT_NOT_FOUND' ? 404 : code === 'PAYOUT_STATE_CONFLICT' || code === 'PAYOUT_PROVIDER_ID_CONFLICT' || code === 'WEBHOOK_IDEMPOTENCY_CONFLICT' ? 409 : 503;
       console.error('[SIREN UA] payout webhook settlement failure', { requestId: res.locals.requestId, provider, eventId, code });
       return res.status(status).json({ error: code, message: 'Не вдалося завершити payout settlement.' });
     }

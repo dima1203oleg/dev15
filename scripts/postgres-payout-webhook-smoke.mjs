@@ -103,6 +103,11 @@ try {
   assert.equal(duplicate.status, 200);
   assert.deepEqual(await duplicate.json(), { status: 'DUPLICATE', provider, providerEventId: eventId });
 
+  const conflictingBody = JSON.stringify({ payoutId, providerPayoutId, status: 'FAILED', occurredAt: now });
+  const conflict = await signedRequest(conflictingBody, timestamp, sign(timestamp, conflictingBody));
+  assert.equal(conflict.status, 409);
+  assert.equal((await conflict.json()).error, 'WEBHOOK_IDEMPOTENCY_CONFLICT');
+
   const state = await client.query('SELECT status, provider_payout_id FROM payout_requests WHERE id = $1', [payoutId]);
   assert.deepEqual(state.rows[0], { status: 'PAID', provider_payout_id: providerPayoutId });
   const wallet = await client.query(`SELECT available_minor, locked_for_payout_minor, paid_minor FROM wallet_projections WHERE partner_id = $1 AND currency = 'UAH'`, [partnerId]);
