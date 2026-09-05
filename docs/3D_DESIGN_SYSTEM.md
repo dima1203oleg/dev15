@@ -16,3 +16,7 @@ SIREN UA використовує deep navy / graphite surfaces, cyan informatio
 - Glow: cyan = information/current, amber = elevated risk, rose = critical, emerald = shelter.
 - Material: glass = context, opaque dark = system base, emissive/pulse = state change.
 - WebGL не є обов’язковим: CSS 3D дає доступний fallback для core prototype. Поки authoritative GeoJSON/TopoJSON та production WebGL renderer не підключені, система не видає CSS-візуалізацію за географічний digital twin.
+
+## Device constellation continuity
+
+У connected path окрема композиція desktop → tablet → smartphone також рендериться з того самого normalized `ThreatSceneModel`: регіон, ризик, freshness, подія та trajectory не мають другого джерела істини. У development/demo path ця композиція залишається візуальною ціллю з постійним маркуванням `DEMO DATA · VISUAL TARGET`.

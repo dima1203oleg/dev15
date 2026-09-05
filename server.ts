@@ -597,7 +597,16 @@ async function startServer() {
   // Switch Demo Role (For seamless UX testing)
   app.post('/api/auth/switch-role', (req, res) => {
     if (!financialDemoEnabled) return financialUnavailable(res);
-    const { role, rank } = req.body;
+    const payload = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body as { role?: unknown; rank?: unknown } : {};
+    const { role, rank } = payload;
+    const validRoles = new Set(['USER', 'PARTNER', 'AMBASSADOR']);
+    const validRanks = new Set(['STARTER', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM']);
+    if (typeof role !== 'string' || !validRoles.has(role) || (rank !== undefined && (typeof rank !== 'string' || !validRanks.has(rank)))) {
+      return res.status(400).json({
+        error: 'INVALID_ROLE_CONFIGURATION',
+        message: 'Роль або ранг не підтримується demo-сесією.'
+      });
+    }
     const partner = partners.get(demoPartnerId);
 
     if (partner && rank) {

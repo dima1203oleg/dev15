@@ -46,15 +46,7 @@ const LiveSpatialShowcase: React.FC<{
         </div>
       </div>
       <div className="relative z-10 grid min-h-[280px] gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_220px] sm:p-7">
-        <div className="relative flex min-h-[280px] items-center justify-center overflow-hidden rounded-3xl border border-cyan-300/20 bg-[#06111d]/80 p-5 [perspective:900px]">
-          <div className="absolute inset-8 rounded-[42%] border border-cyan-300/15 bg-cyan-400/[0.03] shadow-[0_0_80px_rgba(34,211,238,0.12)] [transform:rotateX(58deg)_rotateZ(-8deg)]" />
-          <div className="relative grid w-[82%] max-w-[430px] grid-cols-3 gap-1.5 [transform:rotateX(58deg)_rotateZ(-8deg)]" aria-hidden="true">
-            {Array.from({ length: 18 }, (_, index) => <span key={index} className={`aspect-square rounded-sm border ${index % 5 === 0 ? 'border-rose-300/60 bg-rose-400/35 shadow-[0_0_18px_rgba(251,113,133,0.55)]' : index % 3 === 0 ? 'border-amber-300/45 bg-amber-400/20' : 'border-cyan-300/25 bg-cyan-400/[0.08]'}`} />)}
-          </div>
-          {projectedTrajectory?.path && <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 520 300" fill="none" aria-hidden="true"><path d={projectedTrajectory.path} stroke={leadTrajectory?.confidence === 'CONFIRMED' ? '#34d399' : leadTrajectory?.confidence === 'PREDICTED' ? '#fb7185' : '#fbbf24'} strokeWidth="3" strokeDasharray={leadTrajectory?.confidence === 'CONFIRMED' ? undefined : leadTrajectory?.confidence === 'PREDICTED' ? '8 12' : '4 8'} />{projectedTrajectory.currentPoint && <circle cx={projectedTrajectory.currentPoint.x} cy={projectedTrajectory.currentPoint.y} r="5" fill="#fff" />}</svg>}
-          <div className="absolute bottom-4 left-4 rounded-xl border border-cyan-300/20 bg-slate-950/80 px-3 py-2 text-[10px] font-mono text-cyan-100">{model.region.label} · {model.risk.label}</div>
-          <div className="absolute right-4 top-4 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2.5 py-1 text-[9px] font-mono text-emerald-200">CONNECTED</div>
-        </div>
+        <LiveDeviceConstellation model={model} projectedTrajectory={projectedTrajectory} leadTrajectory={leadTrajectory} />
         <div className="space-y-2">
           <div className="rounded-2xl border border-rose-300/20 bg-rose-400/[0.07] p-3"><div className="text-[9px] font-mono tracking-[0.14em] text-rose-200">ACTIVE EVENT</div><div className="mt-1 text-sm font-bold text-white">{leadEvent?.label ?? 'Подій не зафіксовано'}</div><div className="mt-1 text-[10px] text-slate-400">{leadEvent ? `${leadEvent.confidence} · ${leadEvent.eta}` : 'Дані подій відсутні'}</div></div>
           <div className="rounded-2xl border border-amber-300/20 bg-amber-400/[0.07] p-3"><div className="text-[9px] font-mono tracking-[0.14em] text-amber-200">TRAJECTORY</div><div className="mt-1 text-sm font-bold text-white">{leadTrajectory?.direction ?? 'Напрямок не надано'}</div><div className="mt-1 text-[10px] text-slate-400">{leadTrajectory ? `${leadTrajectory.confidence} · ${leadTrajectory.status}` : 'Без прогнозної геометрії'}</div></div>
@@ -63,6 +55,59 @@ const LiveSpatialShowcase: React.FC<{
       </div>
       <div className="device-constellation-preview__footer"><span><Monitor className="h-4 w-4" /> Реальний normalized model</span><span><Radio className="h-4 w-4" /> Без підміни live-даних</span></div>
     </section>
+  );
+};
+
+const LiveDeviceConstellation: React.FC<{
+  model: ThreatSceneModel;
+  projectedTrajectory: ReturnType<typeof projectTrajectory>;
+  leadTrajectory?: ThreatSceneModel['trajectories'][number];
+}> = ({ model, projectedTrajectory, leadTrajectory }) => {
+  const leadEvent = model.events[0];
+  const trajectoryStroke = leadTrajectory?.confidence === 'CONFIRMED' ? '#34d399' : leadTrajectory?.confidence === 'PREDICTED' ? '#fb7185' : '#fbbf24';
+  const trajectoryDash = leadTrajectory?.confidence === 'CONFIRMED' ? undefined : leadTrajectory?.confidence === 'PREDICTED' ? '8 12' : '4 8';
+
+  return (
+    <div className="live-device-constellation" aria-label="Одна SIREN UA spatial-сцена на desktop, планшеті та смартфоні">
+      <div className="live-device-constellation__glow" aria-hidden="true" />
+      <div className="constellation-device constellation-device--desktop live-constellation-device live-constellation-device--desktop">
+        <div className="constellation-device__bezel">
+          <div className="constellation-screen">
+            <PreviewScreen label="DESKTOP · SPATIAL COMMAND" wide />
+            <div className="preview-map preview-map--wide live-preview-map">
+              <span className="preview-map__core" />
+              <span className="preview-map__node preview-map__node--one" />
+              <span className="preview-map__node preview-map__node--two" />
+              {projectedTrajectory?.path && <svg className="live-preview-trajectory" viewBox="0 0 520 300" fill="none" aria-hidden="true"><path d={projectedTrajectory.path} stroke={trajectoryStroke} strokeWidth="3" strokeDasharray={trajectoryDash} />{projectedTrajectory.currentPoint && <circle cx={projectedTrajectory.currentPoint.x} cy={projectedTrajectory.currentPoint.y} r="5" fill="#fff" />}</svg>}
+              <div className="live-preview-map__caption"><b>{model.region.label}</b><span>{model.risk.label} · {model.activeEvents || '—'} подій</span></div>
+            </div>
+            <div className="live-preview-metrics"><span>LIVE · {model.lastUpdated ?? '—'}</span><span>{leadEvent?.label ?? 'Події не зафіксовано'}</span></div>
+          </div>
+        </div>
+        <div className="constellation-device__stand" />
+      </div>
+
+      <div className="constellation-device constellation-device--tablet live-constellation-device live-constellation-device--tablet">
+        <div className="constellation-device__bezel">
+          <div className="constellation-screen">
+            <PreviewScreen label="TABLET · TOUCH SPATIAL" />
+            <div className="preview-map live-preview-map"><span className="preview-map__core" />{projectedTrajectory?.path && <svg className="live-preview-trajectory" viewBox="0 0 520 300" fill="none" aria-hidden="true"><path d={projectedTrajectory.path} stroke={trajectoryStroke} strokeWidth="3" strokeDasharray={trajectoryDash} /></svg>}<div className="live-preview-map__caption"><b>{model.region.label}</b><span>{model.risk.level}</span></div></div>
+            <div className="preview-screen__chips"><span>ШАРИ</span><span>ФОКУС</span><span>{model.dataMode === 'LIVE' ? 'LIVE' : 'DATA'}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="constellation-device constellation-device--phone live-constellation-device live-constellation-device--phone">
+        <div className="constellation-device__bezel">
+          <div className="constellation-screen">
+            <PreviewScreen label="PHONE · PERSONAL SAFETY" />
+            <div className="live-phone-status"><span>МІЙ РАЙОН</span><b>{model.region.label}</b><strong>{model.risk.label}</strong></div>
+            <div className="live-phone-event"><span>{leadEvent?.label ?? 'Події не зафіксовано'}</span><b>{leadEvent?.eta ?? '—'}</b></div>
+            <div className="preview-screen__status"><span /> {model.dataMode === 'LIVE' ? 'LIVE · source verified' : 'DATA STATE'}</div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
