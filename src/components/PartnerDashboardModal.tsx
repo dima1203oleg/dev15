@@ -21,6 +21,15 @@ interface PartnerDashboardModalProps {
   onSimulateNewSubscriber: () => void;
 }
 
+type PartnerNetworkItem = Pick<ReferralAttribution, 'id' | 'userAnonymousLabel' | 'sourceChannel' | 'utmCampaign' | 'isQualifiedPaid' | 'subscriptionPlan' | 'monthlyQcbMinor' | 'registeredAt' | 'lastPaymentAt' | 'status'>;
+
+interface NetworkData {
+  l1: PartnerNetworkItem[];
+  l2: PartnerNetworkItem[];
+  l1Count: number;
+  l2Count: number;
+}
+
 export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
   isOpen,
   onClose,
@@ -42,7 +51,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
 
   // Local state fetched from server API
   const [dashboardData, setDashboardData] = useState<any>(null);
-  const [networkData, setNetworkData] = useState<{ l1: ReferralAttribution[]; l2: ReferralAttribution[] }>({ l1: [], l2: [] });
+  const [networkData, setNetworkData] = useState<NetworkData>({ l1: [], l2: [], l1Count: 0, l2Count: 0 });
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [payoutsList, setPayoutsList] = useState<PayoutRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +78,12 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
       // unavailable independently; never turn a provider gap into empty
       // financial data that looks authoritative.
       setDashboardData(dashRes.body);
-      setNetworkData(netRes.ok ? { l1: netRes.body.l1?.items || [], l2: netRes.body.l2?.items || [] } : { l1: [], l2: [] });
+      setNetworkData(netRes.ok ? {
+        l1: Array.isArray(netRes.body.l1?.items) ? netRes.body.l1.items : [],
+        l2: Array.isArray(netRes.body.l2?.items) ? netRes.body.l2.items : [],
+        l1Count: Number.isSafeInteger(netRes.body.l1?.count) ? netRes.body.l1.count : (Array.isArray(netRes.body.l1?.items) ? netRes.body.l1.items.length : 0),
+        l2Count: Number.isSafeInteger(netRes.body.l2?.count) ? netRes.body.l2.count : (Array.isArray(netRes.body.l2?.items) ? netRes.body.l2.items.length : 0)
+      } : { l1: [], l2: [], l1Count: 0, l2Count: 0 });
       setLedgerEntries(ledRes.ok ? ledRes.body.entries || [] : []);
       setPayoutsList(poRes.ok ? poRes.body.payouts || [] : []);
     } catch (e) {
@@ -79,7 +93,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
         status: 'NOT_CONNECTED',
         message: 'Партнерський backend не підтвердив повний набір даних. Баланси, мережа та виплати приховано.'
       });
-      setNetworkData({ l1: [], l2: [] });
+      setNetworkData({ l1: [], l2: [], l1Count: 0, l2Count: 0 });
       setLedgerEntries([]);
       setPayoutsList([]);
     } finally {
@@ -284,7 +298,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
             }`}
           >
             <Users className="w-4 h-4" />
-            Мережа L1 / L2 ({networkData.l1.length + networkData.l2.length})
+            Мережа L1 / L2 ({networkData.l1Count + networkData.l2Count})
           </button>
 
           <button
@@ -513,15 +527,15 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between text-xs text-slate-400">
                 <span>Показано лише анонімізовані дані відповідно до політики конфіденційності</span>
-                <span className="font-mono text-amber-300">L1: {networkData.l1.length} • L2: {networkData.l2.length}</span>
+                <span className="font-mono text-amber-300">L1: {networkData.l1Count} • L2: {networkData.l2Count}</span>
               </div>
 
               {([
-                { level: 'L1', label: 'L1 · Особисті запрошення', items: networkData.l1, tone: 'amber' },
-                { level: 'L2', label: 'L2 · Мережа першого рівня', items: networkData.l2, tone: 'cyan' }
+                { level: 'L1', label: 'L1 · Особисті запрошення', items: networkData.l1, total: networkData.l1Count, tone: 'amber' },
+                { level: 'L2', label: 'L2 · Мережа першого рівня', items: networkData.l2, total: networkData.l2Count, tone: 'cyan' }
               ] as const).map((group) => (
                 <section key={group.level} aria-labelledby={`network-${group.level}`}>
-                  <div className="mb-2 flex items-center justify-between"><h4 id={`network-${group.level}`} className="text-sm font-bold text-white">{group.label}</h4><span className="font-mono text-xs text-slate-400">{group.items.length} записів</span></div>
+                  <div className="mb-2 flex items-center justify-between"><h4 id={`network-${group.level}`} className="text-sm font-bold text-white">{group.label}</h4><span className="font-mono text-xs text-slate-400">{group.total} записів</span></div>
                   <div className="divide-y divide-slate-800/80 rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden text-xs">
                     {group.items.length ? group.items.slice(0, 10).map((u) => (
                       <div key={u.id} className="p-3.5 flex items-center justify-between hover:bg-slate-800/50 transition-colors">
@@ -530,7 +544,7 @@ export const PartnerDashboardModal: React.FC<PartnerDashboardModalProps> = ({
                       </div>
                     )) : <div className="p-4 text-center text-slate-500">Записів ще немає.</div>}
                   </div>
-                  {group.items.length > 10 && <p className="mt-2 text-[11px] text-slate-500">Показано 10 із {group.items.length}. Повний список потребує pagination у partner API.</p>}
+                  {group.total > group.items.length && <p className="mt-2 text-[11px] text-slate-500">Показано {group.items.length} із {group.total}. Для повного списку використовується pagination partner API.</p>}
                 </section>
               ))}
             </div>

@@ -51,6 +51,9 @@ jobs:
       - name: Production build and boundary smoke
         run: npm run test:runtime-boundary
 
+      - name: Demo API contract smoke
+        run: npm run test:demo-api
+
       - name: Browser, accessibility and screenshot tests
         run: npm run test:e2e
 

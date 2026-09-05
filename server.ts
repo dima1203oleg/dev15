@@ -720,18 +720,37 @@ async function startServer() {
     if (!financialDemoEnabled) return financialUnavailable(res);
     const l1List = attributions.filter(a => a.referrerL1Id === demoPartnerId);
     const l2List = attributions.filter(a => a.referrerL2Id === demoPartnerId);
+    const parseQueryInteger = (value: unknown, fallback: number) => {
+      if (typeof value !== 'string' || !/^\d+$/.test(value)) return fallback;
+      const parsed = Number(value);
+      return Number.isSafeInteger(parsed) ? parsed : fallback;
+    };
+    const limit = Math.min(50, Math.max(1, parseQueryInteger(req.query.limit, 20)));
+    const offset = parseQueryInteger(req.query.offset, 0);
+    const privacySafe = (item: ReferralAttribution) => ({
+      id: item.id,
+      userAnonymousLabel: item.userAnonymousLabel,
+      sourceChannel: item.sourceChannel,
+      utmCampaign: item.utmCampaign,
+      isQualifiedPaid: item.isQualifiedPaid,
+      subscriptionPlan: item.subscriptionPlan,
+      monthlyQcbMinor: item.monthlyQcbMinor,
+      registeredAt: item.registeredAt,
+      lastPaymentAt: item.lastPaymentAt,
+      status: item.status
+    });
+    const page = (items: ReferralAttribution[]) => ({
+      count: items.length,
+      activePaidCount: items.filter(a => a.isQualifiedPaid).length,
+      offset,
+      limit,
+      hasMore: offset + limit < items.length,
+      items: items.slice(offset, offset + limit).map(privacySafe)
+    });
 
     res.json({
-      l1: {
-        count: l1List.length,
-        activePaidCount: l1List.filter(a => a.isQualifiedPaid).length,
-        items: l1List
-      },
-      l2: {
-        count: l2List.length,
-        activePaidCount: l2List.filter(a => a.isQualifiedPaid).length,
-        items: l2List
-      },
+      l1: page(l1List),
+      l2: page(l2List),
       depthLimitNotice: 'Глибина партнерської моделі суворо обмежена 2 рівнями (L1 + L2). L3+ не оплачується.'
     });
   });

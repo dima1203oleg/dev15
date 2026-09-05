@@ -240,8 +240,8 @@ test.describe('SIREN UA production boundary', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          l1: { count: 1, activePaidCount: 1, items: [{ id: 'l1-test', userId: 'u1', userAnonymousLabel: 'Користувач #L1-TEST', referrerL1Id: 'partner-test', sourceChannel: 'TELEGRAM', utmCampaign: 'test', isQualifiedPaid: true, subscriptionPlan: 'PREMIUM_MONTHLY', monthlyQcbMinor: 100, registeredAt: '2026-09-01T00:00:00.000Z', lastPaymentAt: '2026-09-01T00:00:00.000Z', status: 'ACTIVE' }] },
-          l2: { count: 1, activePaidCount: 1, items: [{ id: 'l2-test', userId: 'u2', userAnonymousLabel: 'Користувач #L2-TEST', referrerL1Id: 'partner-child', referrerL2Id: 'partner-test', sourceChannel: 'QR', utmCampaign: 'test', isQualifiedPaid: true, subscriptionPlan: 'PREMIUM_MONTHLY', monthlyQcbMinor: 100, registeredAt: '2026-09-01T00:00:00.000Z', lastPaymentAt: '2026-09-01T00:00:00.000Z', status: 'ACTIVE' }] }
+          l1: { count: 1, activePaidCount: 1, offset: 0, limit: 20, hasMore: false, items: [{ id: 'l1-test', userId: 'u1', userAnonymousLabel: 'Користувач #L1-TEST', referrerL1Id: 'partner-test', sourceChannel: 'TELEGRAM', utmCampaign: 'test', isQualifiedPaid: true, subscriptionPlan: 'PREMIUM_MONTHLY', monthlyQcbMinor: 100, registeredAt: '2026-09-01T00:00:00.000Z', lastPaymentAt: '2026-09-01T00:00:00.000Z', status: 'ACTIVE' }] },
+          l2: { count: 1, activePaidCount: 1, offset: 0, limit: 20, hasMore: false, items: [{ id: 'l2-test', userId: 'u2', userAnonymousLabel: 'Користувач #L2-TEST', referrerL1Id: 'partner-child', referrerL2Id: 'partner-test', sourceChannel: 'QR', utmCampaign: 'test', isQualifiedPaid: true, subscriptionPlan: 'PREMIUM_MONTHLY', monthlyQcbMinor: 100, registeredAt: '2026-09-01T00:00:00.000Z', lastPaymentAt: '2026-09-01T00:00:00.000Z', status: 'ACTIVE' }] }
         })
       });
     });

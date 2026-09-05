@@ -7,8 +7,8 @@ Date: 2026-09-05
 - Status: **WORKING / PARTIAL**
 - Stack: React 19, TypeScript 5.8, Vite 6, Tailwind CSS 4, Express 5, tsx, esbuild.
 - Package manager: `bun.lock` is present; npm lockfile is tracked for the verified npm scripts and browser test dependencies.
-- UI: public single-page experience with header, alert ticker, 3D responsive showcase, threat map, feature cards, download section, partner and admin modals. Partner demo cabinet now renders privacy-safe L1/L2 groups, local QR generation and UTM referral links.
-- API: Express in-memory demo endpoints for threat data and partner projections; financial domain rules live in a pure typed module. Production financial routes return `NOT_CONNECTED` until durable integrations exist.
+- UI: public single-page experience with header, alert ticker, 3D responsive showcase, threat map, feature cards, download section, partner and admin modals. Partner demo cabinet now renders privacy-safe paged L1/L2 groups, local QR generation and UTM referral links.
+- API: Express in-memory demo endpoints for threat data and partner projections; network responses are bounded and strip internal user/referrer IDs. Financial domain rules live in a pure typed module. Production financial routes return `NOT_CONNECTED` until durable integrations exist.
 - Auth: demo session only; no shared SirenUA identity integration verified.
 - Database: missing. In-memory arrays/maps are not a production source of truth.
 - CI: GitHub Actions verification workflow is present for type, domain, boundary, browser/accessibility, build, performance and dependency checks; staging deployment, migrations, observability and external payment provider remain missing/unverified.
@@ -23,7 +23,8 @@ Date: 2026-09-05
 - `npm run build`: PASS.
 - `npm run lint`: PASS.
 - `npm run test:financial`: PASS.
-- `npm run test:e2e`: PASS (13 tests).
+- `npm run test:e2e`: PASS (14 tests).
+- `npm run test:demo-api`: PASS (demo referral/pagination/privacy smoke).
 - `npm run test:performance`: PASS.
 - `npm audit --omit=dev`: PASS.
 - Production HTTP smoke: PASS locally.
