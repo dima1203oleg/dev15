@@ -79,6 +79,52 @@ class ProfileService {
       };
     }
 
+    // ThreatServer's canonical identity is the referral user returned by
+    // /api/referral/me. The legacy profile/dashboard routes do not expose this
+    // account, so resolve the referral profile first when an identity is set.
+    if (runtimeConfig.apiBaseUrl && runtimeConfig.referralAppleUserId) {
+      try {
+        const query = `?apple_user_id=${encodeURIComponent(runtimeConfig.referralAppleUserId)}`;
+        const [remoteUser, remoteStats] = await Promise.all([
+          getJsonFromPaths<unknown>([`/api/referral/me${query}`], 2500),
+          getJsonFromPaths<unknown>([`/api/referral/stats${query}`], 2500),
+        ]);
+        if (!isJsonObject(remoteUser) || typeof remoteUser.id !== 'number' || typeof remoteUser.display_name !== 'string') {
+          throw new Error('Referral profile payload has invalid shape');
+        }
+        const stats = isJsonObject(remoteStats) ? remoteStats : {};
+        const qualifiedL1 = Number(stats.active_subscribers ?? 0);
+        const totalNetworkCount = Number(stats.total_network_size ?? remoteUser.total_network_size ?? 0);
+        const currentRank = calculateRankByL1(qualifiedL1);
+        const progression = getNextTierInfo(currentRank, qualifiedL1);
+        const names = remoteUser.display_name.trim().split(/\s+/);
+        const data: UserProfileData = {
+          ...this.profile,
+          id: String(remoteUser.id),
+          partnerId: String(remoteUser.id),
+          partnerCode: typeof remoteUser.referral_code === 'string' ? remoteUser.referral_code : '',
+          fullName: remoteUser.display_name,
+          firstName: names[0] || remoteUser.display_name,
+          lastName: names.slice(1).join(' '),
+          email: typeof remoteUser.email === 'string' ? remoteUser.email : '',
+          registrationDate: typeof remoteUser.registered_at === 'string' ? remoteUser.registered_at : '',
+          qualifiedL1,
+          totalNetworkCount,
+          currentRank,
+          nextRank: progression.nextTier,
+          remainingL1ToNextRank: progression.remainingL1,
+          rankProgressPercent: progression.progressPercent,
+          ambassadorStatus: 'NOT_ELIGIBLE',
+          ambassadorTitle: 'Статус не досягнуто',
+        };
+        this.profile = data;
+        return { data, state: 'LIVE', source: 'SIREN_UA_REFERRAL_PROFILE', updatedAt, isRealData: true };
+      } catch {
+        // Fall through to legacy adapters so deployments with an older API
+        // remain compatible.
+      }
+    }
+
     try {
       const remote = await getJsonFromPaths<unknown>([
         '/api/profile/me',
