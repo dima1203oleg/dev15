@@ -59,7 +59,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
   const unavailable = effectiveDataState === 'NOT_CONNECTED';
 
   return (
-    <div className={`w-full my-0 rounded-[24px] border p-3 lg:p-3 ${
+    <div className={`siren-finance-panel w-full my-0 rounded-[24px] border p-3 lg:p-3 relative overflow-hidden ${
       isDark ? 'bg-[#10232B]/80 border-[#2D4A55]' : 'bg-white/70 border-[#D9E2E8]'
     }`}>
       {/* Header */}
@@ -92,7 +92,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
         
         {/* Card 1: Зароблено */}
-        <div className={`rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
+        <div className={`siren-finance-card rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
           isDark 
             ? 'bg-[#131C2B] border-[#24344D] text-white shadow-lg' 
             : 'bg-white border-[#CBD6E2] text-[#0F172A] shadow-sm'
@@ -125,7 +125,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
         </div>
 
         {/* Card 2: Баланс */}
-        <div className={`rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
+        <div className={`siren-finance-card rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
           isDark 
             ? 'bg-[#131C2B] border-[#24344D] text-white shadow-lg' 
             : 'bg-white border-[#CBD6E2] text-[#0F172A] shadow-sm'
@@ -153,7 +153,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
         </div>
 
         {/* Card 3: Доступно до виводу */}
-        <div className={`rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
+        <div className={`siren-finance-card rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
           isDark 
             ? 'bg-[#131C2B] border-[#24344D] text-white shadow-lg' 
             : 'bg-white border-[#CBD6E2] text-[#0F172A] shadow-sm'
@@ -192,7 +192,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
         </div>
 
         {/* Card 4: Виплачено */}
-        <div className={`rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
+        <div className={`siren-finance-card rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between transition-all duration-200 ${
           isDark 
             ? 'bg-[#131C2B] border-[#24344D] text-white shadow-lg' 
             : 'bg-white border-[#CBD6E2] text-[#0F172A] shadow-sm'
@@ -238,7 +238,7 @@ export const HomeFinanceSituationRow: React.FC<HomeFinanceSituationRowProps> = (
             if (onNavigateToNetwork) onNavigateToNetwork();
             playWebAudioSound('click');
           }}
-          className={`w-full text-left rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between cursor-pointer group transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+          className={`siren-finance-card w-full text-left rounded-[18px] p-3.5 lg:p-2.5 lg:h-[100px] border flex flex-col justify-between cursor-pointer group transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
           isDark 
             ? 'bg-[#131C2B] border-[#24344D] text-white hover:border-[#334768] shadow-lg' 
             : 'bg-white border-[#CBD6E2] text-[#0F172A] hover:border-blue-300 shadow-sm'

@@ -116,7 +116,7 @@ export const HomeFeaturesGrid: React.FC<HomeFeaturesGridProps> = ({
               if (onNavigateToTab) onNavigateToTab(card.id as DashboardSection);
               playWebAudioSound('click');
             }}
-            className={`w-full min-w-0 text-left rounded-[22px] p-4 lg:p-3 border flex flex-col min-[1160px]:h-[78px] min-[1160px]:justify-center cursor-pointer group transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+            className={`siren-feature-card w-full min-w-0 text-left rounded-[22px] p-4 lg:p-3 border flex flex-col min-[1160px]:h-[78px] min-[1160px]:justify-center cursor-pointer group transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
               isDark 
                 ? 'bg-[#131C2B] border-[#24344D] text-white hover:border-[#334768] shadow-lg' 
                 : 'bg-white border-[#CBD6E2] text-[#0F172A] hover:border-blue-300 shadow-sm hover:shadow-md'

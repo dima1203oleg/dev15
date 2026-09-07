@@ -64,19 +64,101 @@ body {
 .siren-app--dark {
   --siren-shell-bg: #08151c;
   --siren-shell-text: #eef4f5;
-  --siren-panel-bg: rgba(16, 35, 43, 0.92);
-  --siren-panel-border: rgba(53, 82, 93, 0.86);
+  --siren-panel-bg: rgba(16, 35, 43, 0.78);
+  --siren-panel-border: rgba(76, 111, 123, 0.58);
   --siren-ink-soft: #a7b9bf;
   --siren-accent: #8fbacb;
   background:
-    radial-gradient(circle at 75% 4%, rgba(89, 145, 165, 0.11), transparent 31rem),
-    radial-gradient(circle at 8% 42%, rgba(38, 91, 106, 0.12), transparent 24rem),
+    radial-gradient(circle at 74% 6%, rgba(86, 145, 166, 0.16), transparent 34rem),
+    radial-gradient(circle at 6% 31%, rgba(29, 92, 108, 0.15), transparent 28rem),
+    linear-gradient(135deg, rgba(18, 49, 59, 0.28), transparent 42%),
     var(--siren-shell-bg);
 }
 
 .siren-app--dark .siren-panel {
   background-color: var(--siren-panel-bg);
   border-color: var(--siren-panel-border);
+}
+
+/* The reference is a continuous spatial canvas.  Keep cards glassy and
+   layered, but let the hero itself breathe directly on the shell. */
+.siren-app--dark .siren-hero {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.siren-app--dark .siren-hero::after,
+.siren-app--dark .siren-finance-panel::after,
+.siren-app--dark .siren-device-panel::after {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(152, 203, 217, 0.08);
+  border-radius: inherit;
+  content: '';
+  pointer-events: none;
+}
+
+.siren-app--dark .siren-home-features-grid .siren-feature-card,
+.siren-app--dark .siren-finance-panel,
+.siren-app--dark .siren-device-panel {
+  background:
+    linear-gradient(135deg, rgba(33, 63, 73, 0.74), rgba(12, 27, 35, 0.84)),
+    radial-gradient(circle at 8% 0%, rgba(117, 176, 193, 0.12), transparent 45%);
+  border-color: rgba(78, 119, 132, 0.62);
+  box-shadow:
+    inset 0 1px 0 rgba(205, 235, 241, 0.08),
+    0 18px 42px rgba(0, 0, 0, 0.16);
+}
+
+.siren-app--dark .siren-home-features-grid .siren-feature-card:hover,
+.siren-app--dark .siren-finance-panel:hover,
+.siren-app--dark .siren-device-panel:hover {
+  border-color: rgba(123, 183, 199, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(205, 235, 241, 0.1),
+    0 22px 52px rgba(0, 0, 0, 0.2);
+}
+
+.siren-app--dark .siren-finance-panel .siren-finance-card,
+.siren-app--dark .siren-home-features-grid .siren-feature-card > div > div > div {
+  background: rgba(10, 26, 34, 0.42);
+  border-color: rgba(78, 119, 132, 0.52);
+  box-shadow: inset 0 1px 0 rgba(205, 235, 241, 0.04);
+}
+
+.siren-app--dark header {
+  background: rgba(8, 19, 27, 0.76);
+  border-color: rgba(74, 108, 119, 0.38);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.siren-app--dark header input {
+  background: rgba(22, 43, 53, 0.7);
+  border-color: rgba(77, 116, 129, 0.48);
+}
+
+@media (min-width: 1024px) {
+  .siren-hero {
+    min-height: 318px;
+  }
+
+  .siren-hero h1 {
+    font-size: clamp(2.3rem, 3.05vw, 3.15rem);
+    line-height: 1.02;
+  }
+
+  .siren-hero-map {
+    transform: translateY(2px) scale(1.04);
+  }
+}
+
+@media (max-width: 1023px) {
+  .siren-app--dark .siren-hero {
+    background: linear-gradient(135deg, rgba(16, 35, 43, 0.82), rgba(10, 25, 33, 0.72));
+    border-color: rgba(76, 111, 123, 0.58);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+  }
 }
 
 .siren-app--light .siren-panel {
