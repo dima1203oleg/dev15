@@ -202,12 +202,6 @@ export default function App() {
     };
   }, [settings.myRegion, isDemoMode, threatRefreshNonce]);
 
-  const handleRefreshThreatData = () => {
-    if (isDemoMode) return;
-    setThreatDataState('LOADING');
-    setThreatRefreshNonce((current) => current + 1);
-  };
-
   const handleExitDemo = () => {
     setIsDemoMode(false);
     setThreatDataState('LOADING');
