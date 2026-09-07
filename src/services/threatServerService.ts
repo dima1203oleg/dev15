@@ -92,6 +92,159 @@ type Dev15Threat = {
   source?: unknown;
 };
 
+type ThreatServerActiveThreat = {
+  id?: unknown;
+  threat_id?: unknown;
+  type?: unknown;
+  detail?: unknown;
+  level?: unknown;
+  eta?: unknown;
+  eta_seconds?: unknown;
+  is_predictive?: unknown;
+  is_active?: unknown;
+  since?: unknown;
+  last_checkpoint_latitude?: unknown;
+  last_checkpoint_longitude?: unknown;
+  origin_latitude?: unknown;
+  origin_longitude?: unknown;
+  origin_title?: unknown;
+  transit_from?: unknown;
+  target_region?: unknown;
+  confidence?: unknown;
+  telemetry?: unknown;
+};
+
+type ThreatServerRegion = {
+  level?: unknown;
+  type?: unknown;
+  detail?: unknown;
+  since?: unknown;
+  is_active?: unknown;
+  active_districts?: unknown;
+  active_threats?: unknown;
+};
+
+type ThreatServerPayload = {
+  updated_at?: unknown;
+  mode?: unknown;
+  threats?: unknown;
+};
+
+const threatServerRegionId = (name: string): string | null => {
+  const normalized = name.trim().toLowerCase();
+  const aliases: Record<string, string> = {
+    'ар крим': 'crimea',
+    'автономна республіка крим': 'crimea',
+    'київ': 'kyiv_city',
+    'м. київ': 'kyiv_city',
+    'севастополь': 'sevastopol',
+    'м. севастополь': 'sevastopol',
+  };
+  if (aliases[normalized]) return aliases[normalized];
+  return INITIAL_REGIONS.find((region) => (
+    region.name.toLowerCase() === normalized
+    || region.shortName.toLowerCase() === normalized
+  ))?.id || null;
+};
+
+const sourceThreatType = (value: unknown, level: unknown): RegionData['threatType'] => {
+  const type = String(value ?? '').toLowerCase();
+  const risk = String(level ?? '').toLowerCase();
+  if (type.includes('ballistic') || type.includes('kab')) return 'ballistic';
+  if (type.includes('missile') || type.includes('rocket')) return 'missile';
+  if (type.includes('aviation') || type.includes('aircraft')) return 'aviation';
+  if (type.includes('artillery')) return 'artillery';
+  if (type.includes('uav') || type.includes('shahed') || type.includes('drone')) return 'drone';
+  if (risk === 'critical') return 'missile';
+  if (risk === 'high' || risk === 'medium' || risk === 'elevated') return 'air';
+  return 'none';
+};
+
+const parseEtaMinutes = (value: unknown, seconds: unknown): number => {
+  if (typeof seconds === 'number' && Number.isFinite(seconds)) return Math.max(0, Math.round(seconds / 60));
+  const match = String(value ?? '').match(/\d+/);
+  return match ? Number(match[0]) : 0;
+};
+
+const mapThreatServerPayload = (payload: ThreatServerPayload): {
+  regions: RegionData[];
+  alerts: AlertEvent[];
+  trajectories: ThreatTrajectory[];
+  updatedAt: string;
+  mode: 'live' | 'mock';
+} => {
+  const sourceRegions = isJsonObject(payload.threats) ? payload.threats : {};
+  const byId = new Map<string, { name: string; state: ThreatServerRegion }>();
+  Object.entries(sourceRegions).forEach(([name, raw]) => {
+    if (isJsonObject(raw)) {
+      const regionId = threatServerRegionId(name);
+      if (regionId) byId.set(regionId, { name, state: raw as ThreatServerRegion });
+    }
+  });
+
+  const regions = INITIAL_REGIONS.map((base) => {
+    const source = byId.get(base.id);
+    if (!source) return { ...base, isAlarm: false, threatType: 'none' as const, threatDetails: undefined, activeRayons: undefined };
+    const activeThreats = Array.isArray(source.state.active_threats) ? source.state.active_threats : [];
+    const type = sourceThreatType(source.state.type, source.state.level);
+    return {
+      ...base,
+      isAlarm: source.state.is_active === true,
+      threatType: type,
+      startedAt: typeof source.state.since === 'string' ? source.state.since : null,
+      threatDetails: typeof source.state.detail === 'string' ? source.state.detail : undefined,
+      activeRayons: Array.isArray(source.state.active_districts) ? source.state.active_districts.filter((item): item is string => typeof item === 'string') : undefined,
+      partiallyAlarmed: activeThreats.length > 0 && source.state.is_active !== true,
+    };
+  });
+
+  const trajectories: ThreatTrajectory[] = [];
+  Object.values(sourceRegions).forEach((raw, regionIndex) => {
+    if (!isJsonObject(raw) || !Array.isArray(raw.active_threats)) return;
+    raw.active_threats.filter(isJsonObject).forEach((rawThreat, threatIndex) => {
+      const threat = rawThreat as ThreatServerActiveThreat;
+      const points = [
+        projectDev15Point({ lat: threat.origin_latitude, lng: threat.origin_longitude }),
+        projectDev15Point({ lat: threat.last_checkpoint_latitude, lng: threat.last_checkpoint_longitude }),
+      ].filter((point): point is { x: number; y: number } => Boolean(point));
+      if (points.length < 2) return;
+      const type = sourceThreatType(threat.type, threat.level);
+      const telemetry = isJsonObject(threat.telemetry) ? threat.telemetry : {};
+      const id = typeof threat.id === 'string' ? threat.id : typeof threat.threat_id === 'string' ? threat.threat_id : `threat-${regionIndex}-${threatIndex}`;
+      const trajectoryType: ThreatTrajectory['threatType'] = type === 'missile' || type === 'ballistic' || type === 'aviation' ? type : 'drone';
+      trajectories.push({
+        id,
+        threatType: trajectoryType,
+        name: typeof threat.type === 'string' ? threat.type.toUpperCase() : 'Активна подія',
+        altitudeMeters: 0,
+        speedKmh: typeof telemetry.speed_kmh === 'number' ? telemetry.speed_kmh : 0,
+        azimuthDeg: typeof telemetry.heading_degrees === 'number' ? telemetry.heading_degrees : 0,
+        azimuthDirection: typeof telemetry.attack_vector === 'string' ? telemetry.attack_vector : 'Напрямок не визначено',
+        pathD: `M ${points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' L ')}`,
+        currentPoint: { x: points[1].x, y: points[1].y, z: 22 },
+        origin: typeof threat.origin_title === 'string' ? threat.origin_title : typeof threat.transit_from === 'string' ? threat.transit_from : 'Джерело не визначено',
+        targetRegion: typeof threat.target_region === 'string' ? threatServerRegionId(threat.target_region) || threat.target_region : 'Регіон не визначено',
+        etaMinutes: parseEtaMinutes(threat.eta, threat.eta_seconds),
+        status: threat.is_active === false ? 'WARNING' : 'ACTIVE',
+        altitudeLevel: 'MEDIUM',
+      });
+    });
+  });
+
+  const updatedAt = typeof payload.updated_at === 'string' ? payload.updated_at : new Date().toISOString();
+  const alerts = regions.filter((region) => region.isAlarm || region.partiallyAlarmed).map((region) => ({
+    id: `threat-server-${region.id}-${updatedAt}`,
+    regionId: region.id,
+    regionName: region.name,
+    type: 'update' as const,
+    threatType: region.threatType,
+    timestamp: updatedAt,
+    description: region.threatDetails || 'Оновлено статус регіону',
+    source: 'SirenUA ThreatServer',
+  }));
+  return { regions, alerts, trajectories, updatedAt, mode: payload.mode === 'mock' ? 'mock' : 'live' };
+};
+
 const dev15ThreatType = (value: unknown): ThreatTrajectory['threatType'] => {
   const category = String(value ?? '').toUpperCase();
   if (category.includes('MISSILE')) return 'missile';
@@ -362,7 +515,7 @@ class ThreatServerService {
   public async checkHealth(): Promise<ThreatServerSystemStatus> {
     const start = performance.now();
     try {
-      const response = await fetch(`${API_BASE}/system/status`, {
+      const response = await fetch(apiUrl('/api/health'), {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         signal: AbortSignal.timeout(2000)
@@ -374,9 +527,16 @@ class ThreatServerService {
         const data = await response.json();
         this.connectionStatus = 'CONNECTED';
         this.lastStatus = {
-          ...data,
+          service: typeof data.service === 'string' ? data.service : 'SirenUA-ThreatServer',
+          version: typeof data.version === 'string' ? data.version : 'unknown',
           latencyMs,
-          status: 'HEALTHY'
+          status: data.status === 'running' ? 'HEALTHY' : 'DEGRADED',
+          uptimeSeconds: 0,
+          activeIngestSources: data.telegram_connected === true ? ['Telegram'] : [],
+          lastIngestTimestamp: new Date().toISOString(),
+          totalActiveAlerts: 0,
+          totalActiveVectors: 0,
+          environment: data.mode === 'live' ? 'production' : 'development',
         };
         return this.lastStatus;
       } else {
@@ -451,7 +611,7 @@ class ThreatServerService {
     // A static production build without an explicitly configured API must be
     // instant and truthful. Do not probe same-origin demo routes or wait on
     // network timeouts before showing the unavailable state.
-    if (!runtimeConfig.apiBaseUrl && !runtimeConfig.allowDemoData) {
+    if (!runtimeConfig.apiBaseUrl && runtimeConfig.isProduction && !runtimeConfig.allowDemoData) {
       return this.offlineResponse(myRegionId, nowTime);
     }
 
@@ -459,6 +619,37 @@ class ThreatServerService {
     // Dev15 is the canonical local integration boundary. Its responses are
     // deliberately labelled DEMO_DATA until an authoritative threat source
     // is configured, so the UI must preserve that state end-to-end.
+    try {
+        const sourceRemote = await getJsonFromPaths<unknown>(['/api/threats'], 3500);
+        if (!isJsonObject(sourceRemote)) throw new Error('ThreatServer payload has invalid shape');
+        const mapped = mapThreatServerPayload(sourceRemote as ThreatServerPayload);
+        const demo = mapped.mode === 'mock';
+        if (demo && !runtimeConfig.allowDemoData) throw new Error('DEMO_DATA_DISABLED_IN_PRODUCTION');
+        const state: DataState = demo ? 'DEMO' : 'LIVE';
+        const systemStatus = await this.checkHealth();
+        const threatScene = this.normalizeThreatScene(mapped.regions, mapped.trajectories, myRegionId, state, this.formatTime(new Date(mapped.updatedAt)));
+        const payload: LiveThreatsPayload = {
+          regions: mapped.regions,
+          alerts: mapped.alerts,
+          trajectories: mapped.trajectories,
+          systemStatus: {
+            ...systemStatus,
+            lastIngestTimestamp: mapped.updatedAt,
+            totalActiveAlerts: mapped.alerts.length,
+            totalActiveVectors: mapped.trajectories.length,
+          },
+          threatScene,
+          connectionStatus: demo ? 'DEMO_MODE' : 'CONNECTED',
+          lastUpdated: this.formatTime(new Date(mapped.updatedAt)),
+          isRealData: !demo,
+        };
+        this.connectionStatus = demo ? 'DEMO_MODE' : 'CONNECTED';
+        CacheManager.set(CACHE_KEY_THREATS, payload, 300, 'SIREN_UA_THREATSERVER');
+        return { data: payload, state, source: demo ? 'SIREN_UA_THREATSERVER_DEMO' : 'SIREN_UA_THREATSERVER', updatedAt: payload.lastUpdated, isRealData: !demo };
+    } catch {
+      // Continue to the older Dev15 contract for deployments still migrating.
+    }
+
     try {
         const [regionsRemote, liveRemote, statusRemote] = await Promise.all([
           getJsonFromPaths<unknown>(['/api/threats/regions'], 2500),
