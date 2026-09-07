@@ -23,7 +23,6 @@ interface HeroSectionProps {
   onSelectRegion?: (region: RegionData | null) => void;
   trajectories?: ThreatTrajectory[];
   threatModel?: ThreatSceneModel;
-  onRefreshData?: () => void;
   onNavigateToShelters?: () => void;
   onOpenDemo?: () => void;
   theme?: 'light' | 'dark';
@@ -35,7 +34,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onSelectRegion,
   trajectories = [],
   threatModel,
-  onRefreshData,
   onNavigateToShelters,
   onOpenDemo,
   theme = 'light'
@@ -43,13 +41,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const [mapMode, setMapMode] = useState<'RENDER' | 'WEBGL'>('RENDER');
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const isDark = theme === 'dark';
-  const dataModeMessage = threatModel?.dataMode === 'CACHED'
-    ? 'ОСТАННІ ЗБЕРЕЖЕНІ ДАНІ'
-    : threatModel?.dataMode === 'STALE'
-      ? 'ДАНІ ЗАСТАРІЛІ'
-      : threatModel?.dataMode === 'ERROR'
-        ? 'ПОМИЛКА ДЖЕРЕЛА ДАНИХ'
-        : 'LIVE DATA НЕ ПІДКЛЮЧЕНО';
   const freshnessLabel = threatModel?.dataMode === 'LIVE'
     ? `LIVE · ${threatModel.timestamp}`
     : threatModel?.dataMode === 'DEMO_DATA'
@@ -295,29 +286,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   }}
                   className="w-full h-auto object-contain max-h-[290px] lg:max-h-[255px] drop-shadow-[0_20px_35px_rgba(79,132,154,0.27)]"
                 />
-                {threatModel?.dataMode !== 'DEMO_DATA' && threatModel?.dataMode !== 'LIVE' && (
-                  <div className={`absolute right-3 top-3 rounded-xl border px-3 py-2 text-left text-[9px] font-black tracking-[0.12em] backdrop-blur-md shadow-[0_10px_26px_rgba(0,0,0,0.16)] ${
-                    isDark
-                      ? 'border-amber-400/40 bg-slate-950/80 text-amber-200'
-                      : 'border-amber-300 bg-white/90 text-amber-700'
-                  }`}>
-                    <span className="block">ДАНІ НЕДОСТУПНІ</span>
-                    <span className="mt-1 block text-[9px] font-bold tracking-normal opacity-80">{dataModeMessage}</span>
-                    {onRefreshData && (
-                      <button
-                        type="button"
-                        onClick={onRefreshData}
-                        className={`mt-2 rounded-lg border px-2.5 py-1.5 text-[9px] font-black tracking-normal transition-colors ${
-                          isDark
-                            ? 'border-amber-300/40 bg-amber-300/10 text-amber-100 hover:bg-amber-300/20'
-                            : 'border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100'
-                        }`}
-                      >
-                        Повторити підключення
-                      </button>
-                    )}
-                  </div>
-                )}
               </>
             )}
 

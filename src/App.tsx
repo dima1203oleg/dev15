@@ -473,7 +473,6 @@ export default function App() {
                 selectedRegion={selectedRegion}
                 onSelectRegion={(reg) => setSelectedRegion(reg)}
                 threatModel={threatSceneModel}
-                onRefreshData={handleRefreshThreatData}
                 onNavigateToShelters={() => setIsSheltersModalOpen(true)}
                 onOpenDemo={runtimeConfig.allowDemoData ? () => setIsSimulatorOpen(true) : undefined}
                 theme={settings.theme || 'light'}
