@@ -46,6 +46,7 @@ import { DataState } from '../types/dataEnvelope';
 import { kycService, KycVerificationData } from '../services/kycService';
 import { authSecurityService, UserSecurityData } from '../services/authSecurityService';
 import { runtimeConfig } from '../config/runtime';
+import { ORDERED_TIERS } from '../services/referralEngine';
 
 const REFERRAL_LINK_BASE = 'https://sirenua.online/ref';
 
@@ -120,6 +121,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   const displayRegistrationDate = profile?.registrationDate || '—';
   const displayRank = profile?.currentRank.badgeLabel || '—';
   const displayRate = profile?.currentRank.l1Percent ?? 0;
+  const currentRankIndex = profile ? ORDERED_TIERS.findIndex((tier) => tier.id === profile.currentRank.id) : -1;
   const displayQualifiedL1 = profile?.qualifiedL1 ?? 0;
   const displayNetworkCount = profile?.totalNetworkCount ?? 0;
   const displayNextRank = profile?.nextRank?.name || (profileUnavailable || profileLoading ? '—' : 'DEMO');
@@ -193,7 +195,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
 
           <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             <span className="font-bold text-slate-700 dark:text-slate-200">Більше, ніж акаунт. Це твій внесок у безпечне завтра.</span><br />
-            Керуй своїми даними, безпекою, партнерським статусом та відкривай нові можливості разом із SIREN UA. {profileState === 'DEMO' ? 'Дані профілю демонстраційні до підключення auth API.' : profileState === 'NOT_CONNECTED' ? 'Дані профілю тимчасово недоступні, доки auth API не відновить з’єднання.' : 'Дані профілю підтверджені auth API.'}
+            Керуй своїми даними, безпекою, партнерським статусом та відкривай нові можливості разом із SIREN UA. {profileState === 'DEMO' ? 'Дані профілю демонстраційні до підключення Referral API.' : profileState === 'NOT_CONNECTED' ? 'Дані профілю тимчасово недоступні, доки Referral API не відновить з’єднання.' : 'Дані профілю підтверджені Referral API; auth, KYC і payout-статуси показані окремо.'}
           </p>
         </div>
 
@@ -444,15 +446,15 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               {['Starter', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Ambassador'].map((t, i) => (
                 <div key={t} className="flex flex-col items-center gap-1">
                   <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${
-                    t === 'Gold' 
+                    i === currentRankIndex
                       ? 'bg-amber-500 text-white ring-2 ring-amber-300' 
-                      : i < 3 
+                      : currentRankIndex >= i && i < ORDERED_TIERS.length
                       ? 'bg-blue-600 text-white' 
                       : 'bg-slate-200 dark:bg-slate-700'
                   }`}>
-                    {i < 3 ? '✓' : ''}
+                    {currentRankIndex >= i && i < ORDERED_TIERS.length ? '✓' : ''}
                   </div>
-                  <span className={t === 'Gold' ? 'font-bold text-amber-500' : 'text-slate-400'}>{t}</span>
+                  <span className={i === currentRankIndex ? 'font-bold text-amber-500' : 'text-slate-400'}>{t}</span>
                 </div>
               ))}
             </div>
@@ -574,56 +576,11 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             </div>
 
             <div className="space-y-2 text-xs">
-              {profileState !== 'LIVE' ? (
-                <div className={`p-4 rounded-2xl border text-xs ${isDark ? 'bg-slate-800/80 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
-                  {profileState === 'DEMO' ? 'Демонстраційні платіжні реквізити навмисно не показуємо як реальні. Підключіть payout API, щоб отримати верифіковані методи.' : 'Платіжні методи стануть доступні після підключення профільного та payout API. Реквізити не вважаються верифікованими.'}
-                </div>
-              ) : <>
-              <div className={`p-2.5 rounded-2xl border flex items-center justify-between ${
-                isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100'
-              }`}>
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-blue-600" />
-                  <div>
-                    <div className="font-bold leading-tight">Банківська картка</div>
-                    <div className="text-[10px] text-slate-400">***** 4242</div>
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                  Основна
-                </span>
+              <div className={`p-4 rounded-2xl border text-xs ${isDark ? 'bg-slate-800/80 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                {profileState === 'DEMO'
+                  ? 'Демонстраційні платіжні реквізити навмисно не показуємо як реальні. Підключіть payout API, щоб отримати верифіковані методи.'
+                  : 'Payout API не підключений: платіжні методи, реквізити та їхню верифікацію не показуємо без реального джерела.'}
               </div>
-
-              <div className={`p-2.5 rounded-2xl border flex items-center justify-between ${
-                isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100'
-              }`}>
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-purple-600" />
-                  <div>
-                    <div className="font-bold leading-tight">IBAN (UAH)</div>
-                    <div className="text-[10px] text-slate-400">UA12 3003 0000 0002 ...</div>
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-200">
-                  Верифіковано
-                </span>
-              </div>
-
-              <div className={`p-2.5 rounded-2xl border flex items-center justify-between ${
-                isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-100'
-              }`}>
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-sky-500" />
-                  <div>
-                    <div className="font-bold leading-tight">PayPal</div>
-                    <div className="text-[10px] text-slate-400">{displayEmail}</div>
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                  Підключено
-                </span>
-              </div>
-              </>}
             </div>
           </div>
         </div>
@@ -773,35 +730,17 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             </div>
 
             <div className="grid grid-cols-3 gap-2.5 text-center text-[10px] pt-1">
-              <div className={`p-2.5 rounded-2xl border ${isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-blue-50/50 border-blue-100'}`}>
-                <div className="w-8 h-8 rounded-full bg-blue-500 text-white mx-auto flex items-center justify-center mb-1">
-                  🥇
-                </div>
-                <div className="font-bold">Перший реферал</div>
-              </div>
-              <div className={`p-2.5 rounded-2xl border ${isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-amber-50/50 border-amber-100'}`}>
-                <div className="w-8 h-8 rounded-full bg-amber-600 text-white mx-auto flex items-center justify-center mb-1">
-                  🥉
-                </div>
-                <div className="font-bold">Bronze Partner</div>
-              </div>
-              <div className={`p-2.5 rounded-2xl border ${isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-purple-50/50 border-purple-100'}`}>
-                <div className="w-8 h-8 rounded-full bg-purple-500 text-white mx-auto flex items-center justify-center mb-1">
-                  👥
-                </div>
-                <div className="font-bold">10 активних</div>
-              </div>
               <div className={`p-2.5 rounded-2xl border ${isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-amber-50/50 border-amber-100'}`}>
                 <div className="w-8 h-8 rounded-full bg-amber-400 text-slate-900 mx-auto flex items-center justify-center mb-1">
                   👑
                 </div>
                 <div className="font-bold">{displayRank}</div>
               </div>
-              <div className={`p-2.5 rounded-2xl border ${isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-emerald-50/50 border-emerald-100'}`}>
-                <div className="w-8 h-8 rounded-full bg-emerald-500 text-white mx-auto flex items-center justify-center mb-1">
-                  🛡️
+              <div className={`col-span-2 p-2.5 rounded-2xl border flex items-center justify-center ${isDark ? 'bg-slate-800/80 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                <div>
+                  <div className="font-bold">Досягнення недоступні</div>
+                  <div className="mt-1">Achievement API не підключений</div>
                 </div>
-                <div className="font-bold">Safe Contributor</div>
               </div>
             </div>
           </div>
@@ -890,10 +829,10 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
       >
         <div className="space-y-4 text-sm">
           {activeDrawer === 'rank' && <><p>Поточний ранг: <strong>{displayRank}</strong>, ставка L1: <strong>{displayRate}%</strong>.</p><p className="text-xs text-slate-500">Ранг визначається кваліфікованими активними L1. Історичні нарахування не перераховуються після зміни рангу.</p></>}
-          {activeDrawer === 'payments' && <><p>Платіжні методи керуються payout-провайдером.</p><p className="text-xs text-amber-600">{profileState === 'LIVE' ? 'Провайдер повернув live-дані.' : 'Payout API не підключений: локальні реквізити не зберігаються і не вважаються верифікованими.'}</p></>}
+          {activeDrawer === 'payments' && <><p>Платіжні методи керуються payout-провайдером.</p><p className="text-xs text-amber-600">Payout API не підключений: локальні реквізити не зберігаються і не вважаються верифікованими.</p></>}
           {activeDrawer === 'kyc' && <><p>Статус: <strong>{kycStatusLabel}</strong>.</p><p className="text-xs text-slate-500">{isKycLive ? 'Дані надані підключеним KYC-провайдером.' : 'Підключіть KYC-провайдера, щоб пройти перевірку та відкрити payout-ліміти.'}</p></>}
           {activeDrawer === 'security' && <><p>Стан безпеки: <strong>{isSecurityLive ? 'підтверджено' : 'не підтверджено'}</strong>.</p><p className="text-xs text-slate-500">{isSecurityLive ? `2FA: ${securityData?.twoFactorEnabled ? 'увімкнено' : 'вимкнено'}. Активних сесій: ${securitySessions}.` : 'Auth security API не підключений; локальний екран не робить заяв про захищені сесії.'}</p></>}
-          {activeDrawer === 'achievements' && <><p>Досягнення відокремлені від фінансової компенсації.</p><p className="text-xs text-slate-500">У demo mode показані приклади badge; реальні achievements завантажуються з partner API.</p></>}
+          {activeDrawer === 'achievements' && <><p>Досягнення відокремлені від фінансової компенсації.</p><p className="text-xs text-slate-500">Achievement API не підключений, тому медалі та badge не вигадуються.</p></>}
           {activeDrawer === 'support' && <><p>Для швидкої відповіді відкрийте офіційний Telegram-чат або FAQ.</p><a className="inline-flex items-center gap-2 text-blue-600 font-semibold" href="https://t.me/sirenua_support" target="_blank" rel="noreferrer">Відкрити Telegram-підтримку <ArrowRight className="w-3.5 h-3.5" /></a></>}
         </div>
       </ContextDrawer>
