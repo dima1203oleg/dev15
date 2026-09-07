@@ -38,7 +38,7 @@ jobs:
       - name: Validate and build
         env:
           # Hash navigation keeps every product section usable on static Pages.
-          VITE_BASE_PATH: /Dev20/
+          VITE_BASE_PATH: /dev15/
         run: pnpm check
 
       - name: Configure Pages
