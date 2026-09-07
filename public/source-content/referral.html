@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SirenUA — Реферальний Портал | Кабінет Амбасадора та Адмін-Консоль</title>
+  <meta name="description" content="Реферальна екосистема SirenUA: 5-рівнева партнерська мережа, кабінет амбасадора, візуалізація дерева рефералів та моніторинг виплат.">
+  <meta property="og:title" content="SirenUA — Партнерська та Реферальна Екосистема">
+  <meta property="og:description" content="Кабінет амбасадора та адмін-моніторинг реферальної мережі SirenUA.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://sirenua.online/referral">
+  <meta property="og:image" content="https://sirenua.online/assets/app-icon.png">
+  <link rel="icon" type="image/png" href="assets/app-icon.png">
+  
+  <link rel="stylesheet" href="css/main.css?v=2.2">
+  <link rel="stylesheet" href="css/components.css?v=2.2">
+  <link rel="stylesheet" href="css/animations.css?v=2.2">
+  <link rel="stylesheet" href="css/referral.css?v=1.0">
+</head>
+<body>
+
+  <!-- Ambient Background Glow -->
+  <div class="ambient-glow ambient-glow--cyan"></div>
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="assets/app-icon.png" alt="SirenUA Logo" class="nav-logo-img">
+        <span>SirenUA</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html#features">Можливості</a></li>
+        <li><a href="index.html#how-it-works">Як працює</a></li>
+        <li><a href="features.html">Технології</a></li>
+        <li><a href="referral.html" class="active" style="color: var(--cyan);">Реферали</a></li>
+        <li><a href="support.html">Підтримка</a></li>
+        <li><a href="investors.html">Інвесторам</a></li>
+        <li><a href="index.html#download" class="nav-cta">Завантажити</a></li>
+      </ul>
+      <div class="nav-right">
+        <a href="referral.html" class="nav-cabinet-btn active" title="Кабінет амбасадора та реферальна система">
+          <span class="cabinet-badge-icon">👤</span> Кабінет
+        </a>
+        <div class="lang-switch">
+          <a href="referral.html" class="lang-btn active">UA</a>
+          <span class="lang-divider">|</span>
+          <a href="en/index.html" class="lang-btn">EN</a>
+        </div>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Меню">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Portal Header & Mode Switcher -->
+  <header class="referral-portal-header">
+    <div class="container text-center">
+      <div id="security-banner" class="security-badge-banner">
+        🔒 Режим безпечного перегляду (Read-Only) · Керування захищено в додатку SirenUA iOS
+      </div>
+      
+      <h1 style="font-size: 2.6rem; font-weight: 800; margin-bottom: 12px;">
+        <span class="text-gradient">Партнерська Мережа</span> SirenUA
+      </h1>
+      <p style="color: var(--text-secondary); max-width: 640px; margin: 0 auto 28px; font-size: 1.05rem;">
+        Багаторівнева екосистема винагород за залучення користувачів. 5 рівнів глибини з регресивним розподілом (20%, 10%, 5%, 3%, 2%).
+      </p>
+
+      <!-- Mode Toggle -->
+      <div class="mode-toggle-wrapper">
+        <div class="mode-toggle-group">
+          <button type="button" id="btn-mode-cabinet" class="mode-btn active">
+            <span>👤</span>
+            <span>Кабінет амбасадора</span>
+          </button>
+          <button type="button" id="btn-mode-admin" class="mode-btn">
+            <span>🛡️</span>
+            <span>Адміністративна консоль</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="container" style="position: relative; z-index: 10; margin-bottom: 80px;">
+
+    <!-- ========================================================
+         MODE 1: USER CABINET (КАБІНЕТ АМБАСАДОРА)
+         ======================================================== -->
+    <section id="user-cabinet-section">
+
+      <!-- Lookup Bar -->
+      <div class="user-lookup-bar">
+        <form id="user-lookup-form" class="user-lookup-form">
+          <span style="color: var(--text-muted); font-size: 0.88rem;">Код партнера:</span>
+          <input type="text" id="user-lookup-input" class="user-lookup-input" placeholder="Введіть код, напр. SRNROOT1" value="SRNROOT1">
+          <button type="submit" class="btn btn-primary" style="padding: 10px 18px; border-radius: 12px; font-size: 0.9rem;">
+            Знайти
+          </button>
+        </form>
+        <div class="user-quick-chips">
+          <span style="color: var(--text-muted); font-size: 0.8rem;">Швидкий вибір:</span>
+          <button type="button" class="quick-chip" data-code="SRNROOT1">SRNROOT1 (Головний)</button>
+          <button type="button" class="quick-chip" data-code="SRNBOB01">SRNBOB01 (L1)</button>
+          <button type="button" class="quick-chip" data-code="SRNDAV03">SRNDAV03 (L2)</button>
+          <button type="button" class="quick-chip" data-code="SRNEVA04">SRNEVA04 (L3)</button>
+        </div>
+      </div>
+
+      <!-- Ambassador Profile Card -->
+      <div class="ambassador-profile-card">
+        <div class="profile-main-row">
+          <div class="profile-identity">
+            <div id="user-avatar" class="profile-avatar">ОК</div>
+            <div class="profile-meta">
+              <h2 id="user-display-name">
+                Олег Коваль (Головний амбасадор)
+                <span class="status-badge active" style="font-size: 0.72rem;">Активний</span>
+              </h2>
+              <p id="user-meta-sub">Кореневий амбасадор · ID: 001294.roo... · Рівень: 0</p>
+            </div>
+          </div>
+          <div class="profile-code-actions">
+            <div class="code-pill">
+              <span style="font-size: 0.8rem; color: var(--text-muted);">КОД:</span>
+              <span id="user-ref-code">SRNROOT1</span>
+            </div>
+            <button type="button" id="btn-copy-code" class="btn-icon-square" title="Скопіювати код">📋</button>
+            <button type="button" id="btn-show-qr" class="btn-icon-square" title="Показати QR-код">📱</button>
+            <button type="button" id="btn-copy-link" class="btn btn-secondary" style="padding: 10px 16px; border-radius: 12px; font-size: 0.88rem;">
+              🔗 Посилання
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 KPI Metrics Grid -->
+      <div class="referral-stats-grid">
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Вся мережа</span>
+            <span class="kpi-icon">🌐</span>
+          </div>
+          <div id="kpi-network-size" class="kpi-value">141</div>
+          <div class="kpi-subtext">учасників у глибині до 5 рівнів</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Передплатники</span>
+            <span class="kpi-icon">⭐</span>
+          </div>
+          <div id="kpi-active-subs" class="kpi-value" style="color: #34d399;">89</div>
+          <div class="kpi-subtext">активних платних підписок</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Прямі реферали</span>
+            <span class="kpi-icon">👥</span>
+          </div>
+          <div id="kpi-direct-count" class="kpi-value" style="color: var(--cyan);">8</div>
+          <div class="kpi-subtext">Рівень 1 (винагорода 20%)</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Доступний баланс</span>
+            <span class="kpi-icon">💰</span>
+          </div>
+          <div id="kpi-balance" class="kpi-value" style="color: #fbbf24;">$182.50</div>
+          <div id="kpi-total-earned" class="kpi-subtext">Всього зароблено: $247.50</div>
+        </div>
+      </div>
+
+      <!-- Cabinet Sub-tabs -->
+      <div class="portal-content-tabs">
+        <button type="button" class="content-tab-btn cabinet-tab-btn active" data-tab="network">
+          <span>🌳</span>
+          <span>Мережа (Дерево)</span>
+        </button>
+        <button type="button" class="content-tab-btn cabinet-tab-btn" data-tab="commissions">
+          <span>💳</span>
+          <span>Історія нарахувань</span>
+        </button>
+        <button type="button" class="content-tab-btn cabinet-tab-btn" data-tab="payouts">
+          <span>📤</span>
+          <span>Історія виплат</span>
+        </button>
+      </div>
+
+      <!-- Cabinet Dynamic Container -->
+      <div id="cabinet-tab-content"></div>
+
+    </section>
+
+    <!-- ========================================================
+         MODE 2: ADMIN CONSOLE (АДМІНІСТРАТИВНИЙ МОНІТОРИНГ)
+         ======================================================== -->
+    <section id="admin-console-section" style="display: none;">
+
+      <!-- Admin Overview 6 KPIs -->
+      <div class="referral-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Амбасадори</span>
+            <span class="kpi-icon">👥</span>
+          </div>
+          <div id="admin-kpi-users" class="kpi-value">142</div>
+          <div class="kpi-subtext">зареєстрованих партнерів</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Підписки</span>
+            <span class="kpi-icon">💎</span>
+          </div>
+          <div id="admin-kpi-subs" class="kpi-value" style="color: #34d399;">89</div>
+          <div class="kpi-subtext">активних щомісячних Pro</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Обіг</span>
+            <span class="kpi-icon">💵</span>
+          </div>
+          <div id="admin-kpi-turnover" class="kpi-value">$890.00</div>
+          <div class="kpi-subtext">сума купівель підписок</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Комісії</span>
+            <span class="kpi-icon">💸</span>
+          </div>
+          <div id="admin-kpi-commissions" class="kpi-value" style="color: var(--cyan);">$247.50</div>
+          <div class="kpi-subtext">нараховано за 5 рівнями</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Черга виплат</span>
+            <span class="kpi-icon">⏳</span>
+          </div>
+          <div id="admin-kpi-pending" class="kpi-value" style="color: #fbbf24;">$45.00</div>
+          <div class="kpi-subtext">очікують схвалення в iOS</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Глибина</span>
+            <span class="kpi-icon">🌲</span>
+          </div>
+          <div id="admin-kpi-depth" class="kpi-value" style="color: #c084fc;">5 Рівнів</div>
+          <div class="kpi-subtext">максимальна глибина мережі</div>
+        </div>
+      </div>
+
+      <!-- Admin Sub-tabs -->
+      <div class="portal-content-tabs">
+        <button type="button" class="content-tab-btn admin-tab-btn active" data-tab="users">
+          <span>📋</span>
+          <span>Реєстр партнерів</span>
+        </button>
+        <button type="button" class="content-tab-btn admin-tab-btn" data-tab="depth">
+          <span>📊</span>
+          <span>Глибина та рівні (L1–L5)</span>
+        </button>
+        <button type="button" class="content-tab-btn admin-tab-btn" data-tab="commissions">
+          <span>📜</span>
+          <span>Журнал комісій</span>
+        </button>
+        <button type="button" class="content-tab-btn admin-tab-btn" data-tab="payouts">
+          <span>💳</span>
+          <span>Черга виплат</span>
+        </button>
+        <button type="button" class="content-tab-btn admin-tab-btn" data-tab="config">
+          <span>⚙️</span>
+          <span>Параметри системи</span>
+        </button>
+      </div>
+
+      <!-- Admin Dynamic Container -->
+      <div id="admin-tab-content"></div>
+
+    </section>
+
+  </main>
+
+  <!-- QR Code Modal -->
+  <div id="qr-modal" class="qr-modal-backdrop">
+    <div class="qr-modal-card">
+      <button type="button" id="qr-close-btn" class="qr-close-btn">&times;</button>
+      <h3 style="font-size: 1.25rem; margin-bottom: 6px;">Реферальний QR-код</h3>
+      <p style="color: var(--text-secondary); font-size: 0.85rem;">Скануйте камерою iPhone для відкриття в SirenUA</p>
+      
+      <div id="qr-svg-wrapper" class="qr-svg-container"></div>
+      
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--cyan); margin-bottom: 14px;">
+        <span id="qr-modal-code">SRNROOT1</span>
+      </div>
+      <p style="font-size: 0.78rem; color: var(--text-muted);">
+        Вбудоване посилання Universal Links: <br>
+        <code>https://sirenua.online/ref/CODE</code>
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>&copy; 2026 SirenUA. Всі права захищено. Реферальна система з підтримкою Apple StoreKit 2.</p>
+        <div class="footer-links">
+          <a href="privacy.html">Конфіденційність</a>
+          <a href="terms.html">Умови використання</a>
+          <a href="support.html">Підтримка</a>
+          <a href="referral.html">Партнерам</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js?v=2.2"></script>
+  <script src="js/referral.js?v=1.0"></script>
+</body>
+</html>

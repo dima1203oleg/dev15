@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SirenUA — Smart Shield of Ukraine | AI Early Warning System</title>
+  <meta name="description" content="SirenUA is an iOS application designed to protect Ukraine's civilian population. Real-time AI threat analysis, missile and drone trajectory tracking, and instant shelter routing.">
+  <meta name="keywords" content="SirenUA, air alert, Ukraine, missile threat, shelter locator, AI early warning, civilian defense">
+  <meta property="og:title" content="SirenUA — Smart Shield of Ukraine">
+  <meta property="og:description" content="Real-time AI-powered early warning system for civilian defense">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://sirenua.online/en/">
+  <meta property="og:image" content="https://sirenua.online/assets/app-icon.png">
+  <link rel="icon" type="image/png" href="../assets/app-icon.png">
+  <link rel="apple-touch-icon" href="../assets/app-icon.png">
+  <link rel="stylesheet" href="../css/main.css?v=2.2">
+  <link rel="stylesheet" href="../css/components.css?v=2.2">
+  <link rel="stylesheet" href="../css/animations.css?v=2.2">
+</head>
+<body>
+
+  <!-- Ambient Glow -->
+  <div class="ambient-glow ambient-glow--cyan"></div>
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="../assets/app-icon.png" alt="SirenUA Logo" class="nav-logo-img">
+        <span>SirenUA</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#screenshots">App</a></li>
+        <li><a href="features.html">Technology</a></li>
+        <li><a href="support.html">Support</a></li>
+        <li><a href="investors.html">Investors</a></li>
+        <li><a href="#download" class="nav-cta">Download</a></li>
+      </ul>
+      <div class="nav-right">
+        <div class="lang-switch">
+          <a href="../index.html" class="lang-btn">UA</a>
+          <span class="lang-divider">|</span>
+          <a href="index.html" class="lang-btn active">EN</a>
+        </div>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero" id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="pulse-dot"></span>
+          24/7 Monitoring · Real-Time AI Threat Analysis
+        </div>
+        <h1>
+          <span class="text-gradient">SirenUA</span> — Smart Shield of Ukraine
+        </h1>
+        <p class="hero-subtitle">
+          Defense-grade Artificial Intelligence analyzing real-time multi-spectral telemetry via Palantir AIP-level multi-domain Sensor Fusion. Our autonomous neural engine continuously learns after every attack wave, models exact ballistic vectors, and calculates offline routes to certified bomb shelters in seconds.
+        </p>
+        <div class="hero-actions">
+          <a href="#download" class="btn btn-primary btn-lg btn-pulse">
+            <span class="btn-icon">📱</span>
+            Download on the App Store
+          </a>
+          <a href="features.html" class="btn btn-secondary btn-lg">
+            <span class="btn-icon">🔍</span>
+            Explore Technology
+          </a>
+        </div>
+
+        <!-- Tactical Defense HUD Console (Hero Masterpiece) -->
+        <div class="hero-hud reveal">
+          <div class="hero-hud-header">
+            <div class="hero-hud-header-left">
+              <span class="hud-blip hud-blip--cyan" style="position: static; display: inline-block;"></span>
+              <span>TACTICAL RADAR · SYSTEM ONLINE · 27 REGIONS</span>
+            </div>
+            <div>NEURAL MESH: V4.2-DEFENSE</div>
+          </div>
+          <div class="hero-hud-body">
+            <div class="hud-radar-container">
+              <div class="hud-radar-ring hud-radar-ring--1"></div>
+              <div class="hud-radar-ring hud-radar-ring--2"></div>
+              <div class="hud-radar-ring hud-radar-ring--3"></div>
+              <div class="hud-radar-cross hud-radar-cross--h"></div>
+              <div class="hud-radar-cross hud-radar-cross--v"></div>
+              <div class="hud-radar-sweep"></div>
+              <div class="hud-blip hud-blip--red" title="Iskander-M"></div>
+              <div class="hud-blip hud-blip--amber" title="Shahed-136"></div>
+              <div class="hud-blip hud-blip--cyan" title="Kh-101"></div>
+            </div>
+            <div class="hud-stream">
+              <a href="features.html#threats" class="hud-stream-card hud-stream-card--red">
+                <div class="hud-stream-title">
+                  <span>💥 Iskander-M (SRBM Ballistic)</span>
+                  <span class="badge badge--red" style="font-size: 0.65rem; padding: 2px 6px;">5,500 km/h</span>
+                </div>
+                <div class="hud-stream-desc">Bearing: 340° • Flight ETA: &lt;3 min • Sector: Eastern Frontier</div>
+              </a>
+              <a href="features.html#threats" class="hud-stream-card hud-stream-card--amber">
+                <div class="hud-stream-title">
+                  <span>🛵 Shahed-136 (Loitering Munition)</span>
+                  <span class="badge badge--amber" style="font-size: 0.65rem; padding: 2px 6px;">185 km/h</span>
+                </div>
+                <div class="hud-stream-desc">Altitude: 110m • Riverbed Contour Corridor • Acoustic Lock</div>
+              </a>
+              <a href="features.html#shelters" class="hud-stream-card hud-stream-card--shelter">
+                <div class="hud-stream-title">
+                  <span>🛡️ Nearest Safe Shelter (Tier 1)</span>
+                  <span class="badge badge--cyan" style="font-size: 0.65rem; padding: 2px 6px;">250m · 3 min</span>
+                </div>
+                <div class="hud-stream-desc">Metro Zoloti Vorota • Sealed Bunker • Offline Edge Access</div>
+              </a>
+            </div>
+          </div>
+          <div class="hero-hud-footer">
+            <div class="hero-hud-metric">
+              <span>Latency:</span> <strong>&lt; 2.4s</strong>
+            </div>
+            <div class="hero-hud-metric">
+              <span>AI Precision:</span> <strong>94.2%</strong>
+            </div>
+            <div class="hero-hud-metric">
+              <span>Shelters:</span> <strong>26 Regions</strong>
+            </div>
+            <div class="hero-hud-metric">
+              <span>RPO:</span> <strong>0 Seconds</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-stats" style="margin-top: var(--space-3xl);">
+          <div class="hero-stat">
+            <span class="hero-stat-value" data-count="20" data-suffix="">0</span>
+            <span class="hero-stat-label">Threat Types</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value" data-count="27" data-suffix="">0</span>
+            <span class="hero-stat-label">Regions</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value" data-count="5" data-suffix="">0</span>
+            <span class="hero-stat-label">Intelligence Feeds</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value" data-prefix="<" data-count="3" data-suffix="s">0</span>
+            <span class="hero-stat-label">AI Latency</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Key Features -->
+  <section id="features">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Capabilities</span>
+        <h2>Next-Generation Protection Powered by <span class="text-gradient">Artificial Intelligence</span></h2>
+        <p class="section-description">SirenUA integrates neural threat analysis, tactical geospatial mapping, and certified shelter navigation to safeguard civilian lives.</p>
+      </div>
+      <div class="grid grid-3" data-stagger>
+        <a href="features.html#ai-system" class="feature-card glass-shimmer">
+          <div class="feature-card-icon feature-card-icon--cyan">🧠</div>
+          <h3>AI Threat Classification</h3>
+          <p>Autonomous AI models process 5 real-time intelligence feeds with sub-3-second classification latency. Continuous self-learning calibrated after each attack wave.</p>
+          <div class="feature-card-action">
+            <span>Neural AI Architecture</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#map" class="feature-card glass-shimmer">
+          <div class="feature-card-icon feature-card-icon--blue">🗺️</div>
+          <h3>Tactical Live Map</h3>
+          <p>Dynamic map rendering with smoothed Bézier flight trajectories, launch vectors, and corridor prediction without visual flicker or battery drain.</p>
+          <div class="feature-card-action">
+            <span>Tactical Map Engine</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#shelters" class="feature-card glass-shimmer">
+          <div class="feature-card-icon feature-card-icon--cyan">🛡️</div>
+          <h3>Shelter Navigation</h3>
+          <p>Multi-tier shelter routing engine. Pre-seeded with 26 regional certified civil defense databases categorized by safety tier (Levels 1–4).</p>
+          <div class="feature-card-action">
+            <span>Civil Defense Registry</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#notifications" class="feature-card glass-shimmer">
+          <div class="feature-card-icon feature-card-icon--red">🔔</div>
+          <h3>Critical Alerts</h3>
+          <p>High-priority notifications that bypass Do Not Disturb and silent modes. 7 independent sound channels with district-level targeting.</p>
+          <div class="feature-card-action">
+            <span>Alert Delivery Pipeline</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#analytics" class="feature-card glass-shimmer">
+          <div class="feature-card-icon feature-card-icon--cyan">📊</div>
+          <h3>Corridor Analytics</h3>
+          <p>Probabilistic route modeling, air defense density evaluation, and launch hub correlation across all 27 regions.</p>
+          <div class="feature-card-action">
+            <span>Predictive Models</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#threats" class="feature-card glass-shimmer">
+          <div class="feature-card-icon feature-card-icon--amber">🎯</div>
+          <h3>20 Threat Profiles</h3>
+          <p>Physics-based trajectory models: velocity from 180 to 12,000 km/h, altitude profiles, launch sector fingerprinting, and dynamic ETA calculations.</p>
+          <div class="feature-card-action">
+            <span>Threat Taxonomy</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- How It Works -->
+  <section id="how-it-works" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Workflow</span>
+        <h2>From Intelligence to <span class="text-gradient">Saving Lives</span></h2>
+        <p class="section-description">A four-stage automated pipeline designed for sub-second reaction times.</p>
+      </div>
+      <div class="steps reveal">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-icon">📡</div>
+          <h4>Monitoring</h4>
+          <p>Direct low-latency ingestion from 5 military and radar channels with 0.1–0.3s arrival time</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-icon">🧠</div>
+          <h4>AI Classification</h4>
+          <p>Neural models calculate threat type, flight altitude, kinematic speed, vector, and ETA</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-icon">📲</div>
+          <h4>Critical Push</h4>
+          <p>Targeted push delivery that sounds the siren even in Silent and Sleep focus modes</p>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-icon">🛡️</div>
+          <h4>Safe Routing</h4>
+          <p>Instant identification of the nearest verified bunker with walking navigation and time estimation</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Threat Types -->
+  <section id="threats">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Threat Matrix</span>
+        <h2><span class="text-gradient">20 Threat Types</span> Monitored in Real Time</h2>
+        <p class="section-description">Comprehensive kinematic and ballistic classification for all aerial and tactical hazards.</p>
+      </div>
+      <div class="grid grid-4 reveal" data-stagger>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">🛵</div>
+          <h4 style="font-size:0.95rem;">Shahed-136 Attack Drone</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--amber);">185 km/h</p>
+          <span class="badge badge--amber" style="margin-top:8px;">Active: up to 3h</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Learn More</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">🚀</div>
+          <h4 style="font-size:0.95rem;">Cruise Missile (Kh-101)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--red);">850 km/h</p>
+          <span class="badge badge--red" style="margin-top:8px;">Active: 45 min</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Learn More</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">💥</div>
+          <h4 style="font-size:0.95rem;">Ballistics (Iskander-M)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--red);">5,500 km/h</p>
+          <span class="badge badge--red" style="margin-top:8px;">Active: 10 min</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Learn More</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">⚡</div>
+          <h4 style="font-size:0.95rem;">MiG-31K (Kinzhal)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--cyan);">2,500 km/h</p>
+          <span class="badge badge--cyan" style="margin-top:8px;">Active: 30 min</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Learn More</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">✈️</div>
+          <h4 style="font-size:0.95rem;">Strategic Bomber (Tu-95)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--cyan);">800 km/h</p>
+          <span class="badge badge--cyan" style="margin-top:8px;">Active: 1.5h</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Learn More</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">💣</div>
+          <h4 style="font-size:0.95rem;">Guided Aerial Bomb (KAB)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--red);">900 km/h</p>
+          <span class="badge badge--red" style="margin-top:8px;">Active: 5 min</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Learn More</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">🔥</div>
+          <h4 style="font-size:0.95rem;">Hypersonic Zircon 3M22</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--red);">11,000 km/h</p>
+          <span class="badge badge--red" style="margin-top:8px;">Active: 10 min</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Learn More</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">🎯</div>
+          <h4 style="font-size:0.95rem;">Decoy Drone (Gerbera)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--amber);">150 km/h</p>
+          <span class="badge badge--amber" style="margin-top:8px;">Active: 2h</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Learn More</span> <span class="arrow">→</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Quick Threat Selector Pills -->
+      <div class="text-center mt-xl reveal">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: var(--space-sm);">Quick Threat Taxonomy Jump:</p>
+        <div class="threat-pills" style="justify-content: center;">
+          <a href="features.html#threats" class="threat-pill">🚀 Kh-101 / Kh-555</a>
+          <a href="features.html#threats" class="threat-pill">⚡ Iskander-M / KN-23</a>
+          <a href="features.html#threats" class="threat-pill">🔥 Kinzhal Kh-47M2</a>
+          <a href="features.html#threats" class="threat-pill">🌊 Kalibr 3M14</a>
+          <a href="features.html#threats" class="threat-pill">🛸 Shahed-136</a>
+          <a href="features.html#threats" class="threat-pill">💣 KAB / UMPK</a>
+          <a href="features.html#threats" class="threat-pill">💥 Zircon 3M22</a>
+          <a href="features.html#threats" class="threat-pill">📡 Iskander-K</a>
+          <a href="features.html#threats" class="threat-pill">🛩️ Su-34 / Su-35</a>
+          <a href="features.html#threats" class="threat-pill">✈️ Tu-95MS / Tu-22M3</a>
+        </div>
+      </div>
+
+      <div class="text-center mt-xl reveal">
+        <a href="features.html#threats" class="btn btn-outline">Explore All 20 Ballistic Threat Profiles →</a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Autonomous AI Self-Learning Deep Dive Section -->
+  <section id="ai-engine" style="background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Neural Intelligence</span>
+        <h2>An AI System That <span class="text-gradient">Learns With Every Strike</span></h2>
+        <p class="section-description">SirenUA does not merely broadcast raw alerts — our autonomous neural pipeline filters signal noise, models real-time flight vectors, and evolves its heuristics after every attack wave.</p>
+      </div>
+
+      <div class="grid grid-2 items-center" style="gap: var(--space-4xl); margin-bottom: var(--space-3xl);">
+        <div class="reveal-left">
+          <h3>4-Stage Continuous <span class="text-gradient">Self-Learning Loop</span></h3>
+          <p>Following the conclusion of every major raid, the server initiates an autonomous post-mortem analytical loop:</p>
+          <div style="display: flex; flex-direction: column; gap: var(--space-md); margin-top: var(--space-lg);">
+            <a href="features.html#ai-system" class="glass-card" style="padding: var(--space-md) var(--space-lg); text-decoration: none; color: inherit; display: block; transition: all var(--transition-fast);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: var(--cyan);">1. Telemetry Ingestion & Trajectory Matching</strong>
+                <span style="color: var(--cyan); font-size: 0.85rem;">→</span>
+              </div>
+              <p style="margin: 4px 0 0; font-size: 0.88rem; color: var(--text-secondary);">Comparing predicted flight vectors against ground radar interception points and altitude variations.</p>
+            </a>
+            <a href="features.html#analytics" class="glass-card" style="padding: var(--space-md) var(--space-lg); text-decoration: none; color: inherit; display: block; transition: all var(--transition-fast);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: var(--cyan);">2. Tactical Anomaly Identification</strong>
+                <span style="color: var(--cyan); font-size: 0.85rem;">→</span>
+              </div>
+              <p style="margin: 4px 0 0; font-size: 0.88rem; color: var(--text-secondary);">Isolating terrain masking, waypoint rerouting maneuvers, and swarm decoy tactics.</p>
+            </a>
+            <a href="features.html#ai-system" class="glass-card" style="padding: var(--space-md) var(--space-lg); text-decoration: none; color: inherit; display: block; transition: all var(--transition-fast);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: var(--cyan);">3. Autonomous Heuristic Synthesis</strong>
+                <span style="color: var(--cyan); font-size: 0.85rem;">→</span>
+              </div>
+              <p style="margin: 4px 0 0; font-size: 0.88rem; color: var(--text-secondary);">Generating updated speed brackets, regional corridor probabilities, and vectorization rules.</p>
+            </a>
+            <a href="features.html#network" class="glass-card" style="padding: var(--space-md) var(--space-lg); text-decoration: none; color: inherit; display: block; transition: all var(--transition-fast);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: var(--cyan);">4. Strict 7-Rule Safety Validation</strong>
+                <span style="color: var(--cyan); font-size: 0.85rem;">→</span>
+              </div>
+              <p style="margin: 4px 0 0; font-size: 0.88rem; color: var(--text-secondary);">No rule enters the production dispatch engine without satisfying rigorous statistical validation criteria.</p>
+            </a>
+          </div>
+        </div>
+
+        <div class="reveal-right">
+          <div class="deep-dive-banner">
+            <span class="badge badge--cyan mb-sm">⚡ Neural Speed & Precision</span>
+            <h3 style="font-size: 1.5rem; margin-bottom: var(--space-sm);">&lt; 2.8 Seconds Ingestion-to-Alert</h3>
+            <p style="color: var(--text-secondary); font-size: 0.92rem; margin-bottom: var(--space-lg);">From raw multi-channel intelligence ingestion to high-priority Apple Critical Alert triggering on localized end-user devices.</p>
+
+            <div class="grid grid-2" style="gap: var(--space-md); margin-bottom: var(--space-lg);">
+              <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+                <div style="font-family: var(--font-mono); color: var(--cyan); font-size: 1.3rem; font-weight: 700;">94.2%</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Classification Accuracy</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+                <div style="font-family: var(--font-mono); color: var(--cyan); font-size: 1.3rem; font-weight: 700;">26 Databases</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Civil Defense Shelters</div>
+              </div>
+            </div>
+
+            <a href="features.html#ai-system" class="btn btn-primary" style="width: 100%; justify-content: center;">
+              🧠 Read Technical AI & Architecture Spec →
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Palantir-Grade Multi-Domain Sensor Fusion Section -->
+  <section id="sensor-fusion" style="background: var(--bg-tertiary);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Defense-Grade Tech</span>
+        <h2>Palantir AIP-Grade <span class="text-gradient">Multi-Domain Sensor Fusion</span></h2>
+        <p class="section-description">SirenUA synchronizes and cross-references 5 independent intelligence channels in real time, synthesizing a single unified Common Operating Picture (COP).</p>
+      </div>
+
+      <div class="sensor-fusion-grid reveal" data-stagger>
+        <a href="features.html#sensor-fusion" class="sensor-node-card">
+          <span class="badge badge--cyan mb-sm">📡 Stream 1</span>
+          <h4>MTProto & OSINT Stream</h4>
+          <p>Sub-millisecond military feed parsing with automated misinformation & noise removal.</p>
+          <div class="feature-card-action">
+            <span>Learn More</span> <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#sensor-fusion" class="sensor-node-card">
+          <span class="badge badge--blue mb-sm">📻 Stream 2</span>
+          <h4>ELINT Radar Signatures</h4>
+          <p>Detection of air-defense illumination radar frequencies and enemy AWACS patrol orbits.</p>
+          <div class="feature-card-action">
+            <span>Learn More</span> <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#sensor-fusion" class="sensor-node-card">
+          <span class="badge badge--amber mb-sm">🔊 Stream 3</span>
+          <h4>Acoustic Harmonic Mesh</h4>
+          <p>Frequency spectrogram analysis of Shahed-136 engines and low-altitude cruise missile turbines.</p>
+          <div class="feature-card-action">
+            <span>Learn More</span> <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#sensor-fusion" class="sensor-node-card">
+          <span class="badge badge--red mb-sm">🛰️ Stream 4</span>
+          <h4>Thermal Launch Detection</h4>
+          <p>Tracking thermal rocket plumes at ballistic missile launch pads and strategic aviation hubs.</p>
+          <div class="feature-card-action">
+            <span>Learn More</span> <span class="arrow">→</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Screenshots Carousel -->
+  <section id="screenshots" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div class="carousel-header-row reveal">
+        <div>
+          <span class="section-subtitle">Application Interface</span>
+          <h2>Designed for <span class="text-gradient">Instant Clarity</span></h2>
+          <p class="section-description" style="text-align: left; margin: 0;">Sleek dark glassmorphism interface engineered for high contrast and rapid tactical comprehension. Click any card for detailed specs.</p>
+        </div>
+        <div class="carousel-controls">
+          <button class="carousel-btn" id="carousel-prev" aria-label="Previous card">‹</button>
+          <button class="carousel-btn" id="carousel-next" aria-label="Next card">›</button>
+        </div>
+      </div>
+
+      <div class="carousel-container">
+        <div class="screenshots-scroll reveal" id="screenshots-scroll">
+          <a href="features.html#map" class="screenshot-item">
+            <div class="screenshot-item-top">
+              <span>VIEW 1</span>
+              <span>TACTICAL MAP</span>
+            </div>
+            <div class="screenshot-item-icon">🗺️</div>
+            <div>
+              <h3 class="screenshot-item-title">Interactive Map</h3>
+              <p class="screenshot-item-desc">Real-time threat tracking with Bézier curves and smoothed tactical heading vectors.</p>
+            </div>
+            <div class="screenshot-item-badges">
+              <span class="badge badge--red">🔴 Alert Active</span>
+              <span class="badge badge--amber">🟡 Threat Ingress</span>
+            </div>
+            <div class="feature-card-action">
+              <span>Explore Map Engine</span> <span class="arrow">→</span>
+            </div>
+          </a>
+
+          <a href="features.html#ai-system" class="screenshot-item">
+            <div class="screenshot-item-top">
+              <span>VIEW 2</span>
+              <span>TELEMETRY</span>
+            </div>
+            <div class="screenshot-item-icon">📊</div>
+            <div>
+              <h3 class="screenshot-item-title">Regional Telemetry</h3>
+              <p class="screenshot-item-desc">AI confidence gauge, multi-threat breakdown, estimated flight times, and danger status.</p>
+            </div>
+            <div class="screenshot-item-badges">
+              <span class="badge badge--cyan">🧠 94% AI Accuracy</span>
+            </div>
+            <div class="feature-card-action">
+              <span>AI Telemetry</span> <span class="arrow">→</span>
+            </div>
+          </a>
+
+          <a href="features.html#shelters" class="screenshot-item">
+            <div class="screenshot-item-top">
+              <span>VIEW 3</span>
+              <span>SHELTERS</span>
+            </div>
+            <div class="screenshot-item-icon">🛡️</div>
+            <div>
+              <h3 class="screenshot-item-title">Shelter Finder</h3>
+              <p class="screenshot-item-desc">3-stage search prioritizing verified bunkers and underground shelters with walking ETA.</p>
+            </div>
+            <div class="screenshot-item-badges">
+              <span class="badge badge--cyan">📍 250 m</span>
+              <span class="badge badge--blue">🚶 3 min</span>
+            </div>
+            <div class="feature-card-action">
+              <span>Shelter Registry</span> <span class="arrow">→</span>
+            </div>
+          </a>
+
+          <a href="features.html#analytics" class="screenshot-item">
+            <div class="screenshot-item-top">
+              <span>VIEW 4</span>
+              <span>CHRONOLOGY</span>
+            </div>
+            <div class="screenshot-item-icon">📜</div>
+            <div>
+              <h3 class="screenshot-item-title">Event Chronology</h3>
+              <p class="screenshot-item-desc">Complete 24-hour historical log of regional alerts, launches, and clearances across Ukraine.</p>
+            </div>
+            <div class="screenshot-item-badges">
+              <span class="badge badge--cyan">🕐 24 Hours</span>
+            </div>
+            <div class="feature-card-action">
+              <span>Analytics Log</span> <span class="arrow">→</span>
+            </div>
+          </a>
+
+          <a href="features.html#notifications" class="screenshot-item">
+            <div class="screenshot-item-top">
+              <span>VIEW 5</span>
+              <span>SETTINGS</span>
+            </div>
+            <div class="screenshot-item-icon">⚙️</div>
+            <div>
+              <h3 class="screenshot-item-title">Custom Preferences</h3>
+              <p class="screenshot-item-desc">7 independent audio toggles, critical alerts bypass, and granular district filtering.</p>
+            </div>
+            <div class="screenshot-item-badges">
+              <span class="badge badge--cyan">🔔 Sound Profiles</span>
+            </div>
+            <div class="feature-card-action">
+              <span>Audio Routing</span> <span class="arrow">→</span>
+            </div>
+          </a>
+
+          <a href="features.html#network" class="screenshot-item">
+            <div class="screenshot-item-top">
+              <span>VIEW 6</span>
+              <span>PREMIUM</span>
+            </div>
+            <div class="screenshot-item-icon">⭐</div>
+            <div>
+              <h3 class="screenshot-item-title">Extended Protection</h3>
+              <p class="screenshot-item-desc">Attention zones, flight trajectory corridors, advanced analytics, and custom AI sound alerts.</p>
+            </div>
+            <div class="screenshot-item-badges">
+              <span class="badge badge--amber">⭐ 14-Day Free Trial</span>
+            </div>
+            <div class="feature-card-action">
+              <span>Premium Features</span> <span class="arrow">→</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Statistics -->
+  <section id="stats">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Performance</span>
+        <h2>Key System <span class="text-gradient">Metrics</span></h2>
+      </div>
+      <div class="grid grid-4 reveal" data-stagger>
+        <a href="features.html#threats" class="stat-card" style="text-decoration: none; color: inherit; display: block; transition: transform var(--transition-fast);">
+          <span class="stat-value" data-count="20" data-suffix="">0</span>
+          <span class="stat-label">Threat Types</span>
+        </a>
+        <a href="features.html#map" class="stat-card" style="text-decoration: none; color: inherit; display: block; transition: transform var(--transition-fast);">
+          <span class="stat-value" data-count="136" data-suffix="">0</span>
+          <span class="stat-label">Monitored Districts</span>
+        </a>
+        <a href="features.html#sensor-fusion" class="stat-card" style="text-decoration: none; color: inherit; display: block; transition: transform var(--transition-fast);">
+          <span class="stat-value" data-count="7" data-suffix="">0</span>
+          <span class="stat-label">Launch Hubs Tracked</span>
+        </a>
+        <a href="features.html#network" class="stat-card" style="text-decoration: none; color: inherit; display: block; transition: transform var(--transition-fast);">
+          <span class="stat-value" data-count="15" data-suffix=" min">0</span>
+          <span class="stat-label">Cloud Backup Cycle</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Technology Stack -->
+  <section id="tech" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Architecture</span>
+        <h2>Built on a <span class="text-gradient">Resilient Stack</span></h2>
+      </div>
+      <div class="tech-stack reveal">
+        <div class="tech-item">
+          <span class="tech-item-icon">🍎</span>
+          <span>Swift / iOS</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">🐍</span>
+          <span>FastAPI Engine</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">🧠</span>
+          <span>Artificial Intelligence</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">🔥</span>
+          <span>Cloud Delivery</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">🗺️</span>
+          <span>Geospatial Engine</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">💾</span>
+          <span>Local Storage</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">📡</span>
+          <span>Direct Protocol</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">☁️</span>
+          <span>Cloud Recovery</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Investor Preview -->
+  <section id="investors-preview" class="cta-section">
+    <div class="container">
+      <div class="reveal">
+        <span class="section-subtitle">Partnership</span>
+        <h2>Invest in the Technological <span class="text-gradient">Defense of Ukraine</span></h2>
+        <p>SirenUA is a high-impact civilian defense platform with the potential to reach over 40 million citizens. We collaborate with international grants, state programs, and strategic partners.</p>
+        <div class="hero-actions" style="margin-top: 2rem; margin-bottom: 0;">
+          <a href="investors.html" class="btn btn-primary btn-lg">
+            <span class="btn-icon">📈</span>
+            Partner Deck & Overview
+          </a>
+          <a href="investors.html#grants" class="btn btn-secondary btn-lg">
+            <span class="btn-icon">🏛️</span>
+            Grant & State Programs
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Download CTA -->
+  <section id="download">
+    <div class="container">
+      <div class="text-center reveal">
+        <h2 class="mb-lg">Download <span class="text-gradient">SirenUA</span> Today</h2>
+        <p class="section-description mb-2xl">Available on the Apple App Store. Core emergency alerts and verified shelter navigation remain free forever.</p>
+        <div class="hero-actions">
+          <a href="#" class="appstore-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            Download on the App Store
+          </a>
+        </div>
+        <p class="text-muted" style="margin-top: 1rem; font-size: 0.85rem;">iOS 17.0+ · iPhone · Free Core Features</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-logo">
+            <img src="../assets/app-icon.png" alt="SirenUA Logo" class="nav-logo-img">
+            <span>SirenUA</span>
+          </a>
+          <p>Real-time AI-powered early warning system dedicated to the protection of Ukrainian civilians.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="features.html">Features</a></li>
+            <li><a href="features.html#threats">Threat Types</a></li>
+            <li><a href="features.html#shelters">Shelters</a></li>
+            <li><a href="features.html#analytics">Corridor Analytics</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Support</h4>
+          <ul>
+            <li><a href="support.html">FAQ</a></li>
+            <li><a href="support.html#guides">User Guides</a></li>
+            <li><a href="support.html#contact">Contact Us</a></li>
+            <li><a href="about.html">About Team</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="privacy.html">Privacy Policy</a></li>
+            <li><a href="terms.html">Terms of Service</a></li>
+            <li><a href="investors.html">Investors</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2024–2026 SirenUA. All rights reserved.</span>
+        <div class="footer-socials">
+          <a href="#" aria-label="Telegram">📱</a>
+          <a href="#" aria-label="GitHub">💻</a>
+          <a href="mailto:support@sirenua.online" aria-label="Email">📧</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/main.js"></script>
+  <script src="../js/particles.js"></script>
+  <script src="../js/animations.js"></script>
+</body>
+</html>

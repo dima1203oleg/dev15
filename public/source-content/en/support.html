@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Support & Help Center — SirenUA</title>
+  <meta name="description" content="SirenUA Help Center — Frequently Asked Questions, setup tutorials, live support chat, and direct team contact.">
+  <link rel="icon" type="image/png" href="../assets/app-icon.png">
+  <link rel="stylesheet" href="../css/main.css?v=2.2">
+  <link rel="stylesheet" href="../css/components.css?v=2.2">
+  <link rel="stylesheet" href="../css/animations.css?v=2.2">
+</head>
+<body>
+
+  <!-- Ambient Glow -->
+  <div class="ambient-glow ambient-glow--cyan"></div>
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="../assets/app-icon.png" alt="SirenUA Logo" class="nav-logo-img">
+        <span>SirenUA</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="features.html">Features</a></li>
+        <li><a href="support.html" class="active">Support</a></li>
+        <li><a href="investors.html">Investors</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="index.html#download" class="nav-cta">Download</a></li>
+      </ul>
+      <div class="nav-right">
+        <div class="lang-switch">
+          <a href="../support.html" class="lang-btn">UA</a>
+          <span class="lang-divider">|</span>
+          <a href="support.html" class="lang-btn active">EN</a>
+        </div>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="container">
+      <span class="section-subtitle">Help Center</span>
+      <h1>SirenUA <span class="text-gradient">Customer Support</span></h1>
+      <p>Find answers to common questions, explore setup guides, or connect directly with our technical team.</p>
+      <div style="margin-top: var(--space-xl);">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          All monitoring systems and servers operational
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <section style="padding: var(--space-2xl) 0;">
+    <div class="container container--narrow">
+      <div class="form-group">
+        <input type="text" id="faq-search" placeholder="🔍 Search FAQ topics and questions..." style="padding: 16px 20px; font-size: 1rem; border-radius: var(--radius-lg); background: var(--bg-card); border: 1px solid var(--border-glass);">
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section id="faq" style="padding-top: 0;">
+    <div class="container container--narrow">
+      <div class="section-header reveal">
+        <h2>Frequently Asked <span class="text-gradient">Questions</span></h2>
+      </div>
+
+      <!-- Category Filter -->
+      <div class="faq-categories reveal">
+        <button class="faq-category-btn active" data-category="all">All Topics</button>
+        <button class="faq-category-btn" data-category="start">🚀 Getting Started</button>
+        <button class="faq-category-btn" data-category="notifications">🔔 Alerts & Sound</button>
+        <button class="faq-category-btn" data-category="map">🗺️ Tactical Map</button>
+        <button class="faq-category-btn" data-category="shelters">🛡️ Shelters</button>
+        <button class="faq-category-btn" data-category="premium">⭐ Premium Features</button>
+        <button class="faq-category-btn" data-category="tech">⚙️ Technical Info</button>
+      </div>
+
+      <div class="accordion">
+        <!-- Getting Started -->
+        <div class="accordion-item" data-category="start">
+          <button class="accordion-trigger">
+            <span>How do I install and configure SirenUA?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Download SirenUA for free from the Apple App Store on any device running iOS 17.0 or later. Upon launch:</p>
+              <ol>
+                <li>Grant permission for push notifications, including Critical Alerts.</li>
+                <li>Grant location access for the shelter locator (used exclusively while routing).</li>
+                <li>Select your home region or specific administrative districts to track.</li>
+                <li>Configure custom sound profiles for alerts and clearances.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item" data-category="start">
+          <button class="accordion-trigger">
+            <span>How do I select specific districts for monitoring?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Navigate to <strong>Settings → Monitored Regions</strong> in the bottom tab bar. You can choose:</p>
+              <ul>
+                <li><strong>Entire Region</strong> — receive notifications for all alerts in the province.</li>
+                <li><strong>Specific Districts</strong> — targeted alerts triggered only when threats are in your immediate vicinity.</li>
+              </ul>
+              <p>This avoids alert fatigue from distant threats across large provinces.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item" data-category="start">
+          <button class="accordion-trigger">
+            <span>What do the regional colors represent on the map?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <ul>
+                <li>🔴 <strong>Red</strong> — Official regional air raid alert active.</li>
+                <li>🟠 <strong>Orange</strong> — AI-detected tactical threat (incoming missile, drone, or guided bomb).</li>
+                <li>🟡 <strong>Yellow</strong> — Elevated attention zone or potential threat trajectory corridor.</li>
+                <li>🔵 <strong>Blue / Safe Status</strong> — Calm sector, no confirmed incoming threats.</li>
+                <li>⚫ <strong>Dark Gray</strong> — Temporarily occupied regions.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="accordion-item" data-category="notifications">
+          <button class="accordion-trigger">
+            <span>Why am I not receiving notifications?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Please check the following system settings:</p>
+              <ol>
+                <li>Open <strong>iOS Settings → SirenUA → Notifications</strong> and ensure all toggles are enabled.</li>
+                <li>Ensure <strong>Critical Alerts</strong> are switched on.</li>
+                <li>Verify that at least one region or district is selected in the app settings.</li>
+                <li>Check your device's network connection.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item" data-category="notifications">
+          <button class="accordion-trigger">
+            <span>Why are Critical Alerts necessary?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p><strong>Critical Alerts</strong> are a specialized iOS entitlement allowing emergency sirens to sound even when:</p>
+              <ul>
+                <li>Do Not Disturb is active</li>
+                <li>Sleep Focus is enabled</li>
+                <li>The hardware mute switch is turned on</li>
+              </ul>
+              <p>This ensures you are awakened immediately during sudden nighttime strikes.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map -->
+        <div class="accordion-item" data-category="map">
+          <button class="accordion-trigger">
+            <span>How do I interpret trajectory lines and vectors on the map?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <ul>
+                <li><strong>Solid Neon Beam</strong> — Confirmed active flight vector from detection or launch origin to the destination sector.</li>
+                <li><strong>Dashed White Line</strong> — Carrier approach path from Russian airbases (Engels, Olenya, Savasleyka) to missile release lines.</li>
+                <li><strong>Directional Chevron Arrowheads</strong> — Real-time heading and echelon formation at the tip of the flight path.</li>
+                <li><strong>Pulsing Origin Dot</strong> — Confirmed launch point or territorial ingress coordinate.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item" data-category="map">
+          <button class="accordion-trigger">
+            <span>What do the trajectory and arrowhead colors represent?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Each threat category has a dedicated tactical neon color profile:</p>
+              <ul>
+                <li>🟡 <strong>Luminous Yellow</strong> — Strike UAVs <em>(Shahed-136)</em>, jet drones <em>(Shahed-238)</em>, and tactical <em>FPV/loitering munitions</em>.</li>
+                <li>🔴 <strong>Tactical Crimson Red</strong> — Cruise missiles <em>(Kh-101, Kalibr, Iskander-K)</em> and strategic bombers <em>(Tu-95MS, Tu-22M3)</em>.</li>
+                <li>🟣 <strong>Electric Purple</strong> — Ballistic missiles <em>(Iskander-M, KN-23)</em>, aeroballistic <em>Kinzhal (MiG-31K)</em>, and hypersonic <em>Zircon (3M22)</em>.</li>
+                <li>🟠 <strong>Amber Orange</strong> — Guided aerial bombs <em>(KAB / UMPK)</em>, tactical aviation <em>(Su-34 / Su-35)</em>, and heavy <em>MLRS</em>.</li>
+                <li>🔵 <strong>Tactical Blue</strong> — Reconnaissance drones <em>(Orlan-10, ZALA, Supercam)</em>.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shelters -->
+        <div class="accordion-item" data-category="shelters">
+          <button class="accordion-trigger">
+            <span>How does the nearest shelter search work?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <ol>
+                <li>Tap the <strong>Shelters (🛡️)</strong> tab in the bottom navigation.</li>
+                <li>The app identifies your current location and sorts verified shelters by distance.</li>
+                <li>Select any shelter to inspect its protection tier and estimated walking time.</li>
+                <li>Tap <strong>«Get Directions»</strong> to open walking turn-by-turn navigation.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- Premium -->
+        <div class="accordion-item" data-category="premium">
+          <button class="accordion-trigger">
+            <span>What is included in the Premium subscription?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Extended features include:</p>
+              <ul>
+                <li>Attention zones (yellow zones) on the tactical map</li>
+                <li>Smoothed trajectory vectors and flight heading corridors</li>
+                <li>24-hour historical attack chronology</li>
+                <li>Custom AI audio alerts for incoming threats and local clearances</li>
+              </ul>
+              <p>Core air raid sirens and shelter searches remain <strong>free forever</strong>.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Technical -->
+        <div class="accordion-item" data-category="tech">
+          <button class="accordion-trigger">
+            <span>Does the app drain device battery?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>SirenUA is engineered for minimal energy consumption:</p>
+              <ul>
+                <li>Heavy AI analysis runs entirely on our cloud servers.</li>
+                <li>Alerts are delivered via native Apple Push Notification Service (APNs), using 0% active background battery.</li>
+                <li>GPS location is queried exclusively when navigating to a shelter.</li>
+                <li>Daily background battery usage is under 2–3%.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Guides Section -->
+  <section id="guides" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Documentation</span>
+        <h2>User <span class="text-gradient">Guides</span></h2>
+        <p class="section-description">Step-by-step walkthroughs to get the most out of SirenUA.</p>
+      </div>
+      <div class="grid grid-3 reveal" data-stagger>
+        <!-- Guide 1 -->
+        <a href="#guide-setup" class="guide-card" data-modal="guide-setup">
+          <div class="guide-card-image" style="background: linear-gradient(135deg, rgba(34,211,238,0.1), rgba(59,130,246,0.1));">📱</div>
+          <div class="guide-card-content">
+            <h4>Initial Setup Guide</h4>
+            <p>Installation, critical alert permissions, selecting districts, and initial launch.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="badge badge--cyan">Quick Start</span>
+              <span class="guide-card-action">Read Guide →</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Guide 2 -->
+        <a href="#guide-notifications" class="guide-card" data-modal="guide-notifications">
+          <div class="guide-card-image" style="background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(245,158,11,0.1));">🔔</div>
+          <div class="guide-card-content">
+            <h4>Alert Configuration</h4>
+            <p>Managing Do Not Disturb bypass, sound channels, and district-level filters.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="badge badge--red">Important</span>
+              <span class="guide-card-action">Read Guide →</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Guide 3 -->
+        <a href="#guide-shelters" class="guide-card" data-modal="guide-shelters">
+          <div class="guide-card-image" style="background: linear-gradient(135deg, rgba(34,211,238,0.1), rgba(59,130,246,0.1));">🛡️</div>
+          <div class="guide-card-content">
+            <h4>Shelter Routing & Safety</h4>
+            <p>Locating verified underground shelters and understanding 4 protection tiers.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="badge badge--cyan">Safety</span>
+              <span class="guide-card-action">Read Guide →</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Guide 4 -->
+        <a href="#guide-map" class="guide-card" data-modal="guide-map">
+          <div class="guide-card-image" style="background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(34,211,238,0.1));">🗺️</div>
+          <div class="guide-card-content">
+            <h4>Tactical Threat Map</h4>
+            <p>How to interpret flight vectors, missile types, and real-time danger zones.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="badge badge--blue">Map</span>
+              <span class="guide-card-action">Read Guide →</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Guide 5 -->
+        <a href="#guide-premium" class="guide-card" data-modal="guide-premium">
+          <div class="guide-card-image" style="background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(34,211,238,0.1));">⭐</div>
+          <div class="guide-card-content">
+            <h4>Advanced Features</h4>
+            <p>Elevated attention zones, smooth flight trajectories, and 24h attack timeline.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="badge badge--amber">Advanced</span>
+              <span class="guide-card-action">Read Guide →</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Guide 6 -->
+        <a href="#guide-monitoring" class="guide-card" data-modal="guide-monitoring">
+          <div class="guide-card-image" style="background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(34,211,238,0.1));">📊</div>
+          <div class="guide-card-content">
+            <h4>Operational Monitoring</h4>
+            <p>Analyzing strategic launch hubs, repetitive corridors, and civil defense protocols.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="badge badge--cyan">Analytics</span>
+              <span class="guide-card-action">Read Guide →</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Contact Section -->
+  <section id="contact">
+    <div class="container container--narrow">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Contact Team</span>
+        <h2>Submit a <span class="text-gradient">Support Request</span></h2>
+        <p class="section-description">Have a question, feedback, or need technical assistance? Fill out the form below.</p>
+      </div>
+      <form class="contact-form reveal" id="contact-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="contact-name">Full Name *</label>
+            <input type="text" id="contact-name" name="name" required placeholder="Your name">
+          </div>
+          <div class="form-group">
+            <label for="contact-email">Email Address *</label>
+            <input type="email" id="contact-email" name="email" required placeholder="name@example.com">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="contact-topic">Inquiry Topic</label>
+          <select id="contact-topic" name="topic">
+            <option value="">Select topic...</option>
+            <option value="notifications">Alerts & Notifications</option>
+            <option value="shelters">Shelter Registry & Navigation</option>
+            <option value="premium">Subscription & In-App Purchases</option>
+            <option value="map">Map & Trajectories</option>
+            <option value="bug">Report a Bug</option>
+            <option value="feature">Feature Suggestion</option>
+            <option value="other">Other Inquiries</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="contact-message">Message *</label>
+          <textarea id="contact-message" name="message" required placeholder="Describe your issue or question in detail..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="align-self: flex-start;">
+          📩 Send Message
+        </button>
+        <div class="success-message">
+          ✅ Thank you! Your support request has been submitted. Our team will respond within 24 hours.
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Chat Widget -->
+  <div class="chat-widget">
+    <div class="chat-window" id="chat-window">
+      <div class="chat-header">
+        <h4><span class="online-dot"></span> SirenUA Support Chat</h4>
+        <button class="chat-close" aria-label="Close Chat">✕</button>
+      </div>
+      <div class="chat-body"></div>
+      <form class="chat-form" id="chat-support-form">
+        <input type="text" name="chat-name" placeholder="Your Name" required>
+        <input type="email" name="chat-email" placeholder="Your Email" required>
+        <select name="chat-topic">
+          <option value="">Select Topic...</option>
+          <option value="notifications">Notifications</option>
+          <option value="shelters">Shelters</option>
+          <option value="premium">Premium</option>
+          <option value="bug">Bug Report</option>
+          <option value="other">Other</option>
+        </select>
+        <textarea name="chat-message" placeholder="Type your message..." required></textarea>
+        <button type="submit">Send Message</button>
+      </form>
+    </div>
+    <button class="chat-toggle" aria-label="Open support chat">💬</button>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-logo">
+            <img src="../assets/app-icon.png" alt="SirenUA Logo" class="nav-logo-img">
+            <span>SirenUA</span>
+          </a>
+          <p>Real-time AI-powered early warning system dedicated to the protection of Ukrainian civilians.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="features.html">Features</a></li>
+            <li><a href="index.html#screenshots">App</a></li>
+            <li><a href="investors.html">Investors</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Support</h4>
+          <ul>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#guides">Guides</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="privacy.html">Privacy Policy</a></li>
+            <li><a href="terms.html">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2024–2026 SirenUA. All rights reserved.</span>
+        <div class="footer-socials">
+          <a href="#" aria-label="Telegram">📱</a>
+          <a href="mailto:support@sirenua.online" aria-label="Email">📧</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Guide Modals (Detailed Interactive Content) -->
+  
+  <!-- Modal 1: Initial Setup Guide -->
+  <div class="modal" id="guide-setup">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📱 Initial Application Setup</h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>1. Installation from Apple App Store</h4>
+        <p>Download the official SirenUA application from the Apple App Store. The app requires an iPhone running <strong>iOS 17.0 or later</strong>.</p>
+        
+        <h4>2. Mandatory System Permissions</h4>
+        <p>To ensure guaranteed and life-saving delivery of critical alerts, configure the following during first launch:</p>
+        <ul>
+          <li><strong>Critical Alerts Permission:</strong> Tap «Allow». This permits emergency air sirens to sound at full volume even if your iPhone is muted or in Do Not Disturb / Focus Sleep mode.</li>
+          <li><strong>Location Services:</strong> Select «Allow While Using App». Location access is used strictly for calculating real-time pedestrian walking routes to nearby bomb shelters.</li>
+          <li><strong>Background App Refresh:</strong> Confirm that iOS Background App Refresh is enabled to maintain real-time threat map synchronization.</li>
+        </ul>
+
+        <h4>3. Region & District Selection</h4>
+        <p>Select your home province (e.g. Kyiv Region / Kyiv City) and specific administrative districts for localized precision alerts.</p>
+
+        <div class="highlight-box">
+          <p>💡 <strong>Pro Tip:</strong> Upon first launch, SirenUA pre-seeds an encrypted SQLite database of shelters onto your device, ensuring full offline functionality during telecom blackouts.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm modal-close">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Alert Configuration -->
+  <div class="modal" id="guide-notifications">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>🔔 Alert & Sound Configuration</h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>Granular 7-Channel Notification Controls</h4>
+        <p>SirenUA provides independent toggles for every threat class:</p>
+        <ul>
+          <li>🔴 <strong>Official Air Raid Alert:</strong> Regional sirens triggered by Ukrainian Air Force directives.</li>
+          <li>🚀 <strong>High-Speed Missiles (Cruise / Ballistic):</strong> Immediate alerts upon telemetry acquisition or launch sector detection.</li>
+          <li>🛵 <strong>Loitering Munitions (Shahed-136):</strong> Trajectory tracking for attack drones with estimated arrival vector.</li>
+          <li>💣 <strong>Glide Bombs (KAB) & Tactical Jets:</strong> Warning when enemy tactical aviation approaches bomb release lines.</li>
+          <li>✈️ <strong>Strategic Aviation Takeoffs:</strong> Early warnings when Tu-95MS / Tu-22M3 bombers take off 1–2 hours prior to launches.</li>
+          <li>⚠️ <strong>Artillery & CBRN Hazards:</strong> Direct alerts for heavy MLRS shelling, chemical, or radiation threats.</li>
+          <li>✅ <strong>All-Clear Notification:</strong> Gentle calming audio tone when the sector returns to safe status.</li>
+        </ul>
+
+        <h4>Custom Audio Profiles</h4>
+        <p>In Settings &gt; Audio, select classical air raid sirens, modern electronic tones, or soft tactical chimes to identify threats by sound alone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm modal-close">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Shelter Routing & Safety -->
+  <div class="modal" id="guide-shelters">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>🛡️ Shelter Locator & Offline Routing</h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>4 Certified Shelter Tiers</h4>
+        <p>All civil defense shelters are categorized by physical protection level:</p>
+        <ol>
+          <li><strong>Tier 1 (Sealed Deep Bunkers):</strong> Metro stations, reinforced civil defense facilities with filtered ventilation. Protects against direct strikes and CBRN contamination.</li>
+          <li><strong>Tier 2 (Specialized Facilities):</strong> Anti-radiation shelters and solid monolithic underground bunkers.</li>
+          <li><strong>Tier 3 (Dual-Use Structures):</strong> Underground parking lots and residential basements with dual exits.</li>
+          <li><strong>Tier 4 (Temporary Basements):</strong> Ground-floor and basement spaces for immediate fragmentation protection.</li>
+        </ol>
+
+        <h4>3-Step Pedestrian Navigation</h4>
+        <ul>
+          <li><strong>Step 1:</strong> Open the «Shelters» tab — SirenUA instantly identifies the closest Tier 1–3 facility.</li>
+          <li><strong>Step 2:</strong> Check walking time and distance (e.g., 250m • 3 min walk).</li>
+          <li><strong>Step 3:</strong> Tap «Navigate» for turn-by-turn walking directions (works 100% offline).</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm modal-close">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Tactical Threat Map -->
+  <div class="modal" id="guide-map">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>🗺️ Tactical Threat Map Guide</h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>Map Regional Color Codes</h4>
+        <ul>
+          <li>🔴 <strong>Red:</strong> Active official regional air raid alert.</li>
+          <li>🟠 <strong>Orange:</strong> Real-time neural detection of active high-speed aerial threats in sector.</li>
+          <li>🟡 <strong>Yellow:</strong> Elevated attention zone or potential incoming trajectory corridor.</li>
+          <li>🔵 <strong>Blue:</strong> Calm safe status, no incoming threats detected.</li>
+        </ul>
+
+        <h4>Reading Trajectory Vectors</h4>
+        <p>Dynamic arrow vectors indicate real-time flight bearings, projected waypoint turns, and estimated time of arrival (ETA) to your district.</p>
+
+        <div class="highlight-box">
+          <p>⚡ <strong>Performance:</strong> Built on a 60fps WebGL GPU-accelerated engine consuming under 2% battery during active viewing.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm modal-close">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Advanced Features -->
+  <div class="modal" id="guide-premium">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>⭐ Advanced Features & Analytics</h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>Premium Capabilities</h4>
+        <ul>
+          <li><strong>Elevated Attention Zones:</strong> Early warnings of heading adjustments 5–10 minutes before sirens are officially activated.</li>
+          <li><strong>24-Hour Attack Chronology:</strong> Comprehensive post-event timeline documenting every threat trajectory, air defense interception, and siren duration.</li>
+          <li><strong>Priority Push Relays:</strong> Notification routing through dedicated high-speed server clusters with sub-second delivery.</li>
+          <li><strong>Exclusive Sound Themes:</strong> Specialized acoustic signatures for each specific hazard type (Shahed, Ballistics, Kinzhal).</li>
+        </ul>
+
+        <h4>14-Day Free Trial</h4>
+        <p>All new users receive a complimentary 14-day trial with unrestricted access to all advanced features, cancellable anytime in Apple ID settings.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm modal-close">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: Operational Monitoring -->
+  <div class="modal" id="guide-monitoring">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📊 Operational Monitoring & Protocols</h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>Reading Threat Telemetry</h4>
+        <p>SirenUA tracks 5 heterogeneous intelligence feeds. Key operational indicators include:</p>
+        <ul>
+          <li><strong>Tu-95MS / Tu-22M3 Takeoffs:</strong> Signals a coordinated missile strike; typical cruise flight time is 40–90 minutes.</li>
+          <li><strong>Black Sea Surface/Submarine Deployments:</strong> Signals sea-launched Kalibr cruise missile salvoes targeting central/southern Ukraine.</li>
+          <li><strong>Ballistic Missile Launch Locks:</strong> Requires immediate transition to bunkers (flight time &lt; 3 minutes).</li>
+        </ul>
+
+        <h4>Two-Wall Rule & Safety Protocols</h4>
+        <p>If you cannot reach a certified Tier 1–2 bunker in time, immediately take cover behind two solid interior walls (hallway or bathroom) away from windows.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm modal-close">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/main.js?v=2.2"></script>
+  <script src="../js/animations.js?v=2.2"></script>
+  <script src="../js/support.js?v=2.2"></script>
+</body>
+</html>

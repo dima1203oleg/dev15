@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+
+<html lang="uk">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Технології та Функції — SirenUA</title>
+<meta content="Детальний огляд технологій SirenUA: аналіз через штучний інтелект, інтерактивна карта, пошук укриттів, тактична аналітика коридорів, інтелектуальні сповіщення." name="description"/>
+<link href="assets/app-icon.png" rel="icon" type="image/png"/>
+<link href="css/main.css?v=2.2" rel="stylesheet"/>
+<link href="css/components.css?v=2.2" rel="stylesheet"/>
+<link href="css/animations.css?v=2.2" rel="stylesheet"/>
+</head>
+<body>
+<!-- Ambient Glow -->
+<div class="ambient-glow ambient-glow--cyan"></div>
+<!-- Navigation -->
+<nav class="navbar" id="navbar">
+<div class="container">
+<a class="nav-logo" href="index.html">
+<img alt="SirenUA Logo" class="nav-logo-img" src="assets/app-icon.png"/>
+<span>SirenUA</span>
+</a>
+<ul class="nav-links" id="nav-links">
+<li><a href="index.html">Головна</a></li>
+<li><a class="active" href="features.html">Можливості</a></li>
+<li><a href="referral.html">Реферали</a></li>
+<li><a href="support.html">Підтримка</a></li>
+<li><a href="investors.html">Інвесторам</a></li>
+<li><a href="about.html">Про нас</a></li>
+<li><a class="nav-cta" href="index.html#download">Завантажити</a></li>
+</ul>
+<div class="nav-right">
+<a href="referral.html" class="nav-cabinet-btn" title="Кабінет амбасадора та реферальна система">
+<span class="cabinet-badge-icon">👤</span> Кабінет
+</a>
+<div class="lang-switch">
+<a class="lang-btn active" href="features.html">UA</a>
+<span class="lang-divider">|</span>
+<a class="lang-btn" href="en/features.html">EN</a>
+</div>
+<button aria-label="Меню" class="nav-toggle" id="nav-toggle"><span></span><span></span><span></span></button>
+</div>
+</div>
+</nav>
+<!-- Page Header -->
+<div class="page-header">
+<div class="container">
+<span class="section-subtitle">Технологічний стек</span>
+<h1>Функції та <span class="text-gradient">можливості</span></h1>
+<p>Повний огляд технологій та алгоритмів, які роблять SirenUA передовою платформою раннього попередження.</p>
+</div>
+</div>
+<!-- Feature Navigation (Wrapped Tactical Subnav) -->
+<div class="subnav-wrapper">
+<div class="container">
+<div class="subnav-bar">
+<a class="subnav-item" href="#ai-system">🧠 Штучний Інтелект</a>
+<a class="subnav-item" href="#sensor-fusion">🛰️ Злиття даних (Sensor Fusion)</a>
+<a class="subnav-item" href="#map">🗺️ Карта загроз</a>
+<a class="subnav-item" href="#shelters">🛡️ База укриттів</a>
+<a class="subnav-item" href="#analytics">📊 Аналітика коридорів</a>
+<a class="subnav-item" href="#notifications">🔔 Сповіщення</a>
+<a class="subnav-item" href="#threats">🎯 20 типів загроз</a>
+<a class="subnav-item" href="#network">🌐 Мережева стійкість</a>
+</div>
+</div>
+</div>
+<!-- Article 1: AI System -->
+<section id="ai-system">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Розділ 1</div>
+<h2>🧠 Штучний Інтелект — Миттєвий Аналіз Загроз у Реальному Часі</h2>
+<div class="highlight-box">
+<p><strong>Головна перевага:</strong> SirenUA використовує нейромережевий аналіз із динамічним підбором контекстних правил для обробки оперативних розвідувальних каналів. Час від надходження первинних даних до повної класифікації загрози складає менше 3 секунд.</p>
+</div>
+<h3>Як працює система динамічних правил</h3>
+<p>Перед кожною обробкою повідомлення система автоматично підбирає найбільш точні емпіричні правила з накопиченої бази знань. Правила оцінюються за формулою балансу точності та кількості підтверджень у попередніх сесіях.</p>
+<p><strong>Пріоритетні коефіцієнти:</strong> Якщо в повідомленні зафіксовано пряму згадку українського населеного пункту (наприклад, Київ, Харків, Одеса, Кривий Ріг) або конкретного типу зброї (шахед, балістика, КАБ), відповідні правила отримують підвищений пріоритет. Правила розпізнавання аеродромів базування та стартових майданчиків мають найвищу вагу при класифікації.</p>
+<h3>20 канонічних категорій загроз</h3>
+<p>Кожна повітряна ціль розподіляється за однією з 20 чітких категорій з індивідуальними балістичними параметрами:</p>
+<table class="threat-table">
+<thead>
+<tr>
+<th>Позначка</th>
+<th>Найменування цілі</th>
+<th>Швидкість</th>
+<th>Час активності</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>🛩️</td><td>БПЛА Shahed-136 (ударний дрон)</td><td style="font-family: var(--font-mono);">185 км/год</td><td>до 3 годин</td></tr>
+<tr><td>⚡️</td><td>Реактивний ударний БпЛА (Shahed-238)</td><td style="font-family: var(--font-mono);">550 км/год</td><td>1.5 години</td></tr>
+<tr><td>⚡️</td><td>Реактивний БпЛА (Jet Shahed / приманка Гербера)</td><td style="font-family: var(--font-mono);">550 км/год</td><td>2 години</td></tr>
+<tr><td>🚀</td><td>Крилата ракета (Калібр / Х-101 / Х-555 / Х-59 / мКР «Бандероль»)</td><td style="font-family: var(--font-mono);">850 км/год</td><td>45 хвилин</td></tr>
+<tr><td>🚀</td><td>Балістична ракета (Іскандер-М / KN-23 / С-300)</td><td style="font-family: var(--font-mono);">4500–5500 км/год</td><td>10 хвилин</td></tr>
+<tr><td>🚀</td><td>Х-47М2 «Кинджал» (носій винищувач МіГ-31К)</td><td style="font-family: var(--font-mono);">3000–4000 км/год</td><td>30 хвилин</td></tr>
+<tr><td>💣</td><td>Керована авіабомба (КАБ / ФАБ з УМПК / УМПБ Д-30СН)</td><td style="font-family: var(--font-mono);">900 км/год</td><td>5 хвилин</td></tr>
+<tr><td>🚀</td><td>Крилаті ракети Х-101 / Х-555 (носій Ту-95МС)</td><td style="font-family: var(--font-mono);">750–850 км/год</td><td>1.5 години</td></tr>
+<tr><td>🚀</td><td>Надзвукові ракети Х-22 / Х-32 (носій Ту-22М3)</td><td style="font-family: var(--font-mono);">900–4200 км/год</td><td>1 година</td></tr>
+<tr><td>🚀</td><td>Керовані ракети Х-59/69 / Х-31П (носії Су-34 / Су-35)</td><td style="font-family: var(--font-mono);">900–1100 км/год</td><td>45 хвилин</td></tr>
+<tr><td>🚀</td><td>Оперативно-тактичний комплекс Іскандер-К</td><td style="font-family: var(--font-mono);">850 км/год</td><td>20 хвилин</td></tr>
+<tr><td>💥</td><td>Ствольна артилерія / Обстріл прикордоння</td><td style="font-family: var(--font-mono);">1200 км/год</td><td>30 хвилин</td></tr>
+<tr><td>🛡️</td><td>Вуличні бої / Зона активних боїв</td><td style="font-family: var(--font-mono);">—</td><td>постійно</td></tr>
+<tr><td>🧪</td><td>Хімічна загроза</td><td style="font-family: var(--font-mono);">—</td><td>2 години</td></tr>
+<tr><td>☢️</td><td>Радіаційна небезпека (ЗАЕС)</td><td style="font-family: var(--font-mono);">—</td><td>2 години</td></tr>
+<tr><td>🚀</td><td>Гіперзвукова ракета 3M22 «Циркон»</td><td style="font-family: var(--font-mono);">9000–11000 км/год</td><td>10 хвилин</td></tr>
+<tr><td>💥</td><td>Реактивна система залпового вогню (Торнадо-С / Град / Смерч)</td><td style="font-family: var(--font-mono);">2200 км/год</td><td>20 хвилин</td></tr>
+<tr><td>🛸</td><td>FPV-дрон / Ланцет (тактичний ударний дрон)</td><td style="font-family: var(--font-mono);">120–140 км/год</td><td>30 хвилин</td></tr>
+<tr><td>👁️</td><td>Розвідувальний безпілотник (Орлан / ZALA / Supercam)</td><td style="font-family: var(--font-mono);">120 км/год</td><td>1 година</td></tr>
+<tr><td>🚨</td><td>Офіційна повітряна тривога регіону</td><td style="font-family: var(--font-mono);">—</td><td>1 година</td></tr>
+</tbody>
+</table>
+<h3>Автономне донавчання після кожної атаки</h3>
+<p>Після завершення повітряної атаки система автоматично проводить аналіз повної хронології сесії: співставляє первинні попередження, фактичні траєкторії, роботу протиповітряної оборони та тривалість загроз. За підсумками аналізу штучний інтелект самостійно формує нові правила для підвищення точності наступних розрахунків.</p>
+<h3>Періодичний статистичний аналізатор</h3>
+<p>Кожні 6 годин система аналізує масив даних за попередні 30 днів за <strong>7 математичними критеріями</strong>:</p>
+<ol>
+<li><strong>Аналіз міжрегіональних векторів</strong> — фіксація стійких маршрутів прольоту ударних груп</li>
+<li><strong>Калібрування точності</strong> — усунення гіперчутливості у спокійних секторах</li>
+<li><strong>Часова кластеризація</strong> — виявлення пікових годин типових запусків</li>
+<li><strong>Математика підльоту</strong> — уточнення реального часу руху за географічними коридорами</li>
+<li><strong>Кореляція аеродромів базування</strong> — зв'язок злетів із напрямками пусків</li>
+<li><strong>Прив'язка пускових майданчиків</strong> — розрахунок імовірних секторів заходу цілей</li>
+<li><strong>Очищення застарілих правил</strong> — деактивація моделей зі зниженою точністю</li>
+</ol>
+<h3>Об'єднання повторних повідомлень</h3>
+<p>Коли кілька джерел одночасно повідомляють про один і той самий об'єкт, система групує їх за географічними координатами пуску, часовим вікном та вектором руху в одну картку без дублювання сповіщень.</p>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 2: Palantir Sensor Fusion -->
+<section id="sensor-fusion" style="background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Розділ 2</div>
+<h2>🛰️ Технології Оборонного Рівня: Багатодоменне Злиття Розвідданих (Sensor Fusion)</h2>
+<div class="highlight-box">
+<p><strong>Оборонна парадигма:</strong> SirenUA реалізує злиття сенсорних даних (Sensor Fusion) на рівні провідних оборонних систем світу (як-от Palantir AIP). Замість покладання на одне джерело, система синтезує 5 гетерогенних потоків даних у єдину узгоджену картину повітряної обстановки (Common Operating Picture).</p>
+</div>
+<h3>4 потоки мультиспектрального збору даних</h3>
+<p>Кожен вхідний сигнал маркується геопросторовою міткою часу та верифікується алгоритмами фільтрації шумів:</p>
+<div class="sensor-fusion-grid">
+<a class="sensor-node-card" href="#sensor-fusion" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-sm">📡 Потік 1</span>
+<h4>MTProto та OSINT-зведення</h4>
+<p>Прямий низьколатентний парсинг перевірених військових та розвідувальних каналів із мілісекундним видаленням спаму.</p>
+</a>
+<a class="sensor-node-card" href="#sensor-fusion" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--blue mb-sm">📻 Потік 2</span>
+<h4>Радіотехнічна розвідка (РТР)</h4>
+<p>Фіксація випромінювання радарів підсвітки ворожих зенітно-ракетних комплексів та бортових систем літаків ДРЛВ.</p>
+</a>
+<a class="sensor-node-card" href="#sensor-fusion" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--amber mb-sm">🔊 Потік 3</span>
+<h4>Акустичні сигнатури БпЛА</h4>
+<p>Аналіз частотних спектрів роторних двигунів ударних БпЛА та реактивних турбін низьковисотних ракет.</p>
+</a>
+<a class="sensor-node-card" href="#sensor-fusion" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--red mb-sm">🛰️ Потік 4</span>
+<h4>Теплова детекція стартів</h4>
+<p>Фіксація теплових факелів двигунів балістичних ракет у момент пуску з пускових позицій та аеродромів базування.</p>
+</a>
+</div>
+<h3 style="margin-top: var(--space-2xl);">Мультиагентний нейромережевий контур</h3>
+<p>Аналітичне ядро SirenUA складається з 4 спеціалізованих мікроагентів:</p>
+<ul>
+<li><strong>Модуль кінематики (KinematicsPredictor)</strong> — розраховує балістичну параболу, вектор перевантаження та точку падіння цілі при збитті.</li>
+<li><strong>Аналізатор рельєфу (TerrainMaskingEngine)</strong> — зіставляє висоту польоту з 3D-моделлю рельєфу України, знаходячи сліпі зони для завчасного попередження населення.</li>
+<li><strong>Класифікатор хибних цілей (DeceptionClassifier)</strong> — відсіює фальшиві повітряні цілі («Гербера», «Пародія») за відсутністю бойової маси та стабільністю радіовисотоміра.</li>
+<li><strong>Оптимізатор евакуації (EvacuationOptimizer)</strong> — миттєво формує маршрути до найближчих сертифікованих укриттів Рівня 1–4.</li>
+</ul>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 3: Interactive Map -->
+<section id="map" style="background: var(--bg-secondary);">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Розділ 3</div>
+<h2>🗺️ Інтерактивна Карта Загроз — Тактичний Дисплей</h2>
+<div class="highlight-box">
+<p><strong>Головна перевага:</strong> Повноекранна карта України з оперативним відображенням статусу всіх 27 регіонів, згладженими траєкторіями руху, маркерами пусків та миттєвим оновленням без навантаження на акумулятор пристрою.</p>
+</div>
+<h3>Відображення 27 областей України</h3>
+<p>Кожна область отримує колірний статус залежно від реальної небезпеки. Геометричні межі регіонів оптимізовані та декодуються у фоновому потоці, забезпечуючи плавний скрол і масштабування навіть на старіших моделях iPhone.</p>
+<h3>Плавні траєкторії руху</h3>
+<p>Маршрути цілей візуалізуються згладженими кривими лініями з урахуванням маневрів:</p>
+<ul>
+<li><strong>Суцільні лінії</strong> — активний зафіксований вектор польоту від місця виявлення до цілі</li>
+<li><strong>Штрихові лінії</strong> — рух літаків-носіїв від аеродромів базування до рубежів пуску</li>
+<li><strong>Динамічні шеврони</strong> — стрілки напрямку з точним курсом польоту</li>
+<li><strong>Пульсуюча точка</strong> — останнє підтверджене положення засобів ураження</li>
+</ul>
+<h3>Групування пускових позицій</h3>
+<p>Якщо зафіксовано масований запуск групи дронів з одного району, маркери об'єднуються у єдиний пульсуючий сектор, зберігаючи чистоту та зрозумілість карти.</p>
+<h3>Плавна робота без мерехтіння</h3>
+<p>Картографічний інтерфейс оновлюється лише за наявності реальних змін у даних, що усуває неприємне мерехтіння шарів та забезпечує нульове навантаження на процесор у стані спокою.</p>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 3: Shelters -->
+<section id="shelters">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Розділ 3</div>
+<h2>🛡️ Система Пошуку Укриттів — Багаторівнева База</h2>
+<div class="highlight-box">
+<p><strong>Головна перевага:</strong> Миттєвий розрахунок відстані до найближчих укриттів з пішохідною навігацією. Попередньо завантажений реєстр цивільного захисту дозволяє знаходити сховища з першої секунди встановлення навіть за слабкого інтернету.</p>
+</div>
+<h3>3 рівні пошуку укриттів</h3>
+<ol>
+<li><strong>Рівень 1: Сертифікований реєстр</strong> — 26 регіональних баз даних укриттів цивільного захисту: протирадіаційні укриття, підземні станції метро, спеціалізовані підвали лікарень, навчальних закладів та адміністративних будівель.</li>
+<li><strong>Рівень 2: Картографічна верифікація</strong> — регулярне оновлення реєстру з верифікацією тегів захисних споруд та фільтрацією непридатних об'єктів (зупинок, кіосків тощо).</li>
+<li><strong>Рівень 3: Точковий локальний пошук</strong> — швидке сканування радіуса навколо користувача для виявлення нових підземних паркінгів та сховищ.</li>
+</ol>
+<h3>Класифікація надійності укриттів</h3>
+<div class="grid grid-2" style="margin: var(--space-lg) 0;">
+<a class="glass-card" href="support.html#guide-shelters" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-sm" style="align-self: flex-start;">Рівень 1 (Найвищий)</span>
+<p style="font-size: 0.9rem; flex-grow: 1;">Спеціалізовані бомбосховища, станції метро, глибокі герметичні підземні паркінги</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Інструкція щодо укриттів</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="support.html#guide-shelters" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--blue mb-sm" style="align-self: flex-start;">Рівень 2 (Надійний)</span>
+<p style="font-size: 0.9rem; flex-grow: 1;">Підвали адміністративних будівель, захисні споруди торгових центрів</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Інструкція щодо укриттів</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="support.html#guide-shelters" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--amber mb-sm" style="align-self: flex-start;">Рівень 3 (Базовий)</span>
+<p style="font-size: 0.9rem; flex-grow: 1;">Цокольні поверхи та капітальні підвали житлових багатоквартирних будинків</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Інструкція щодо укриттів</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="support.html#guide-shelters" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--red mb-sm" style="align-self: flex-start;">Рівень 4 (Найпростіший)</span>
+<p style="font-size: 0.9rem; flex-grow: 1;">Найпростіші укриття та захисні споруди місцевого значення</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Інструкція щодо укриттів</span> <span class="arrow">→</span>
+</div>
+</a>
+</div>
+<h3>Зручна панель швидкого доступу</h3>
+<p>Панель укриттів з'являється автоматично під час відкриття додатку при активній тривозі та за потреби закривається, не перекриваючи огляд тактичної карти.</p>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 4: Analytics -->
+<section id="analytics" style="background: var(--bg-secondary);">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Розділ 4</div>
+<h2>📊 Аналітика Коридорів та Тактичне Прогнозування</h2>
+<div class="highlight-box">
+<p><strong>Головна перевага:</strong> Модуль просторового аналізу, який розраховує ймовірнісні ланцюги польоту, визначає пускові бази противника та оцінює баланс ризиків по кожній області.</p>
+</div>
+<h3>Прогнозування траєкторій польоту</h3>
+<p>Система моделює ланцюги можливих переходів цілі між областями на основі історії попередніх ударів. На ключових розв'язках маршруту обчислюється відсоткова ймовірність зміни курсу, що дозволяє попередити користувачів сусідніх областей заздалегідь.</p>
+<h3>Оцінка щільності протиповітряної оборони</h3>
+<p>Аналіз ефективності прикриття по секторах дозволяє розуміти динаміку знищення цілей та орієнтовні рубежі перехоплення.</p>
+<h3>Ідентифікація пускових хабів</h3>
+<p>Автоматична прив'язка пусків до відомих аеродромів та стартових майданчиків (Приморсько-Ахтарськ, Чауда, Енгельс, Шайковка, Саваслейка тощо) з відстеженням активності за часом доби.</p>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 5: Notifications -->
+<section id="notifications">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Розділ 5</div>
+<h2>🔔 Інтелектуальна Система Сповіщень</h2>
+<div class="highlight-box">
+<p><strong>Головна перевага:</strong> 4 типи звукових сповіщень, 7 незалежних перемикачів, гарантована доставка критичних сигналів крізь беззвучний режим та розумне групування сигналів під час масованих хвиль.</p>
+</div>
+<h3>4 типи звукових сигналів</h3>
+<div class="grid grid-2" style="margin: var(--space-lg) 0;">
+<a class="glass-card" href="support.html#guide-notifications" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--red mb-sm" style="align-self: flex-start;">🔴 Тривога</span>
+<h4 style="font-size: 1rem;">Сирена тривоги</h4>
+<p style="font-size: 0.85rem; flex-grow: 1;">Офіційний початок повітряної тривоги в обраному регіоні</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Налаштування звуків</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="support.html#guide-notifications" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--amber mb-sm" style="align-self: flex-start;">⚠️ Загроза</span>
+<h4 style="font-size: 1rem;">Попередження ШІ</h4>
+<p style="font-size: 0.85rem; flex-grow: 1;">Конкретна загроза: фіксація БПЛА, ракети чи скидання КАБ</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Налаштування звуків</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="support.html#guide-notifications" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-sm" style="align-self: flex-start;">🔷 Відбій</span>
+<h4 style="font-size: 1rem;">Сигнал відбою</h4>
+<p style="font-size: 0.85rem; flex-grow: 1;">Офіційне скасування повітряної тривоги</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Налаштування звуків</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="support.html#guide-notifications" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-sm" style="align-self: flex-start;">✅ Локальне очищення</span>
+<h4 style="font-size: 1rem;">Зняття загрози</h4>
+<p style="font-size: 0.85rem; flex-grow: 1;">ШІ підтвердив знищення або відхід конкретної цілі</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Налаштування звуків</span> <span class="arrow">→</span>
+</div>
+</a>
+</div>
+<h3>Точне районне налаштування</h3>
+<p>Можливість обрати для моніторингу окремі райони всередині області. Система надсилає адресні сповіщення, не турбуючи тривогами з протилежного кінця великої області.</p>
+<h3>Захист від звукового спаму</h3>
+<p>Під час масованих атак на десятки регіонів звуковий сигнал відтворюється один раз для першої цілі, а наступні зміни додаються в центр сповіщень у текстовому вигляді без повторного оглушення сиреною.</p>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 6: 20 Threat Types -->
+<section id="threats">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Розділ 6</div>
+<h2>🎯 Каталог 20 Типів Загроз — Фізико-Кінематичні Профілі</h2>
+<div class="highlight-box">
+<p><strong>Повний тактичний спектр:</strong> SirenUA містить вбудовану математичну модель поведінки 20 класів повітряних загроз — від низькошвидкісних ударних БпЛА до гіперзвукових балістичних ракет зі швидкістю понад 11 000 км/год.</p>
+</div>
+<div class="grid grid-2" style="gap: var(--space-xl); margin: var(--space-2xl) 0;">
+<a class="glass-card" href="#threats" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--red mb-sm">🚀 Крилаті ракети (КР)</span>
+<h4>Х-101 / Х-555 / Калібр / Іскандер-К</h4>
+<p><strong>Швидкість:</strong> 720–900 км/год (0.7–0.85 Маха)</p>
+<p><strong>Висота польоту:</strong> 30–120 метрів з огинанням рельєфу</p>
+<p><strong>Особливість ШІ:</strong> Відстеження точок зміни курсу (waypoint maneuvers), програмованих петель та входження в коридори річкових русел.</p>
+<div class="feature-card-action" style="margin-top: 12px;"><span>Перейти до матриці загроз</span><span class="arrow">→</span></div></a>
+<a class="glass-card" href="#threats" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--red mb-sm">💥 Балістичні ракети (БР)</span>
+<h4>Іскандер-М (9М723) / KN-23</h4>
+<p><strong>Швидкість:</strong> 2100–5500 км/год (до 5.5 Маха)</p>
+<p><strong>Висота польоту:</strong> Квазібалістична траєкторія до 50 км</p>
+<p><strong>Особливість ШІ:</strong> Миттєве виявлення стартової позиції та розрахунок сектору удару за менш ніж 40 секунд від моменту пуску.</p>
+<div class="feature-card-action" style="margin-top: 12px;"><span>Перейти до матриці загроз</span><span class="arrow">→</span></div></a>
+<a class="glass-card" href="#threats" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-sm">⚡ Аеробалістика та Гіперзвук</span>
+<h4>Х-47М2 «Кинджал» / 3М22 «Циркон»</h4>
+<p><strong>Швидкість:</strong> 7000–11000 км/год (до 10 Махів)</p>
+<p><strong>Час підльоту:</strong> 2–6 хвилин до будь-якої точки України</p>
+<p><strong>Особливість ШІ:</strong> Фіксація вильоту носіїв МіГ-31К з аеродромів Саваслейка/Моздок та негайне оголошення підвищеного рівня небезпеки.</p>
+<div class="feature-card-action" style="margin-top: 12px;"><span>Перейти до матриці загроз</span><span class="arrow">→</span></div></a>
+<a class="glass-card" href="#threats" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--amber mb-sm">🛸 Ударні БпЛА та Приманки</span>
+<h4>Shahed-136 / Герань-2 / Гербера</h4>
+<p><strong>Швидкість:</strong> 150–220 км/год</p>
+<p><strong>Тривалість:</strong> До 4–6 годин перебування у повітрі</p>
+<p><strong>Особливість ШІ:</strong> Групування роїв, сепарація хибних дронів-приманок від бойових одиниць за акустичними та швидкісними сигнатурами.</p>
+<div class="feature-card-action" style="margin-top: 12px;"><span>Перейти до матриці загроз</span><span class="arrow">→</span></div></a>
+<a class="glass-card" href="#threats" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--red mb-sm">💣 Керовані авіабомби (КАБ)</span>
+<h4>ФАБ-250/500/1500 з модулем УМПК</h4>
+<p><strong>Швидкість планування:</strong> 800–1000 км/год</p>
+<p><strong>Дистанція скидання:</strong> 45–80 км від лінії фронту</p>
+<p><strong>Особливість ШІ:</strong> Фіксація маневру виходу ворожого Су-34 на рубежі скидання та миттєве попередження прикордонних та прифронтових міст.</p>
+<div class="feature-card-action" style="margin-top: 12px;"><span>Перейти до матриці загроз</span><span class="arrow">→</span></div></a>
+<a class="glass-card" href="#threats" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--blue mb-sm">✈️ Стратегічна авіація</span>
+<h4>Ту-95МС / Ту-22М3 / Ту-160</h4>
+<p><strong>Рубежі пуску:</strong> Каспійське море, Волгодонськ, Енгельс</p>
+<p><strong>Особливість ШІ:</strong> Розрахунок часу виходу ракетоносців на пускові рубежі та прогнозування підльоту перших залпів крилатих ракет.</p>
+<div class="feature-card-action" style="margin-top: 12px;"><span>Перейти до матриці загроз</span><span class="arrow">→</span></div></a>
+</div>
+<h3>Повний реєстр 20 тактичних класів</h3>
+<p>Кожна загроза класифікується за унікальним фізико-балістичним профілем для максимально точного розрахунку часу підльоту та рекомендацій цивільного захисту:</p>
+<div class="threat-catalog-grid reveal" data-stagger="">
+<!-- 01 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🛵</div>
+<span class="threat-catalog-id">CLASS #01</span>
+</div>
+<div class="threat-catalog-title">Shahed-136 / Герань-2</div>
+<div class="threat-catalog-desc">Ударний безпілотник-камікадзе великої дальності з акустичним відстеженням двигуна.</div>
+<div class="threat-catalog-footer">
+<span>Низьковисотний</span>
+<span class="threat-catalog-speed">⚡ 185 км/год</span>
+</div>
+</a>
+<!-- 02 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🚀</div>
+<span class="threat-catalog-id">CLASS #02</span>
+</div>
+<div class="threat-catalog-title">Х-101 / Х-555 / мКР «Бандероль»</div>
+<div class="threat-catalog-desc">Стратегічні та малогабаритні крилаті ракети з огинанням рельєфу та маневруванням.</div>
+<div class="threat-catalog-footer">
+<span>Крилата ракета</span>
+<span class="threat-catalog-speed">⚡ 550–850 км/год</span>
+</div>
+</a>
+<!-- 03 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🌊</div>
+<span class="threat-catalog-id">CLASS #03</span>
+</div>
+<div class="threat-catalog-title">3М-54 «Калібр»</div>
+<div class="threat-catalog-desc">Морська крилата ракета підводного та надводного базування (Чорне / Каспійське море).</div>
+<div class="threat-catalog-footer">
+<span>Морський пуск</span>
+<span class="threat-catalog-speed">⚡ 880 км/год</span>
+</div>
+</a>
+<!-- 04 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">💥</div>
+<span class="threat-catalog-id">CLASS #04</span>
+</div>
+<div class="threat-catalog-title">9М723 «Іскандер-М»</div>
+<div class="threat-catalog-desc">Квазібалістична твердопаливна ракета з надкоротким часом підльоту та параболічним вектором.</div>
+<div class="threat-catalog-footer">
+<span>Балістика</span>
+<span class="threat-catalog-speed">⚡ 5500 км/год</span>
+</div>
+</a>
+<!-- 05 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">⚡</div>
+<span class="threat-catalog-id">CLASS #05</span>
+</div>
+<div class="threat-catalog-title">Х-47М2 «Кинджал»</div>
+<div class="threat-catalog-desc">Аеробалістична ракета з носіїв МіГ-31К зі стратосферним розгоном та високою точністю.</div>
+<div class="threat-catalog-footer">
+<span>Аеробалістика</span>
+<span class="threat-catalog-speed">⚡ До Mach 10</span>
+</div>
+</a>
+<!-- 06 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">💣</div>
+<span class="threat-catalog-id">CLASS #06</span>
+</div>
+<div class="threat-catalog-title">КАБ / ФАБ / УМПБ Д-30СН</div>
+<div class="threat-catalog-desc">Керовані та плануючі авіаційні боєприпаси модульного типу зі скиданням з тактичної авіації.</div>
+<div class="threat-catalog-footer">
+<span>Плануюча бомба</span>
+<span class="threat-catalog-speed">⚡ 900 км/год</span>
+</div>
+</a>
+<!-- 07 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">✈️</div>
+<span class="threat-catalog-id">CLASS #07</span>
+</div>
+<div class="threat-catalog-title">Ту-95МС «Ведмідь»</div>
+<div class="threat-catalog-desc">Стратегічний турбогвинтовий ракетоносець (рубежі пуску: Каспій, Енгельс, Волгодонськ).</div>
+<div class="threat-catalog-footer">
+<span>Страт-авіація</span>
+<span class="threat-catalog-speed">⚡ 800 км/год</span>
+</div>
+</a>
+<!-- 08 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🛩️</div>
+<span class="threat-catalog-id">CLASS #08</span>
+</div>
+<div class="threat-catalog-title">Ту-22М3 (Х-22/32)</div>
+<div class="threat-catalog-desc">Дальній надзвуковий бомбардувальник із надважкими надзвуковими ракетами Х-22.</div>
+<div class="threat-catalog-footer">
+<span>Дальня авіація</span>
+<span class="threat-catalog-speed">⚡ 4200 км/год</span>
+</div>
+</a>
+<!-- 09 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🔥</div>
+<span class="threat-catalog-id">CLASS #09</span>
+</div>
+<div class="threat-catalog-title">3М22 «Циркон»</div>
+<div class="threat-catalog-desc">Гіперзвукова протикорабельна ракета з прямоточним двигуном та надшвидким заходом на ціль.</div>
+<div class="threat-catalog-footer">
+<span>Гіперзвук</span>
+<span class="threat-catalog-speed">⚡ 11000 км/год</span>
+</div>
+</a>
+<!-- 10 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🎯</div>
+<span class="threat-catalog-id">CLASS #10</span>
+</div>
+<div class="threat-catalog-title">9М728 «Іскандер-К»</div>
+<div class="threat-catalog-desc">Крилата ракета наземного пуску комплексів 9К720 з наднизьким профілем польоту.</div>
+<div class="threat-catalog-footer">
+<span>КР наземна</span>
+<span class="threat-catalog-speed">⚡ 850 км/год</span>
+</div>
+</a>
+<!-- 11 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🛸</div>
+<span class="threat-catalog-id">CLASS #11</span>
+</div>
+<div class="threat-catalog-title">БпЛА «Гербера» / Пародія</div>
+<div class="threat-catalog-desc">Фальш-ціль з лінзою Люнеберга без бойової частини для імітації дронів та перевантаження ППО.</div>
+<div class="threat-catalog-footer">
+<span>Дрон-приманка</span>
+<span class="threat-catalog-speed">⚡ 150 км/год</span>
+</div>
+</a>
+<!-- 12 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🏹</div>
+<span class="threat-catalog-id">CLASS #12</span>
+</div>
+<div class="threat-catalog-title">Х-31П / Х-58</div>
+<div class="threat-catalog-desc">Високошвидкісна тактична ракета з пасивним наведенням на випромінювання радарів ППО.</div>
+<div class="threat-catalog-footer">
+<span>Протирадіолокаційна</span>
+<span class="threat-catalog-speed">⚡ 3300 км/год</span>
+</div>
+</a>
+<!-- 13 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🌊</div>
+<span class="threat-catalog-id">CLASS #13</span>
+</div>
+<div class="threat-catalog-title">П-800 «Онікс»</div>
+<div class="threat-catalog-desc">Надзвукова універсальна протикорабельна ракета берегових комплексів «Бастіон» (Крим).</div>
+<div class="threat-catalog-footer">
+<span>Береговий комплекс</span>
+<span class="threat-catalog-speed">⚡ 3180 км/год</span>
+</div>
+</a>
+<!-- 14 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">💥</div>
+<span class="threat-catalog-id">CLASS #14</span>
+</div>
+<div class="threat-catalog-title">С-300 / С-400 (по землі)</div>
+<div class="threat-catalog-desc">Зенітні керовані ракети, переналаштовані на балістичні удари по прифронтових містах.</div>
+<div class="threat-catalog-footer">
+<span>ЗРК по землі</span>
+<span class="threat-catalog-speed">⚡ 4500 км/год</span>
+</div>
+</a>
+<!-- 15 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">💢</div>
+<span class="threat-catalog-id">CLASS #15</span>
+</div>
+<div class="threat-catalog-title">РСЗВ Смерч / Торнадо-С</div>
+<div class="threat-catalog-desc">Реактивні снаряди калібру 300мм із касетними та уламковими бойовими частинами.</div>
+<div class="threat-catalog-footer">
+<span>Реактивна арт</span>
+<span class="threat-catalog-speed">⚡ 2200 км/год</span>
+</div>
+</a>
+<!-- 16 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🎯</div>
+<span class="threat-catalog-id">CLASS #16</span>
+</div>
+<div class="threat-catalog-title">Су-34 / Су-35</div>
+<div class="threat-catalog-desc">Фронтові винищувачі-бомбардувальники, що здійснюють скиди КАБів та пуски тактичних ракет.</div>
+<div class="threat-catalog-footer">
+<span>Тактична авіація</span>
+<span class="threat-catalog-speed">⚡ 950 км/год</span>
+</div>
+</a>
+<!-- 17 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">👁️</div>
+<span class="threat-catalog-id">CLASS #17</span>
+</div>
+<div class="threat-catalog-title">Орлан-10 / Zala / Supercam</div>
+<div class="threat-catalog-desc">Оперативно-тактичні БпЛА оптичної та тепловізійної розвідки й коригування вогню.</div>
+<div class="threat-catalog-footer">
+<span>Розвід-БпЛА</span>
+<span class="threat-catalog-speed">⚡ 120 км/год</span>
+</div>
+</a>
+<!-- 18 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">☢️</div>
+<span class="threat-catalog-id">CLASS #18</span>
+</div>
+<div class="threat-catalog-title">Радіаційна небезпека</div>
+<div class="threat-catalog-desc">Оповіщення про критичне підвищення радіаційного фону, загрози на АЕС та захисні протоколи.</div>
+<div class="threat-catalog-footer">
+<span>ЗМУ</span>
+<span class="threat-catalog-speed">⚡ Негайне сховище</span>
+</div>
+</a>
+<!-- 19 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">⚠️</div>
+<span class="threat-catalog-id">CLASS #19</span>
+</div>
+<div class="threat-catalog-title">Хімічна загроза</div>
+<div class="threat-catalog-desc">Попередження про токсичні речовини, хлор, аміак або застосування хімічної зброї.</div>
+<div class="threat-catalog-footer">
+<span>Токсичні речовини</span>
+<span class="threat-catalog-speed">⚡ Герметизація</span>
+</div>
+</a>
+<!-- 20 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🔔</div>
+<span class="threat-catalog-id">CLASS #20</span>
+</div>
+<div class="threat-catalog-title">Загальна тривога</div>
+<div class="threat-catalog-desc">Офіційний статус повітряної тривоги на рівні області за даними Повітряних Сил ЗСУ.</div>
+<div class="threat-catalog-footer">
+<span>Офіційний сигнал</span>
+<span class="threat-catalog-speed">⚡ Прямий шлюз</span>
+</div>
+</a>
+</div>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 7: Network & Multi-Tier Disaster Recovery -->
+<section id="network" style="background: var(--bg-secondary);">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Розділ 7</div>
+<h2>🌐 Надійна Мережева Архітектура, Мультирівневе Резервування та Відмовостійкість</h2>
+<div class="highlight-box">
+<p><strong>Корпоративний та оборонний рівень надійності:</strong> Архітектура SirenUA розроблена за стандартом нульової втрати даних (Zero-Data-Loss: RPO = 0 с, RTO &lt; 1.2 с). Система поєднує 5 рівнів резервування даних — від циклічних хмарних зліпків до атомарних локальних дампів та локального кешування на iPhone.</p>
+</div>
+<div class="grid grid-2" style="gap: var(--space-xl); margin: var(--space-2xl) 0;">
+<a class="glass-card" href="investors.html" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-sm" style="align-self: flex-start;">🔄 Рівень 1</span>
+<h4>Хмарне резервування кожні 15 хвилин</h4>
+<p style="flex-grow: 1;">Автоматичний планувальник кожні 15 хвилин формує перевірений криптографічний зліпок повної карти активних загроз, векторів руху та сесійних логів.</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Інвестиційна стійкість</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="investors.html" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--blue mb-sm" style="align-self: flex-start;">⚡ Рівень 2</span>
+<h4>Подієво-кероване миттєве збереження</h4>
+<p style="flex-grow: 1;">При появі кожної нової загрози, корекції траєкторії чи оголошенні відбою тривоги стан бази негайно записується у режимі випереджувального журналювання (WAL), унеможливлюючи пошкодження даних при раптових відключеннях живлення.</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Архітектурна надійність</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="investors.html" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--purple mb-sm" style="align-self: flex-start;">☁️ Рівень 3</span>
+<h4>Георозподілена хмара Firebase та Cloud Storage</h4>
+<p style="flex-grow: 1;">Дзеркалювання стану в хмарну інфраструктуру з автоматичною геореплікацією між датацентрами. Якщо первинний серверний вузол зазнає збою або мережевого блекауту, резервний сервер підхоплює роботу без втрати мілісекунди даних.</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Хмарна реплікація</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="investors.html" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--amber mb-sm" style="align-self: flex-start;">🚀 Рівень 4</span>
+<h4>Гарячий старт за 0.05 секунди (Pre-Shutdown стан)</h4>
+<p style="flex-grow: 1;">При оновленнях ПЗ або перезапуску сервер перехоплює системні сигнали (SIGTERM/SIGINT), заморожує пам'ять і при старті відновлює оперативну картину менш ніж за 50 мс без необхідності повторного тривалого опитування зовнішніх каналів.</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Швидкість відновлення</span> <span class="arrow">→</span>
+</div>
+</a>
+</div>
+<h3>📱 Рівень 5: Автономне Офлайн-Кешування на Пристрої (Робота без зв'язку)</h3>
+<p>iOS-клієнт SirenUA містить локальну зашифровану базу укриттів для всіх 26 регіонів та алгоритми автономного пішохідного розрахунку. Навіть в умовах <strong>повного блекауту вишок зв'язку та мобільного інтернету</strong> користувач миттєво бачить найближчі сховища Рівня 1–4, маршрути до них та інструкції безпеки.</p>
+<h3>Подвійний мережевий контур (Автоматичне перемикання каналів)</h3>
+<p>Клієнтський додаток підтримує одночасний зв'язок через два незалежні мережеві шлюзи: прямий високошвидкісний статичний IP та зашифрований захищений проксі-тунель. Перемикання каналу відбувається прозоро для користувача за 300 мс без обриву аудіосигналів сирени.</p>
+<div class="metrics-row" style="display: flex; gap: var(--space-xl); margin-top: var(--space-xl); flex-wrap: wrap;">
+<div style="flex: 1; min-width: 200px; background: var(--bg-card); padding: var(--space-lg); border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+<div style="font-size: 1.6rem; font-weight: 700; color: var(--cyan); font-family: var(--font-mono);">RPO = 0 с</div>
+<div style="font-size: 0.85rem; color: var(--text-muted);">Нульова втрата оперативних розвідданих</div>
+</div>
+<div style="flex: 1; min-width: 200px; background: var(--bg-card); padding: var(--space-lg); border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+<div style="font-size: 1.6rem; font-weight: 700; color: var(--cyan); font-family: var(--font-mono);">&lt; 1.2 с</div>
+<div style="font-size: 0.85rem; color: var(--text-muted);">Час повного аварійного відновлення (RTO)</div>
+</div>
+<div style="flex: 1; min-width: 200px; background: var(--bg-card); padding: var(--space-lg); border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+<div style="font-size: 1.6rem; font-weight: 700; color: var(--cyan); font-family: var(--font-mono);">99.98%</div>
+<div style="font-size: 0.85rem; color: var(--text-muted);">Відмовостійкість архітектури доставки сигналів</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- CTA -->
+<section class="cta-section">
+<div class="container reveal">
+<h2>Захистіть себе та своїх <span class="text-gradient">близьких</span></h2>
+<p>Завантажте SirenUA безкоштовно та отримайте передову систему захисту.</p>
+<div class="hero-actions" style="margin-top: 2rem; margin-bottom: 0;">
+<a class="btn btn-primary btn-lg" href="index.html#download">📱 Завантажити в App Store</a>
+<a class="btn btn-secondary btn-lg" href="support.html">💬 Центр підтримки</a>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="footer">
+<div class="container">
+<div class="footer-grid">
+<div class="footer-brand">
+<a class="nav-logo" href="index.html">
+<img alt="SirenUA Logo" class="nav-logo-img" src="assets/app-icon.png"/>
+<span>SirenUA</span>
+</a>
+<p>Система штучного інтелекту раннього попередження про повітряні загрози для захисту цивільного населення України.</p>
+</div>
+<div class="footer-column">
+<h4>Продукт</h4>
+<ul>
+<li><a href="#ai-system">Штучний Інтелект</a></li>
+<li><a href="#map">Карта загроз</a></li>
+<li><a href="#shelters">Укриття</a></li>
+<li><a href="#analytics">Аналітика коридорів</a></li>
+</ul>
+</div>
+<div class="footer-column">
+<h4>Підтримка</h4>
+<ul>
+<li><a href="support.html">Часті запитання</a></li>
+<li><a href="support.html#guides">Інструкції</a></li>
+<li><a href="support.html#contact">Зворотний зв'язок</a></li>
+</ul>
+</div>
+<div class="footer-column">
+<h4>Правова інформація</h4>
+<ul>
+<li><a href="privacy.html">Конфіденційність</a></li>
+<li><a href="terms.html">Умови використання</a></li>
+<li><a href="referral.html">Реферали / Кабінет</a></li>
+</ul>
+</div>
+</div>
+<div class="footer-bottom">
+<span>© 2024–2026 SirenUA. Усі права захищені.</span>
+</div>
+</div>
+</footer>
+<script src="js/main.js"></script>
+<script src="js/animations.js"></script>
+</body>
+</html>
