@@ -86,7 +86,10 @@ class ProfileService {
       try {
         const query = `?apple_user_id=${encodeURIComponent(runtimeConfig.referralAppleUserId)}`;
         const [remoteUser, remoteStats] = await Promise.all([
-          getJsonFromPaths<unknown>([`/api/referral/me${query}`], 2500),
+          getJsonFromPaths<unknown>([
+            `/api/referral/me${query}`,
+            `/api/referral/user/${encodeURIComponent(runtimeConfig.referralAppleUserId)}`,
+          ], 2500),
           getJsonFromPaths<unknown>([`/api/referral/stats${query}`], 2500),
         ]);
         if (!isJsonObject(remoteUser) || typeof remoteUser.id !== 'number' || typeof remoteUser.display_name !== 'string') {
