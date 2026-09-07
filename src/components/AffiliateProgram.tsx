@@ -232,7 +232,8 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
   const graphIsDemo = graphState !== 'LIVE';
   const activityIsDemo = activityState !== 'LIVE';
   const branchIsDemo = branchState !== 'LIVE';
-  const partnerDataIsDemo = dataState !== 'LIVE' || graphIsDemo || activityIsDemo || branchIsDemo;
+  const partnerDataUnavailable = dataState !== 'LIVE';
+  const partnerDataIsPartial = dataState === 'LIVE' && (graphIsDemo || activityIsDemo || branchIsDemo);
 
   const tabButtonClass = (tab: typeof activeTab) => `px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
     activeTab === tab
@@ -366,9 +367,11 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {partnerDataIsDemo && (
+      {(partnerDataUnavailable || partnerDataIsPartial) && (
         <div className={`rounded-2xl border px-4 py-3 text-xs font-semibold ${isDark ? 'border-amber-900/60 bg-amber-950/20 text-amber-300' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
-          Демонстраційні або неповні дані партнерської мережі: підключіть partner API, щоб відображати реальні L1/L2, rank, earnings та activity stream.
+          {partnerDataUnavailable
+            ? 'Referral API не підключений: партнерська мережа та фінансові показники недоступні.'
+            : 'Referral API підключений і повертає реальні L1/L2 та rank. Додаткові activity/branch analytics endpoint-и ще не підключені, тому частина аналітики неповна.'}
         </div>
       )}
       
