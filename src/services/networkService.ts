@@ -485,6 +485,11 @@ class NetworkService {
     return new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
   }
 
+  private referralQuery(): string {
+    if (!runtimeConfig.referralAppleUserId) throw new Error('REFERRAL_USER_NOT_CONFIGURED');
+    return `?apple_user_id=${encodeURIComponent(runtimeConfig.referralAppleUserId)}`;
+  }
+
   private notConnected<T>(source: string): DataEnvelope<T> {
     return {
       data: null,
@@ -549,10 +554,36 @@ class NetworkService {
 
     try {
       const remote = await getJsonFromPaths<unknown>([
+        `/api/referral/stats${this.referralQuery()}`,
         '/api/partner/dashboard',
         '/api/v1/partner/summary',
       ], 2500);
       if (!isJsonObject(remote)) throw new Error('Partner summary has invalid shape');
+
+      // Native ThreatServer referral contract: stats are authoritative and
+      // deliberately contain USD values. Do not fabricate UAH conversions.
+      if (typeof remote.referral_code === 'string' && typeof remote.total_network_size === 'number') {
+        const activeSubscribers = Number(remote.active_subscribers ?? 0);
+        const totalNetworkSize = Number(remote.total_network_size ?? 0);
+        const totalReferrals = Number(remote.total_referrals ?? 0);
+        const qualifiedL1 = activeSubscribers;
+        const remoteSummary = this.buildSummary({
+          totalNetworkSize,
+          activeL1Count: totalReferrals,
+          activeL2Count: Math.max(0, totalNetworkSize - totalReferrals),
+          new30DaysCount: 0,
+          conversionRatePercent: totalReferrals > 0 ? (activeSubscribers / totalReferrals) * 100 : 0,
+          monthlyNetworkIncomeUah: 0,
+          qualifiedL1,
+          referralCode: remote.referral_code,
+          referralUrl: `https://siren.ua/r/${remote.referral_code}`,
+          trafficSources: [],
+          metricsAvailability: { conversion: true, new30Days: false, monthlyIncome: false, trafficSources: false },
+        });
+        const state = inferDataState(remote);
+        if (state === 'DEMO' && !runtimeConfig.allowDemoData) throw new Error('DEMO_DATA_DISABLED_IN_PRODUCTION');
+        return { data: remoteSummary, state, source: 'SIREN_UA_REFERRAL_STATS', updatedAt, isRealData: state === 'LIVE' };
+      }
 
       const partner = isJsonObject(remote.partner) ? remote.partner : remote;
       const rankProgress = isJsonObject(remote.rankProgress) ? remote.rankProgress : null;
@@ -636,10 +667,41 @@ class NetworkService {
   public async getNetworkGraph(): Promise<DataEnvelope<{ nodes: NetworkNode[]; edges: NetworkEdge[] }>> {
     try {
         const remote = await getJsonFromPaths<unknown>([
+          `/api/referral/tree${this.referralQuery()}&max_depth=2`,
           '/api/partner/network',
           '/api/v1/partner/network',
         ], 2500);
         if (!isJsonObject(remote)) throw new Error('Partner network has invalid shape');
+        if (isJsonObject(remote.user) && Array.isArray(remote.children)) {
+          const root = remote;
+          const nodes: NetworkNode[] = [{
+            id: String(isJsonObject(root.user) ? root.user.id ?? 'me' : 'me'),
+            name: isJsonObject(root.user) && typeof root.user.display_name === 'string' ? root.user.display_name : 'Моя мережа',
+            level: 'ME', avatar: '', earnings: '—', rawEarningsUah: 0,
+            peopleCount: Number(root.network_size ?? 0), status: 'ACTIVE', x: 50, y: 50,
+            joinDate: '', plan: 'Premium', planPrice: 0, qualifiedL1Count: 0,
+          }];
+          const edges: NetworkEdge[] = [];
+          const walk = (children: unknown[], parentId: string, depth: 1 | 2) => children.filter(isJsonObject).forEach((child, index) => {
+            const user = isJsonObject(child.user) ? child.user : {};
+            const id = String(user.id ?? `ref-${depth}-${index}`);
+            const level = depth === 1 ? 'L1' : 'L2';
+            nodes.push({
+              id, name: typeof user.display_name === 'string' && user.display_name ? user.display_name : 'Партнер',
+              level, avatar: '', earnings: '—', rawEarningsUah: 0,
+              peopleCount: Number(child.network_size ?? child.children_count ?? 1),
+              status: user.is_active_subscriber === true ? 'ACTIVE' : 'TRIAL',
+              x: depth === 1 ? 25 + index * 25 : 15 + index * 14, y: depth === 1 ? 30 : 70,
+              parentId, parentName: '', joinDate: '', plan: 'Premium', planPrice: 0, qualifiedL1Count: 0,
+            });
+            edges.push({ from: parentId, to: id, level });
+            if (depth === 1 && Array.isArray(child.children)) walk(child.children, id, 2);
+          });
+          walk(remote.children, nodes[0].id, 1);
+          const state = inferDataState(remote);
+          if (state === 'DEMO' && !runtimeConfig.allowDemoData) throw new Error('DEMO_DATA_DISABLED_IN_PRODUCTION');
+          return { data: { nodes, edges }, state, source: 'SIREN_UA_REFERRAL_TREE', updatedAt: this.now(), isRealData: state === 'LIVE' };
+        }
         if (!Array.isArray(remote.nodes) || !Array.isArray(remote.edges)) {
           const l1 = isJsonObject(remote.l1) ? remote.l1 : null;
           const l2 = isJsonObject(remote.l2) ? remote.l2 : null;

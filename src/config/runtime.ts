@@ -22,6 +22,10 @@ export const runtimeConfig = {
   isProduction,
   allowDemoData,
   apiBaseUrl: trimTrailingSlash(viteEnv.VITE_API_BASE_URL?.trim() || ''),
+  // Referral API identifies the current Apple account server-side. This is a
+  // public account identifier, not a secret; production auth should eventually
+  // replace it with a signed session/token.
+  referralAppleUserId: viteEnv.VITE_REFERRAL_APPLE_USER_ID?.trim() || null,
   appStoreUrl: viteEnv.VITE_APP_STORE_URL?.trim() || null,
   googlePlayUrl: viteEnv.VITE_GOOGLE_PLAY_URL?.trim() || null,
   // Do not invent a public channel URL. Social links are rendered only when

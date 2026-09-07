@@ -39,6 +39,9 @@ jobs:
         env:
           # Hash navigation keeps every product section usable on static Pages.
           VITE_BASE_PATH: /dev15/
+          # Production ThreatServer documented by the upstream repositories.
+          # The frontend still keeps explicit LIVE/STALE/OFFLINE semantics.
+          VITE_API_BASE_URL: https://sirenua.online
         run: pnpm check
 
       - name: Configure Pages
