@@ -12,6 +12,8 @@ import { runtimeConfig } from '../config/runtime';
 import { calculateRankByL1, getNextTierInfo, ReferralTierDefinition } from './referralEngine';
 import { getJsonFromPaths, inferDataState, isJsonObject } from './apiClient';
 
+const REFERRAL_LINK_BASE = 'https://sirenua.online/ref';
+
 export interface NetworkNode {
   id: string;
   name: string;
@@ -535,7 +537,7 @@ class NetworkService {
         },
       },
       referralCode: overrides.referralCode ?? this.referralCode,
-      referralUrl: overrides.referralUrl ?? `https://siren.ua/r/${this.referralCode}`,
+      referralUrl: overrides.referralUrl ?? `${REFERRAL_LINK_BASE}/${this.referralCode}`,
       trafficSources: overrides.trafficSources ?? defaultTrafficSources,
       metricsAvailability: overrides.metricsAvailability ?? {
         conversion: true,
@@ -576,7 +578,7 @@ class NetworkService {
           monthlyNetworkIncomeUah: 0,
           qualifiedL1,
           referralCode: remote.referral_code,
-          referralUrl: `https://siren.ua/r/${remote.referral_code}`,
+          referralUrl: `${REFERRAL_LINK_BASE}/${remote.referral_code}`,
           trafficSources: [],
           metricsAvailability: { conversion: true, new30Days: false, monthlyIncome: false, trafficSources: false },
         });
@@ -616,7 +618,7 @@ class NetworkService {
         monthlyNetworkIncomeUah: typeof remote.monthlyNetworkIncomeUah === 'number' ? remote.monthlyNetworkIncomeUah : 0,
         qualifiedL1,
         referralCode: typeof partner.referralCode === 'string' ? partner.referralCode : undefined,
-        referralUrl: typeof partner.referralCode === 'string' ? `https://siren.ua/r/${partner.referralCode}` : undefined,
+        referralUrl: typeof partner.referralCode === 'string' ? `${REFERRAL_LINK_BASE}/${partner.referralCode}` : undefined,
         trafficSources: Array.isArray(remote.trafficSources)
           ? remote.trafficSources.filter((source): source is NetworkSummary['trafficSources'][number] => (
             isJsonObject(source)

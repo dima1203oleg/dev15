@@ -47,6 +47,8 @@ import { kycService, KycVerificationData } from '../services/kycService';
 import { authSecurityService, UserSecurityData } from '../services/authSecurityService';
 import { runtimeConfig } from '../config/runtime';
 
+const REFERRAL_LINK_BASE = 'https://sirenua.online/ref';
+
 interface ProfileSectionProps {
   theme?: 'light' | 'dark';
 }
@@ -124,7 +126,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   const displayRemainingL1 = profile?.remainingL1ToNextRank ?? 0;
   const displayRankProgress = profile?.rankProgressPercent ?? 0;
   const displayAvatar = profile?.avatarUrl || '';
-  const liveReferralUrl = profileState === 'LIVE' && profile?.partnerCode ? `https://siren.ua/r/${profile.partnerCode}` : '';
+  const liveReferralUrl = profileState === 'LIVE' && profile?.partnerCode ? `${REFERRAL_LINK_BASE}/${profile.partnerCode}` : '';
   const displayReferralUrl = liveReferralUrl || (profileState === 'DEMO' ? 'Посилання недоступне в DEMO' : 'Посилання недоступне');
   const partnerActionsAvailable = Boolean(liveReferralUrl);
   const isKycLive = kycState === 'LIVE';

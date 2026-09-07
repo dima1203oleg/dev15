@@ -116,7 +116,7 @@ export const AffiliateProgram: React.FC<AffiliateProgramProps> = ({
       }
     },
     referralCode: 'OLEKSANDR25',
-    referralUrl: 'https://siren.ua/r/OLEKSANDR25',
+    referralUrl: 'https://sirenua.online/ref/OLEKSANDR25',
     trafficSources: []
   };
   const unavailableSummary: NetworkSummary = {
