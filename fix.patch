@@ -1,0 +1,10 @@
+--- src/components/SmartMetricRail.tsx
++++ src/components/SmartMetricRail.tsx
+@@ -176,5 +176,7 @@
+             <span className="text-[10px] font-bold tracking-widest text-[#10B981]">LIVE</span>
++          </div>
++        </div>
++      </div>
+     </div>
+   );
+ };

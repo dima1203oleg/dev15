@@ -1,85 +1,69 @@
-import React from 'react';
-import { Shield, Github, Radio, Heart, ExternalLink, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronDown, Send, Youtube, Facebook, Instagram } from 'lucide-react';
+import { runtimeConfig } from '../config/runtime';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  theme?: 'light' | 'dark';
+}
+
+export const Footer: React.FC<FooterProps> = ({ theme = 'light' }) => {
+  const isDark = theme === 'dark';
+  const [languageNote, setLanguageNote] = useState(false);
+
   return (
-    <footer className="bg-[#070B11] border-t border-slate-800/80 text-slate-400 text-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+    <footer className={`w-full border-t mt-8 py-6 transition-colors ${
+      isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200/80 text-slate-500'
+    }`}>
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
         
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
-          
-          {/* Brand Col */}
-          <div className="md:col-span-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/40 font-bold">
-                <Shield className="w-4 h-4" />
-              </div>
-              <span className="text-base font-bold text-white tracking-tight font-['Plus_Jakarta_Sans']">
-                SIREN <span className="text-rose-400">UA</span>
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
-              Центральна вебплатформа ситуаційної обізнаності повітряної безпеки та офіційна партнерська програма 5–25% на 2 рівні.
-            </p>
-            <div className="text-[11px] text-slate-400 font-mono">
-              Atlas Trinity Ecosystem © 2026. Всі права захищено.
-            </div>
-          </div>
-
-          {/* Nav Col 1 */}
-          <div className="md:col-span-2 space-y-2">
-            <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Продукт</h4>
-            <ul className="space-y-1.5 text-xs">
-              <li><a href="#map-section" className="hover:text-white transition-colors">Оперативна карта</a></li>
-              <li><a href="#features-section" className="hover:text-white transition-colors">Можливості та ETA</a></li>
-              <li><a href="#download-section" className="hover:text-white transition-colors">Мобільні застосунки</a></li>
-              <li><a href="#map-section" className="hover:text-white transition-colors">База укриттів</a></li>
-            </ul>
-          </div>
-
-          {/* Nav Col 2: Partner */}
-          <div className="md:col-span-3 space-y-2">
-            <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Партнерська програма</h4>
-            <ul className="space-y-1.5 text-xs">
-              <li><a href="#partner-section" className="hover:text-amber-300 transition-colors">2-Рівнева модель (L1 + L2)</a></li>
-              <li><a href="#partner-section" className="hover:text-amber-300 transition-colors">Ранги 5–25% (Starter до Platinum)</a></li>
-              <li><a href="#partner-section" className="hover:text-amber-300 transition-colors">Ambassador Program</a></li>
-              <li><a href="#partner-section" className="hover:text-amber-300 transition-colors">Калькулятор прибутку</a></li>
-            </ul>
-          </div>
-
-          {/* Nav Col 3: Repositories & Legal */}
-          <div className="md:col-span-3 space-y-2">
-            <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Atlas Trinity Repositories</h4>
-            <ul className="space-y-1.5 text-[11px] font-mono">
-              <li className="flex items-center gap-1.5 text-slate-300">
-                <Github className="w-3.5 h-3.5 text-slate-400" />
-                <span>SirenUA-Website (Web Platform)</span>
-              </li>
-              <li className="flex items-center gap-1.5 text-slate-400">
-                <Github className="w-3.5 h-3.5 text-slate-500" />
-                <span>SirenUA-ThreatServer (Threat API)</span>
-              </li>
-              <li className="flex items-center gap-1.5 text-slate-400">
-                <Github className="w-3.5 h-3.5 text-slate-500" />
-                <span>SirenUA (Mobile App iOS/Android)</span>
-              </li>
-            </ul>
-          </div>
-
+        {/* Left: Copyright */}
+        <div className="flex items-center gap-2">
+          <span>© 2025 SIREN UA</span>
+          <span>Всі права захищені.</span>
         </div>
 
-        {/* Bottom Safety Disclaimer & Compliance */}
-        <div className="pt-8 border-t border-slate-800/80 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
-          <div className="flex items-center gap-2 text-center md:text-left">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>
-              Увага: SIREN UA є аналітичним інформаційним шаром. Під час повітряної тривоги завжди прямуйте до укриття та керуйтеся офіційними джерелами органів влади.
-            </span>
-          </div>
+        {/* Center: Mission tagline */}
+        <div className={`hidden sm:flex items-center gap-3 font-semibold ${
+          isDark ? 'text-slate-300' : 'text-slate-700'
+        }`}>
+          <span>Безпека</span>
+          <span>·</span>
+          <span>Технології</span>
+          <span>·</span>
+          <span>Люди</span>
+          <span>·</span>
+          <span className="text-blue-600">Україна</span>
+        </div>
 
-          <div className="flex items-center gap-4 shrink-0">
-            <span className="text-slate-400">Made with Ukrainian Resilience 🇺🇦</span>
+        {/* Right: Language Switcher & Social Links */}
+        <div className="flex items-center gap-5">
+          {/* Language selector */}
+          <button type="button" onClick={() => setLanguageNote((visible) => !visible)} className={`px-2.5 py-1 rounded-full border flex items-center gap-1.5 transition-colors cursor-pointer text-[11px] font-bold ${
+            isDark ? 'bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800' : 'bg-white border-slate-200/80 text-slate-800 hover:bg-slate-50 shadow-2xs'
+          }`}>
+            <span>🇺🇦</span>
+            <span>Українська</span>
+            <ChevronDown className="w-3 h-3 text-slate-400" />
+          </button>
+          {languageNote && <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>English — локалізація готується</span>}
+
+          {/* Social Icons */}
+          <div className="flex items-center gap-3 text-slate-400">
+            <a 
+              href={runtimeConfig.telegramUrl}
+              target="_blank" 
+              rel="noreferrer"
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                isDark ? 'hover:text-white hover:bg-slate-800' : 'hover:text-blue-600 hover:bg-slate-100'
+              }`}
+              title="Telegram"
+            >
+              <Send className="w-4 h-4" />
+            </a>
+
+            {runtimeConfig.youtubeUrl && <a href={runtimeConfig.youtubeUrl} target="_blank" rel="noreferrer" className={`p-1.5 rounded-full transition-colors cursor-pointer ${isDark ? 'hover:text-white hover:bg-slate-800' : 'hover:text-rose-600 hover:bg-slate-100'}`} title="YouTube"><Youtube className="w-4 h-4" /></a>}
+            {runtimeConfig.facebookUrl && <a href={runtimeConfig.facebookUrl} target="_blank" rel="noreferrer" className={`p-1.5 rounded-full transition-colors cursor-pointer ${isDark ? 'hover:text-white hover:bg-slate-800' : 'hover:text-blue-600 hover:bg-slate-100'}`} title="Facebook"><Facebook className="w-4 h-4" /></a>}
+            {runtimeConfig.instagramUrl && <a href={runtimeConfig.instagramUrl} target="_blank" rel="noreferrer" className={`p-1.5 rounded-full transition-colors cursor-pointer ${isDark ? 'hover:text-white hover:bg-slate-800' : 'hover:text-pink-600 hover:bg-slate-100'}`} title="Instagram"><Instagram className="w-4 h-4" /></a>}
           </div>
         </div>
 

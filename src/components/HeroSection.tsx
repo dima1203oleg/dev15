@@ -1,383 +1,414 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { 
-  Shield, ArrowRight, Download, Radio, Compass, Navigation, Clock, MapPin, 
-  Users, Bell, AlertTriangle, ChevronRight, QrCode, Sparkles, Building2,
-  Award
+  ArrowRight, 
+  Apple,
+  Play,
+  Check,
+  AlertTriangle,
+  ShieldCheck,
+  QrCode
 } from 'lucide-react';
-import { ThreatSceneModel } from '../data/spatialModel';
-import { HeroIntelligenceStack } from './HeroIntelligenceStack';
-import { MobileExperience } from './MobileExperience';
-import { TabletExperience } from './TabletExperience';
+import { RegionData, ThreatSceneModel, ThreatTrajectory } from '../types';
+import { playWebAudioSound } from '../utils/sirenAudio';
+import { runtimeConfig } from '../config/runtime';
+import ukraine3dCutoutDark from '../assets/images/ukraine_3d_cutout_dark.webp';
 
-const ThreeDShowcase = React.lazy(() => import('./ThreeDShowcase').then(({ ThreeDShowcase: component }) => ({ default: component })));
-const DeviceExperienceLab = React.lazy(() => import('./DeviceExperienceLab').then(({ DeviceExperienceLab: component }) => ({ default: component })));
-
-const SpatialSurfaceLoading: React.FC<{ label: string }> = ({ label }) => (
-  <section className="device-constellation-preview" aria-label={label} aria-busy="true">
-    <div className="device-constellation-preview__grid" aria-hidden="true" />
-    <div className="device-constellation-preview__intro">
-      <div className="device-constellation-preview__eyebrow">SIREN SPATIAL ECOSYSTEM</div>
-      <h2>Завантажуємо просторову систему.</h2>
-      <p>Критична інформація вже доступна в інтерфейсі. Візуальний spatial layer підключається окремо.</p>
-      <div className="device-constellation-preview__state"><span /> INITIALIZING SPATIAL SURFACE</div>
-    </div>
-  </section>
-);
+const ThreeMapUkraine = React.lazy(() => import('./ThreeMapUkraine').then((module) => ({
+  default: module.ThreeMapUkraine,
+})));
 
 interface HeroSectionProps {
-  onNavigateToMap: () => void;
-  onNavigateToFeatures: () => void;
-  onNavigateToPartner: () => void;
-  onNavigateToDownload: () => void;
-  model: ThreatSceneModel;
+  regions?: RegionData[];
+  selectedRegion?: RegionData | null;
+  onSelectRegion?: (region: RegionData | null) => void;
+  trajectories?: ThreatTrajectory[];
+  threatModel?: ThreatSceneModel;
+  onRefreshData?: () => void;
+  onNavigateToShelters?: () => void;
+  onOpenDemo?: () => void;
+  theme?: 'light' | 'dark';
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
-  onNavigateToMap,
-  onNavigateToFeatures,
-  onNavigateToPartner,
-  onNavigateToDownload,
-  model
+  regions = [],
+  selectedRegion = null,
+  onSelectRegion,
+  trajectories = [],
+  threatModel,
+  onRefreshData,
+  onNavigateToShelters,
+  onOpenDemo,
+  theme = 'light'
 }) => {
-  const threatDataMode = model.dataMode;
+  const [mapMode, setMapMode] = useState<'RENDER' | 'WEBGL'>('RENDER');
+  const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
+  const isDark = theme === 'dark';
+  const dataModeMessage = threatModel?.dataMode === 'CACHED'
+    ? 'ОСТАННІ ЗБЕРЕЖЕНІ ДАНІ'
+    : threatModel?.dataMode === 'STALE'
+      ? 'ДАНІ ЗАСТАРІЛІ'
+      : threatModel?.dataMode === 'ERROR'
+        ? 'ПОМИЛКА ДЖЕРЕЛА ДАНИХ'
+        : 'LIVE DATA НЕ ПІДКЛЮЧЕНО';
+  const freshnessLabel = threatModel?.dataMode === 'LIVE'
+    ? `LIVE · ${threatModel.timestamp}`
+    : threatModel?.dataMode === 'DEMO_DATA'
+      ? `DEMO · ${threatModel.timestamp}`
+      : threatModel?.dataMode === 'CACHED'
+        ? `CACHED · ${threatModel.timestamp}`
+        : threatModel?.dataMode === 'STALE'
+          ? `STALE · ${threatModel.timestamp}`
+          : 'ДАНІ НЕДОСТУПНІ';
+  const freshnessAccessibleLabel = threatModel?.dataMode === 'LIVE'
+    ? `LIVE. Оновлено ${threatModel.timestamp}`
+    : threatModel?.dataMode === 'DEMO_DATA'
+      ? `DEMO. Сценарій оновлено ${threatModel.timestamp}`
+      : threatModel?.dataMode === 'CACHED'
+        ? `CACHED. Останнє збережене оновлення ${threatModel.timestamp}`
+        : threatModel?.dataMode === 'STALE'
+          ? `STALE. Останнє оновлення ${threatModel.timestamp}`
+          : 'Актуальні дані недоступні';
+  const freshnessTone = threatModel?.dataMode === 'LIVE'
+    ? 'bg-emerald-500/15 text-emerald-300'
+    : threatModel?.dataMode === 'DEMO_DATA'
+      ? 'bg-purple-500/15 text-purple-300'
+      : 'bg-amber-500/15 text-amber-300';
+  const trustPoints = threatModel?.dataMode === 'LIVE'
+    ? [
+        'Швидке встановлення',
+        'Покриття всієї України',
+        'Оновлення в реальному часі',
+      ]
+    : threatModel?.dataMode === 'DEMO_DATA'
+      ? [
+          'Демонстраційний spatial twin',
+          'Реальний API позначається окремо',
+          'Сценарій не видається за live',
+        ]
+      : [
+          'Швидке встановлення',
+          'Джерело даних видно на екрані',
+          'Застарілі дані не маскуються під live',
+        ];
+
+  // Verified live data uses the normalized selectable scene. Explicit demo
+  // data keeps the polished product preview on the first paint; its paths are
+  // labelled demo-only and never claim an authoritative threat surface.
+  useEffect(() => {
+    if (threatModel?.dataMode === 'LIVE') setMapMode('WEBGL');
+    if (threatModel?.dataMode !== 'LIVE') setMapMode('RENDER');
+  }, [threatModel?.dataMode]);
 
   return (
-    <section className="relative overflow-hidden pt-6 pb-20 lg:pt-10 lg:pb-28">
-
-      <div className="mobile-home-only">
-        <MobileExperience model={model} onDownload={onNavigateToDownload} />
-      </div>
-
-      <div className="tablet-home-only">
-        <TabletExperience model={model} />
-      </div>
-
-      <div className="desktop-home-only">
+    <div className={`siren-panel siren-hero w-full rounded-[30px] p-5 sm:p-7 lg:p-4 border relative overflow-hidden transition-all duration-300 ${
+      isDark 
+        ? 'bg-[#10232B] border-[#2D4A55] text-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]'
+        : 'bg-[#F7FAFC] border-[#D9E2E8] text-[#0F172A] shadow-[0_20px_70px_rgba(42,68,83,0.08)]'
+    }`}>
       
-      {/* Background High-Tech Cyan & Deep Space Gradients */}
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] sm:w-[1000px] h-[450px] bg-gradient-to-b from-cyan-500/10 via-blue-600/10 to-transparent blur-[140px] rounded-full pointer-events-none -z-10"></div>
-      <div className="absolute top-1/2 -left-20 w-[400px] h-[400px] bg-rose-600/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
-      <div className="absolute top-1/3 -right-20 w-[450px] h-[450px] bg-amber-600/10 blur-[130px] rounded-full pointer-events-none -z-10"></div>
+      {/* Background Soft Glow */}
+      <div className={`absolute top-1/2 right-10 -translate-y-1/2 w-[650px] h-[650px] rounded-full blur-[130px] pointer-events-none -z-10 ${
+        isDark ? 'bg-blue-600/15' : 'bg-blue-200/40'
+      }`} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-7 relative z-10 w-full min-h-[330px] lg:min-h-[290px]">
         
-        {/* ========================================================================= */}
-        {/* HERO TITLE & CALL TO ACTION HEADER (Matching reference images)           */}
-        {/* ========================================================================= */}
-        <div className="grid max-w-7xl mx-auto gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
-          <div className="flex flex-col items-center text-center lg:col-span-1 lg:items-start lg:text-left">
+        {/* Left: Text Content & Sub-Block */}
+        <div className="flex-1 w-full flex flex-col items-start text-left max-w-[620px]">
           
-          {/* Eyebrow Pill as in Image 2: "У БЕЗПЕЧНІШЕ ЗАВТРА" */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-cyan-500/40 text-xs font-mono tracking-widest text-cyan-300 mb-5 shadow-lg shadow-cyan-950/30">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
-            </span>
-            <span className="font-bold uppercase tracking-wider">У БЕЗПЕЧНІШЕ ЗАВТРА</span>
-          </div>
-
-          {/* Main Headline (Exact words from reference image 1) */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.04] font-['Plus_Jakarta_Sans']">
-            Не просто тривога. <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-500 drop-shadow-[0_0_35px_rgba(0,212,255,0.4)]">
-              Розумій ситуацію.
-            </span>
-          </h1>
-
-          <div className={`mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-mono ${
-            threatDataMode === 'LIVE' ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' :
-            threatDataMode === 'DEMO_DATA' ? 'border-amber-400/30 bg-amber-400/10 text-amber-300' :
-            'border-slate-700 bg-slate-900/70 text-slate-400'
+          {/* Top Pill Badge */}
+          <div className={`inline-flex max-w-full flex-wrap items-center gap-2 px-4 py-1.5 rounded-full border mb-3 lg:mb-2 text-[12px] font-extrabold tracking-wide ${
+            isDark 
+              ? 'bg-[#1B293F] border-[#2E4160] text-blue-400' 
+              : 'bg-blue-50 border-blue-200 text-blue-700'
           }`}>
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            {threatDataMode === 'LIVE' ? 'THREATSERVER · LIVE' : threatDataMode === 'DEMO_DATA' ? 'DEMO DATA · ВІЗУАЛЬНИЙ РЕЖИМ' : 'NOT CONNECTED · ПІДКЛЮЧЕННЯ ОЧІКУЄТЬСЯ'}
-          </div>
-
-          {/* 4 Feature Key Bullets with Shields (Exact match to Reference Image 1) */}
-          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto text-left">
-            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-200">
-              <Shield className="w-4 h-4 text-cyan-400 shrink-0" />
-              <span className="font-medium">Реальні дані в режимі реального часу</span>
-            </div>
-            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-200">
-              <Navigation className="w-4 h-4 text-cyan-400 shrink-0" />
-              <span className="font-medium">Траєкторії та напрямок загроз</span>
-            </div>
-            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-200">
-              <Bell className="w-4 h-4 text-cyan-400 shrink-0" />
-              <span className="font-medium">Персоналізовані сповіщення</span>
-            </div>
-            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-200">
-              <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
-              <span className="font-medium">Інтелектуальний аналіз ризиків</span>
-            </div>
-          </div>
-
-          {/* CTA Buttons & Store Badges Row */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4 w-full">
-            
-            {/* Primary Glowing Download Button */}
-            <button
-              onClick={onNavigateToDownload}
-              className="flex items-center gap-3 px-7 py-4 rounded-2xl text-base font-bold text-white bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 hover:from-blue-500 hover:to-cyan-400 transition-all shadow-[0_0_30px_rgba(0,180,255,0.45)] hover:shadow-[0_0_45px_rgba(0,212,255,0.7)] active:scale-98 group"
-              id="hero-primary-download-btn"
-            >
-              <span>Завантажити SIREN UA</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-
-            {/* Learn More Button */}
-            <button
-              onClick={onNavigateToFeatures}
-              className="flex items-center gap-2 px-6 py-4 rounded-2xl text-sm font-semibold text-slate-200 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 transition-all active:scale-98"
-              id="hero-learn-more-btn"
-            >
-              <span>▶ Дізнатися більше</span>
-            </button>
-
-          </div>
-
-          {/* App Store / Google Play / QR Code Pills */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs">
-            
-            {/* Apple App Store */}
-            <button
-              onClick={onNavigateToDownload}
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-left transition-all"
-            >
-              <svg className="w-5 h-5 fill-current text-white" viewBox="0 0 24 24">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 1.01-2.87-.96.04-2.12.64-2.79 1.43-.59.68-1.11 1.76-1.03 2.81 1.07.08 2.19-.58 2.81-1.37z" />
-              </svg>
-              <div>
-                <div className="text-[9px] text-slate-400 leading-tight">Завантажити з</div>
-                <div className="text-xs font-bold text-white leading-tight">App Store</div>
-              </div>
-            </button>
-
-            {/* Google Play */}
-            <button
-              onClick={onNavigateToDownload}
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-left transition-all"
-            >
-              <svg className="w-5 h-5 fill-current text-white" viewBox="0 0 24 24">
-                <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.5,12.92 20.16,13.19L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z" />
-              </svg>
-              <div>
-                <div className="text-[9px] text-slate-400 leading-tight">Доступно в</div>
-                <div className="text-xs font-bold text-slate-400 leading-tight">COMING SOON</div>
-              </div>
-            </button>
-
-            {/* QR Code Quick Scan Box */}
-            <div 
-              onClick={onNavigateToDownload}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/60 border border-slate-800/80 text-slate-300 hover:border-cyan-500/40 cursor-pointer transition-all"
-            >
-              <QrCode className="w-4 h-4 text-cyan-400" />
-              <span className="text-[11px] font-mono">Скануй QR та завантажуй</span>
-            </div>
-
-          </div>
-
-          </div>
-
-          <HeroIntelligenceStack model={model} />
-        </div>
-
-        {/* ========================================================================= */}
-        {/* THE MASTERPIECE 3D HOLOGRAPHIC & GADGET SHOWCASE — FIRST VISUAL SURFACE  */}
-        {/* ========================================================================= */}
-        <Suspense fallback={<SpatialSurfaceLoading label="Завантаження 3D-вітрини пристроїв SIREN UA" />}>
-          <ThreeDShowcase
-            onNavigateToDownload={onNavigateToDownload}
-            onNavigateToMap={onNavigateToMap}
-            onNavigateToPartner={onNavigateToPartner}
-            model={model}
-          />
-        </Suspense>
-
-        <Suspense fallback={<SpatialSurfaceLoading label="Завантаження device experience SIREN UA" />}>
-          <DeviceExperienceLab model={model} />
-        </Suspense>
-
-        {/* ========================================================================= */}
-        {/* 4 HIGH-TECH CAPABILITY CARDS (Directly under 3D as in reference images)   */}
-        {/* ========================================================================= */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          
-          {/* Card 1: Актуальні попередження */}
-          <div 
-            onClick={onNavigateToMap}
-            className="group relative p-5 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800 hover:border-cyan-500/50 transition-all cursor-pointer shadow-lg hover:shadow-cyan-950/30"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Shield className="w-5 h-5 text-cyan-400" />
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
-            </div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-1 font-mono">
-              Актуальні попередження
-            </h3>
-            <p className="text-xs text-slate-400">
-              Реальний час та перевірені джерела радіолокаційних комплексів.
-            </p>
-          </div>
-
-          {/* Card 2: Прогнозні траєкторії */}
-          <div 
-            onClick={onNavigateToMap}
-            className="group relative p-5 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800 hover:border-rose-500/50 transition-all cursor-pointer shadow-lg hover:shadow-rose-950/30"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Navigation className="w-5 h-5 text-rose-400 rotate-45" />
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-rose-400 group-hover:translate-x-1 transition-all" />
-            </div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-1 font-mono">
-              Прогнозні траєкторії
-            </h3>
-            <p className="text-xs text-slate-400">
-              Швидкість, азимут, векторний коридор та орієнтовний час ETA.
-            </p>
-          </div>
-
-          {/* Card 3: Інформація про укриття */}
-          <div 
-            onClick={onNavigateToMap}
-            className="group relative p-5 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800 hover:border-emerald-500/50 transition-all cursor-pointer shadow-lg hover:shadow-emerald-950/30"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <MapPin className="w-5 h-5 text-emerald-400" />
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
-            </div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-1 font-mono">
-              Інформація про укриття
-            </h3>
-            <p className="text-xs text-slate-400">
-              Поруч із вами: радіус пішої доступності, статус доступу 24/7 та місткість.
-            </p>
-          </div>
-
-          {/* Card 4: Персональні сповіщення */}
-          <div 
-            onClick={onNavigateToFeatures}
-            className="group relative p-5 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800 hover:border-amber-500/50 transition-all cursor-pointer shadow-lg hover:shadow-amber-950/30"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Bell className="w-5 h-5 text-amber-400" />
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
-            </div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-1 font-mono">
-              Персональні сповіщення
-            </h3>
-            <p className="text-xs text-slate-400">
-              Лише важливе: адаптивні фільтри без спаму та хибних спрацьовувань.
-            </p>
-          </div>
-
-        </div>
-
-        {/* ========================================================================= */}
-        {/* PARTNER PROGRAM HIGHLIGHT BANNER (Matching reference images)              */}
-        {/* ========================================================================= */}
-        <div className="mt-8 p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-blue-950/60 via-slate-900 to-indigo-950/60 border border-blue-500/30 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4 text-left">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-blue-600/20 border border-amber-400/40 flex items-center justify-center shrink-0">
-              <Users className="w-6 h-6 text-amber-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm sm:text-base font-bold text-white uppercase tracking-wide font-mono">
-                  Партнерська програма
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40">
-                  5% – 25% комісії
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1">
-                Рекомендуй корисне. Отримуй винагороду за кожне активне підключення.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={onNavigateToPartner}
-            className="flex items-center gap-2 px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 transition-all shadow-lg shadow-blue-950/40 active:scale-98 whitespace-nowrap"
-            id="hero-partner-banner-btn"
-          >
-            <span>Стати партнером</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* ========================================================================= */}
-        {/* TRUST OF MILLIONS SECTION (Matching reference images)                     */}
-        {/* ========================================================================= */}
-        <div className="mt-14 pt-10 border-t border-slate-800/80 text-center">
-          
-          <h4 className="text-xs sm:text-sm font-mono tracking-widest text-slate-400 font-bold uppercase mb-8">
-            ДОВІРА МІЛЬЙОНІВ В УКРАЇНІ
-          </h4>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            
-            {/* 1. Люди */}
-            <div className="flex flex-col items-center p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 hover:border-cyan-500/30 transition-all">
-              <Users className="w-6 h-6 text-cyan-400 mb-2" />
-              <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                Люди
-              </span>
-              <span className="text-[10px] text-slate-400 mt-0.5">Цивільний захист 24/7</span>
-            </div>
-
-            {/* 2. Бізнес */}
-            <div className="flex flex-col items-center p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 hover:border-amber-500/30 transition-all">
-              <Building2 className="w-6 h-6 text-amber-400 mb-2" />
-              <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                Бізнес
-              </span>
-              <span className="text-[10px] text-slate-400 mt-0.5">Захист персоналу & логістики</span>
-            </div>
-
-            {/* 3. Державні органи (Trident Coat of Arms) */}
-            <div className="flex flex-col items-center p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 hover:border-blue-500/30 transition-all">
-              {/* Stylized Coat of Arms / Trident icon */}
-              <div className="w-6 h-6 flex items-center justify-center text-blue-400 font-bold text-lg mb-2">
-                🔱
-              </div>
-              <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                Державні органи
-              </span>
-              <span className="text-[10px] text-slate-400 mt-0.5">Офіційні протоколи</span>
-            </div>
-
-            {/* 4. Сили безпеки */}
-            <div className="flex flex-col items-center p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 hover:border-emerald-500/30 transition-all">
-              <Shield className="w-6 h-6 text-emerald-400 mb-2" />
-              <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                Сили безпеки
-              </span>
-              <span className="text-[10px] text-slate-400 mt-0.5">Радіолокаційна координація</span>
-            </div>
-
-          </div>
-
-          <div className="mt-8">
-            <span className="text-xs font-mono font-extrabold tracking-widest text-cyan-400 uppercase">
-              БЕЗПЕЧНІША УКРАЇНА РАЗОМ
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+            </span>
+            <span>UA | Платформа безпеки та ситуаційної обізнаності</span>
+            <span role="status" aria-label={freshnessAccessibleLabel} title={freshnessAccessibleLabel} className={`ml-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[9px] font-black tracking-wide ${freshnessTone}`}>
+              {freshnessLabel}
             </span>
           </div>
 
+          {/* Heading */}
+          <h1 className={`text-4xl sm:text-5xl lg:text-[36px] font-black tracking-tight leading-[1.06] ${
+            isDark ? 'text-[#ECE4D8]' : 'text-[#0F172A]'
+          }`}>
+            Розумій ситуацію.<br />
+            <span className={isDark ? 'text-[#9DB0BA]' : 'text-[#5E87A0]'}>Не просто отримуй тривогу.</span>
+          </h1>
+          
+          {/* Subtitle */}
+          <p className={`mt-3 lg:mt-2 text-[14px] sm:text-[15px] lg:text-[13px] lg:leading-[1.35] leading-relaxed font-medium ${
+            isDark ? 'text-slate-300' : 'text-[#46566B]'
+          }`}>
+            SIREN UA — на карті повітряної ситуації, напрями загроз, прогнозні траєкторії, орієнтовний час, хронологія подій та інформація про укриття — в одному застосунку.
+          </p>
+          
+          {/* Primary & Secondary Buttons */}
+          <div className="mt-5 lg:mt-3 flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <button
+              onClick={() => {
+                if (runtimeConfig.appStoreUrl) {
+                  window.open(runtimeConfig.appStoreUrl, '_blank', 'noopener,noreferrer');
+                  return;
+                }
+                setDownloadNotice('App Store-посилання буде активне після публікації офіційного застосунку.');
+                playWebAudioSound('click');
+                window.setTimeout(() => setDownloadNotice(null), 4200);
+              }}
+              className={`w-full sm:w-auto px-6 py-2.5 rounded-full font-bold text-[13px] flex items-center justify-center gap-2.5 transition-all shadow-md hover:shadow-lg cursor-pointer ${
+                isDark
+                  ? 'bg-[#73AFC7] hover:bg-[#8BC2D7] active:bg-[#5E9BB4] text-[#07151C] shadow-[0_10px_28px_rgba(115,175,199,0.25)]'
+                  : 'bg-[#6D9FB8] hover:bg-[#5E8EA7] active:bg-[#4F7D96] text-white shadow-[0_10px_28px_rgba(80,128,153,0.20)]'
+              }`}
+            >
+              <Apple className="w-4 h-4 fill-white mb-0.5" />
+              <span>Завантажити для iPhone</span>
+              <ArrowRight className="w-4 h-4 ml-0.5" />
+            </button>
+            <button
+              onClick={() => {
+                onOpenDemo?.();
+                if (!onOpenDemo) {
+                  setMapMode((current) => threatModel?.dataMode === 'LIVE' ? 'WEBGL' : current === 'RENDER' ? 'WEBGL' : 'RENDER');
+                }
+                playWebAudioSound('click');
+              }}
+              className={`w-full sm:w-auto px-6 py-2.5 rounded-full border font-bold text-[13px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                isDark 
+                  ? 'bg-[#182335] border-[#2E4160] text-white hover:bg-[#202E46]' 
+                  : 'bg-white border-[#CBD6E2] text-[#0F172A] hover:bg-slate-50 shadow-sm'
+              }`}
+            >
+              <Play className="w-3.5 h-3.5 fill-current text-blue-600" />
+              <span>{onOpenDemo ? 'Дивитись демо' : 'Відкрити карту'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onNavigateToShelters?.();
+                playWebAudioSound('click');
+              }}
+              className={`w-full sm:w-auto lg:hidden px-5 py-2.5 rounded-full border font-bold text-[13px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                isDark
+                  ? 'border-[#2E4160] text-[#B9D8E2] hover:bg-[#182335]'
+                  : 'bg-white/80 border-[#CBD6E2] text-[#416B7C] hover:bg-white shadow-sm'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              <span>Найближче укриття</span>
+            </button>
+          </div>
+
+          {downloadNotice && (
+            <div role="status" className={`mt-3 max-w-md rounded-xl border px-3 py-2 text-[11px] font-semibold ${
+              isDark ? 'border-[#3B5B68] bg-[#17313B] text-[#B9D8E2]' : 'border-[#C7DCE5] bg-[#EDF7FA] text-[#416B7C]'
+            }`}>
+              {downloadNotice}
+            </div>
+          )}
+
+          {/* Sub-block: QR Code, App Store Pill & Checkmarks */}
+          <div className={`mt-4 lg:mt-2 pt-3 lg:pt-2 border-t w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+            isDark ? 'border-[#24344D]' : 'border-[#DBE4EC]'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 border ${
+                isDark ? 'bg-[#182335] border-[#2E4160] text-white' : 'bg-white border-[#CBD6E2] text-slate-800 shadow-sm'
+              }`}>
+                <QrCode className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="flex flex-col">
+                <div className={`px-3 py-1.5 rounded-lg bg-black text-white text-[10px] font-bold flex items-center gap-1.5 border border-slate-700 shadow-sm mb-1`}>
+                  <Apple className="w-3.5 h-3.5 fill-white" />
+                  <div>
+                    <div className="text-[8px] uppercase tracking-wider text-slate-400">Завантажуйте в</div>
+                    <div className="text-[10px] font-bold leading-none">App Store</div>
+                  </div>
+                </div>
+                {!runtimeConfig.appStoreUrl && (
+                  <span className={`text-[9px] font-semibold ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                    Посилання готується
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              {trustPoints.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-1.5">
+                  <div className="w-3.5 h-3.5 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </div>
+                  <span className={`text-[11px] font-semibold ${isDark ? 'text-slate-200' : 'text-[#334155]'}`}>
+                    {item}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right: 3D Ukraine Map matching screenshots 1:1 with pins & arcs */}
+        <div className="flex-1 w-full flex items-center justify-center relative min-h-[280px] lg:min-h-[270px]">
+          <div className={`siren-hero-map relative w-full max-w-[620px] aspect-[16/10] lg:aspect-auto lg:h-[250px] flex items-center justify-center ${
+            isDark ? 'siren-hero-map--dark' : 'siren-hero-map--light'
+          }`}>
+            {mapMode === 'WEBGL' ? (
+              <Suspense fallback={(
+                <div className={`absolute inset-0 flex items-center justify-center text-xs font-semibold ${isDark ? 'text-[#9BC7D7]' : 'text-[#5E87A0]'}`}>
+                  Завантаження інтерактивної 3D-сцени…
+                </div>
+              )}>
+                <ThreeMapUkraine
+                  variant="hero"
+                  theme={theme}
+                  regions={regions}
+                  trajectories={trajectories}
+                  selectedRegionId={selectedRegion?.id || null}
+                  onSelectRegion={(region) => onSelectRegion?.(region)}
+                  activeThreatCount={threatModel?.activeAlarmsCount || 0}
+                  enableControls
+                  className="absolute inset-0"
+                />
+              </Suspense>
+            ) : (
+              <>
+                <img
+                  // The light cutout has an opaque canvas baked into the asset.
+                  // Use the alpha-preserving asset in both themes so the map
+                  // floats directly on the hero surface instead of sitting in a
+                  // rectangular image tile.
+                  src={ukraine3dCutoutDark}
+                  alt="3D Карта України SIREN UA — дизайн-прев’ю"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                  style={{
+                    opacity: isDark ? 0.92 : 0.96,
+                    filter: isDark
+                      ? 'saturate(0.38) brightness(0.76) contrast(0.92)'
+                      : 'saturate(0.28) brightness(1.18) contrast(1.04)'
+                  }}
+                  className="w-full h-auto object-contain max-h-[290px] lg:max-h-[255px] drop-shadow-[0_20px_35px_rgba(79,132,154,0.27)]"
+                />
+                {threatModel?.dataMode !== 'DEMO_DATA' && threatModel?.dataMode !== 'LIVE' && (
+                  <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border px-3 py-2 text-center text-[10px] font-black tracking-[0.12em] backdrop-blur-md ${
+                    isDark
+                      ? 'border-amber-400/40 bg-slate-950/80 text-amber-200'
+                      : 'border-amber-300 bg-white/90 text-amber-700'
+                  }`}>
+                    <span className="block">ДИЗАЙН-ПРЕВ’Ю</span>
+                    <span className="mt-1 block text-[9px] font-bold tracking-normal opacity-80">{dataModeMessage}</span>
+                    {onRefreshData && (
+                      <button
+                        type="button"
+                        onClick={onRefreshData}
+                        className={`mt-2 rounded-lg border px-2.5 py-1.5 text-[9px] font-black tracking-normal transition-colors ${
+                          isDark
+                            ? 'border-amber-300/40 bg-amber-300/10 text-amber-100 hover:bg-amber-300/20'
+                            : 'border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                        }`}
+                      >
+                        Повторити підключення
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Conceptual arcs are allowed only in explicit DEMO mode. Live spatial paths come from the normalized threat model. */}
+            {mapMode === 'RENDER' && threatModel?.dataMode === 'DEMO_DATA' && <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+              <defs>
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="1.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              {/* Arc 1: Львів (28, 42) -> Київ (57, 28) */}
+              <path d="M 28,42 Q 42,22 57,28" fill="none" stroke={isDark ? '#9BC7D7' : '#6D9FB8'} strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
+              {/* Arc 2: Київ (57, 28) -> Харків (80, 36) */}
+              <path d="M 57,28 Q 68,22 80,36" fill="none" stroke={isDark ? '#9BC7D7' : '#6D9FB8'} strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
+              {/* Arc 3: Київ (57, 28) -> Дніпро (72, 58) */}
+              <path d="M 57,28 Q 66,42 72,58" fill="none" stroke={isDark ? '#9BC7D7' : '#6D9FB8'} strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
+              {/* Arc 4: Дніпро (72, 58) -> Одеса (58, 76) */}
+              <path d="M 72,58 Q 64,72 58,76" fill="none" stroke={isDark ? '#9BC7D7' : '#6D9FB8'} strokeWidth="0.8" strokeDasharray="1.5 1" filter="url(#glow)" />
+              {/* Arc 5: Львів (28, 42) -> Одеса (58, 76) */}
+              <path d="M 28,42 Q 40,68 58,76" fill="none" stroke={isDark ? '#9BC7D7' : '#6D9FB8'} strokeWidth="0.5" strokeDasharray="1 1" opacity="0.5" />
+            </svg>}
+
+            {/* Map Pins and City Labels (the WebGL scene owns its own overlays) */}
+            {mapMode === 'RENDER' && <>
+            {[
+              { name: 'Львів', top: '42%', left: '28%' },
+              { name: 'Київ', top: '28%', left: '57%' },
+              { name: 'Харків', top: '36%', left: '80%' },
+              { name: 'Дніпро', top: '58%', left: '72%' },
+              { name: 'Одеса', top: '76%', left: '58%' },
+            ].map((city, idx) => (
+              <button
+                key={idx} 
+                type="button"
+                aria-label={`Вибрати регіон ${city.name}`}
+                onClick={() => {
+                  const lookup: Record<string, string[]> = {
+                    'Київ': ['kyiv_obl', 'kyiv_city'],
+                    'Харків': ['kharkiv'],
+                    'Дніпро': ['dnipro'],
+                    'Одеса': ['odesa'],
+                    'Львів': ['lviv'],
+                  };
+                  const region = (regions || []).find((item) => lookup[city.name]?.includes(item.id));
+                  if (region) onSelectRegion?.(region);
+                }}
+                className="absolute flex items-center gap-1.5 -translate-x-1/2 -translate-y-1/2 cursor-pointer group z-10 transition-transform hover:scale-110"
+                style={{ top: city.top, left: city.left }}
+              >
+                {/* 3D Map Teardrop Pin Icon */}
+                <div className="relative flex items-center justify-center">
+                  <svg className="w-5 h-5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" viewBox="0 0 24 24" fill="none">
+                    <defs>
+                      <linearGradient id={`pinGrad-${idx}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor={isDark ? '#B8D5DF' : '#A8C8D8'} />
+                        <stop offset="100%" stopColor={isDark ? '#557A88' : '#6D9FB8'} />
+                      </linearGradient>
+                    </defs>
+                    <path 
+                      d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
+                      fill={`url(#pinGrad-${idx})`} 
+                      stroke={isDark ? '#D8E9EE' : '#FFFFFF'}
+                      strokeWidth="1.2"
+                    />
+                    <circle cx="12" cy="9" r="2.5" fill="#FFFFFF" />
+                  </svg>
+                </div>
+
+                {/* City Name Label */}
+                <span className={`text-[12px] sm:text-[13px] font-extrabold tracking-tight select-none ${
+                  isDark ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]' : 'text-[#0F172A] drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]'
+                }`}>
+                  {city.name}
+                </span>
+              </button>
+            ))}
+            </>}
+
+            {/* Bottom Right Pill Badge: SIREN UA - Україна */}
+            <div className={`absolute bottom-3 right-4 px-4 py-1.5 rounded-full border text-[11px] font-bold shadow-md backdrop-blur-md z-20 ${
+              isDark 
+                ? 'bg-[#182335]/90 border-[#2E4160] text-slate-200' 
+                : 'bg-white/90 border-[#CBD6E2] text-slate-700'
+            }`}>
+              SIREN UA • Україна
+            </div>
+          </div>
         </div>
 
       </div>
-      </div>
-    </section>
+    </div>
   );
 };
