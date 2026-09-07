@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SirenUA — Реферальне запрошення</title>
+    <meta name="description" content="Приєднуйтесь до SirenUA — системи повітряної тривоги для України. Отримайте Premium доступ за запрошенням.">
+    <meta property="og:title" content="SirenUA — Захисти себе та близьких">
+    <meta property="og:description" content="Завантажуй SirenUA і отримай Premium за реферальним запрошенням.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sirenua.online/ref/">
+    <meta id="appleItunesAppMeta" name="apple-itunes-app" content="app-id=6741498174">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0d1b2a 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 64px;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 16px;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 32px 24px;
+            margin-bottom: 24px;
+        }
+
+        .referral-code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            color: #60a5fa;
+            margin: 12px 0;
+        }
+
+        .referrer-name {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: #fff;
+            font-size: 17px;
+            font-weight: 600;
+            padding: 16px 32px;
+            border-radius: 14px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .cta-button:active {
+            transform: translateY(0);
+        }
+
+        .secondary-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #e2e8f0;
+            font-size: 15px;
+            font-weight: 500;
+            padding: 12px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            cursor: pointer;
+            width: 100%;
+            justify-content: center;
+            margin-top: 12px;
+            transition: background 0.2s;
+        }
+
+        .secondary-button:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .code-input-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .code-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #fff;
+            font-family: 'SF Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .code-input:focus {
+            border-color: #3b82f6;
+        }
+
+        .copy-btn {
+            background: #3b82f6;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #2563eb;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .feature {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 16px 12px;
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .feature-text {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .footer {
+            margin-top: 32px;
+            color: #475569;
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        @media (max-width: 480px) {
+            .referral-code { font-size: 24px; letter-spacing: 2px; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🇺🇦</div>
+        <h1>SirenUA</h1>
+        <p class="subtitle">Система повітряної тривоги для безпеки українців</p>
+
+        <div class="card">
+            <p class="referrer-name">Вас запросив друг</p>
+            <div class="referral-code" id="refCode">—</div>
+            
+            <a href="#" id="openAppBtn" class="cta-button" style="background: linear-gradient(135deg, #06b6d4, #3b82f6); margin-bottom: 10px;">
+                ⚡️ Відкрити в додатку SirenUA
+            </a>
+            
+            <a href="#" id="downloadBtn" class="secondary-button" style="margin-top: 0; margin-bottom: 16px;">
+                📲 Завантажити в App Store
+            </a>
+            
+            <div class="code-input-group">
+                <input type="text" class="code-input" id="codeInput" placeholder="КОД" maxlength="8" readonly>
+                <button class="copy-btn" onclick="copyCode()">📋</button>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🔔</div>
+                <div class="feature-text">Миттєві сповіщення про тривогу</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🗺️</div>
+                <div class="feature-text">Карта загроз в реальному часі</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🏠</div>
+                <div class="feature-text">Укриття поблизу вас</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">💎</div>
+                <div class="feature-text">Premium за запрошенням</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2024-2026 SirenUA • <a href="https://sirenua.online/privacy.html">Конфіденційність</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Extract referral code from URL path: /ref/{CODE}
+        const pathParts = window.location.pathname.split('/');
+        const refIndex = pathParts.indexOf('ref');
+        let refCode = '';
+
+        if (refIndex !== -1 && refIndex + 1 < pathParts.length) {
+            refCode = pathParts[refIndex + 1].toUpperCase();
+        }
+
+        // Also check query params: ?ref=CODE
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!refCode && urlParams.has('ref')) {
+            refCode = urlParams.get('ref').toUpperCase();
+        }
+
+        if (refCode) {
+            document.getElementById('refCode').textContent = refCode;
+            document.getElementById('codeInput').value = refCode;
+            
+            // Set Apple Smart App Banner argument
+            const meta = document.getElementById('appleItunesAppMeta');
+            if (meta) {
+                meta.setAttribute('content', `app-id=6741498174, app-argument=https://sirenua.online/ref/${refCode}`);
+            }
+        }
+
+        // App Store link (real App Store ID: 6741498174)
+        const appStoreURL = 'https://apps.apple.com/ua/app/sirenua/id6741498174';
+        const downloadBtn = document.getElementById('downloadBtn');
+        const openAppBtn = document.getElementById('openAppBtn');
+        downloadBtn.href = appStoreURL;
+
+        if (refCode) {
+            const customSchemeURL = `sirenua://ref/${refCode}`;
+            if (openAppBtn) {
+                openAppBtn.href = customSchemeURL;
+                openAppBtn.addEventListener('click', function(e) {
+                    try {
+                        navigator.clipboard.writeText(refCode);
+                    } catch (err) {
+                        console.log('Clipboard error on openAppBtn', err);
+                    }
+                });
+            }
+
+            // Try to open the app via custom scheme on iOS devices
+            if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+                setTimeout(() => {
+                    window.location.href = customSchemeURL;
+                }, 400);
+            }
+        }
+
+        // Auto-copy referral code to clipboard when tapping Download
+        downloadBtn.addEventListener('click', function() {
+            if (refCode) {
+                try {
+                    navigator.clipboard.writeText(refCode);
+                } catch (e) {
+                    console.log('Clipboard copy fallback', e);
+                }
+            }
+        });
+
+        function copyCode() {
+            const code = document.getElementById('codeInput').value;
+            if (code) {
+                navigator.clipboard.writeText(code).then(() => {
+                    const btn = document.querySelector('.copy-btn');
+                    btn.textContent = '✅';
+                    setTimeout(() => { btn.textContent = '📋'; }, 2000);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

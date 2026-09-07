@@ -9,6 +9,7 @@ interface FooterProps {
 export const Footer: React.FC<FooterProps> = ({ theme = 'light' }) => {
   const isDark = theme === 'dark';
   const [languageNote, setLanguageNote] = useState(false);
+  const sourceContentHref = `${import.meta.env.BASE_URL}source-content/index.html`;
 
   return (
     <footer className={`w-full border-t mt-8 py-6 transition-colors ${
@@ -37,6 +38,17 @@ export const Footer: React.FC<FooterProps> = ({ theme = 'light' }) => {
 
         {/* Right: Language Switcher & Social Links */}
         <div className="flex items-center gap-5">
+          <a
+            href={sourceContentHref}
+            className={`hidden md:inline-flex items-center rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors ${
+              isDark
+                ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white'
+                : 'border-slate-200/80 bg-white text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            Розширений сайт SIREN UA
+          </a>
+
           {/* Language selector */}
           <button type="button" onClick={() => setLanguageNote((visible) => !visible)} className={`px-2.5 py-1 rounded-full border flex items-center gap-1.5 transition-colors cursor-pointer text-[11px] font-bold ${
             isDark ? 'bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800' : 'bg-white border-slate-200/80 text-slate-800 hover:bg-slate-50 shadow-2xs'

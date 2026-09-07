@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SirenUA — Розумний Щит України | ШІ Система Раннього Попередження</title>
+  <meta name="description" content="SirenUA — додаток для захисту цивільного населення України. Система штучного інтелекту аналізує загрози в реальному часі, відстежує траєкторії ракет і дронів, та знаходить найближчі укриття.">
+  <meta name="keywords" content="SirenUA, повітряна тривога, Україна, ракетна загроза, укриття, ШІ, штучний інтелект, безпека">
+  <meta property="og:title" content="SirenUA — Розумний Щит України">
+  <meta property="og:description" content="Система штучного інтелекту раннього попередження про повітряні загрози">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://sirenua.online">
+  <meta property="og:image" content="https://sirenua.online/assets/app-icon.png">
+  <link rel="icon" type="image/png" href="assets/app-icon.png">
+  <link rel="stylesheet" href="css/main.css?v=2.2">
+  <link rel="stylesheet" href="css/components.css?v=2.2">
+  <link rel="stylesheet" href="css/animations.css?v=2.2">
+</head>
+<body>
+
+  <!-- Ambient Glow -->
+  <div class="ambient-glow ambient-glow--cyan"></div>
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="assets/app-icon.png" alt="SirenUA Logo" class="nav-logo-img">
+        <span>SirenUA</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#features">Можливості</a></li>
+        <li><a href="#how-it-works">Як працює</a></li>
+        <li><a href="#screenshots">Додаток</a></li>
+        <li><a href="features.html">Технології</a></li>
+        <li><a href="referral.html">Реферали</a></li>
+        <li><a href="support.html">Підтримка</a></li>
+        <li><a href="investors.html">Інвесторам</a></li>
+        <li><a href="#download" class="nav-cta">Завантажити</a></li>
+      </ul>
+      <div class="nav-right">
+        <a href="referral.html" class="nav-cabinet-btn" title="Кабінет амбасадора та реферальна система">
+          <span class="cabinet-badge-icon">👤</span> Кабінет
+        </a>
+        <div class="lang-switch">
+          <a href="index.html" class="lang-btn active">UA</a>
+          <span class="lang-divider">|</span>
+          <a href="en/index.html" class="lang-btn">EN</a>
+        </div>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Меню">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero" id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="pulse-dot"></span>
+          Моніторинг 24/7 · Аналіз загроз через ШІ у реальному часі
+        </div>
+        <h1>
+          <span class="text-gradient">SirenUA</span> — Розумний Щит України
+        </h1>
+        <p class="hero-subtitle">
+          Штучний інтелект оборонного рівня аналізує мультиспектральні розвіддані в реальному часі за методологією багатодоменного злиття Sensor Fusion (рівня Palantir AIP). Автономний нейроконтур самонавчається після кожної атаки, моделює точні вектори балістики та за секунди знаходить безпечні укриття з офлайн-навігацією.
+        </p>
+        <div class="hero-actions">
+          <a href="#download" class="btn btn-primary btn-lg btn-pulse">
+            <span class="btn-icon">📱</span>
+            Завантажити в App Store
+          </a>
+          <a href="features.html" class="btn btn-secondary btn-lg">
+            <span class="btn-icon">🔍</span>
+            Детальніше про технології
+          </a>
+        </div>
+
+        <!-- Tactical Defense HUD Console (Hero Masterpiece) -->
+        <div class="hero-hud reveal">
+          <div class="hero-hud-header">
+            <div class="hero-hud-header-left">
+              <span class="hud-blip hud-blip--cyan" style="position: static; display: inline-block;"></span>
+              <span>ТАКТИЧНИЙ ДИСПЛЕЙ · СИСТЕМА ОНЛАЙН · 27 РЕГІОНІВ</span>
+            </div>
+            <div>НЕЙРОКОНТУР: V4.2-DEFENSE</div>
+          </div>
+          <div class="hero-hud-body">
+            <div class="hud-radar-container">
+              <div class="hud-radar-ring hud-radar-ring--1"></div>
+              <div class="hud-radar-ring hud-radar-ring--2"></div>
+              <div class="hud-radar-ring hud-radar-ring--3"></div>
+              <div class="hud-radar-cross hud-radar-cross--h"></div>
+              <div class="hud-radar-cross hud-radar-cross--v"></div>
+              <div class="hud-radar-sweep"></div>
+              <div class="hud-blip hud-blip--red" title="Іскандер-М"></div>
+              <div class="hud-blip hud-blip--amber" title="Shahed-136"></div>
+              <div class="hud-blip hud-blip--cyan" title="Х-101"></div>
+            </div>
+            <div class="hud-stream">
+              <a href="features.html#threats" class="hud-stream-card hud-stream-card--red">
+                <div class="hud-stream-title">
+                  <span>💥 Іскандер-M (Балістика)</span>
+                  <span class="badge badge--red" style="font-size: 0.65rem; padding: 2px 6px;">5500 км/год</span>
+                </div>
+                <div class="hud-stream-desc">Курс: 340° • Час підльоту: &lt;3 хв • Сектор: Східний напрямок</div>
+              </a>
+              <a href="features.html#threats" class="hud-stream-card hud-stream-card--amber">
+                <div class="hud-stream-title">
+                  <span>🛵 Shahed-136 (Ударний БпЛА)</span>
+                  <span class="badge badge--amber" style="font-size: 0.65rem; padding: 2px 6px;">185 км/год</span>
+                </div>
+                <div class="hud-stream-desc">Висота: 110м • Коридор: річкове русло • Акустична детекція</div>
+              </a>
+              <a href="features.html#shelters" class="hud-stream-card hud-stream-card--shelter">
+                <div class="hud-stream-title">
+                  <span>🛡️ Найближче Сховище (Рівень 1)</span>
+                  <span class="badge badge--cyan" style="font-size: 0.65rem; padding: 2px 6px;">250м · 3 хв</span>
+                </div>
+                <div class="hud-stream-desc">ст. м. «Золоті Ворота» • Герметичне укриття • Автономний доступ</div>
+              </a>
+            </div>
+          </div>
+          <div class="hero-hud-footer">
+            <div class="hero-hud-metric">
+              <span>Затримка:</span> <strong>&lt; 2.4 с</strong>
+            </div>
+            <div class="hero-hud-metric">
+              <span>Точність ШІ:</span> <strong>94.2%</strong>
+            </div>
+            <div class="hero-hud-metric">
+              <span>База укриттів:</span> <strong>26 регіонів</strong>
+            </div>
+            <div class="hero-hud-metric">
+              <span>RPO:</span> <strong>0 секунд</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-stats" style="margin-top: var(--space-3xl);">
+          <div class="hero-stat">
+            <span class="hero-stat-value" data-count="20" data-suffix="">0</span>
+            <span class="hero-stat-label">Типів загроз</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value" data-count="27" data-suffix="">0</span>
+            <span class="hero-stat-label">Областей</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value" data-count="5" data-suffix="">0</span>
+            <span class="hero-stat-label">Каналів розвідки</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value" data-prefix="<" data-count="3" data-suffix=" с">0</span>
+            <span class="hero-stat-label">Час реакції ШІ</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Key Features -->
+  <section id="features">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Можливості</span>
+        <h2>Передовий захист на базі <span class="text-gradient">штучного інтелекту</span></h2>
+        <p class="section-description">SirenUA поєднує нейромережевий аналіз, геопросторову аналітику та повний реєстр укриттів для надійного захисту цивільного населення.</p>
+      </div>
+      <div class="grid grid-3" data-stagger>
+        <a href="features.html#ai-system" class="feature-card glass-shimmer">
+          <div class="feature-card-icon feature-card-icon--cyan">🧠</div>
+          <h3>Аналіз загроз через ШІ</h3>
+          <p>Штучний інтелект обробляє дані з 5 розвідувальних каналів у реальному часі. Безперервне самонавчання на основі статистики попередніх атак.</p>
+          <div class="feature-card-action">
+            <span>Архітектура ШІ</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#map" class="feature-card glass-shimmer">
+          <div class="feature-card-icon feature-card-icon--blue">🗺️</div>
+          <h3>Інтерактивна карта</h3>
+          <p>Візуалізація загроз на карті з плавними кривими траєкторій, напрямками руху та коридорами прольоту без затримок та мерехтіння.</p>
+          <div class="feature-card-action">
+            <span>Можливості карти</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#shelters" class="feature-card glass-shimmer">
+          <div class="feature-card-icon feature-card-icon--cyan">🛡️</div>
+          <h3>Навігація до укриттів</h3>
+          <p>Багаторівневий пошук найближчих укриттів з точним маршрутом. Попередньо завантажена база сертифікованих сховищ цивільного захисту (Рівні 1–4).</p>
+          <div class="feature-card-action">
+            <span>Реєстр укриттів</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#notifications" class="feature-card glass-shimmer">
+          <div class="feature-card-icon feature-card-icon--red">🔔</div>
+          <h3>Критичні сповіщення</h3>
+          <p>Гучні сповіщення спрацьовують навіть у беззвучному режимі та режимі сну. 7 незалежних перемикачів звуків з точністю до окремого району.</p>
+          <div class="feature-card-action">
+            <span>Система сигналів</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#analytics" class="feature-card glass-shimmer">
+          <div class="feature-card-icon feature-card-icon--cyan">📊</div>
+          <h3>Аналітика коридорів</h3>
+          <p>Ймовірнісне прогнозування наступних областей на шляху цілей. Аналіз щільності протиповітряної оборони та стартових позицій ворога.</p>
+          <div class="feature-card-action">
+            <span>Предиктивні моделі</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#threats" class="feature-card glass-shimmer">
+          <div class="feature-card-icon feature-card-icon--amber">🎯</div>
+          <h3>20 типів загроз</h3>
+          <p>Повна фізико-кінематична модель: швидкість від 180 до 12 000 км/год, висота, сектори пуску та орієнтовний час підльоту.</p>
+          <div class="feature-card-action">
+            <span>Каталог загроз</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- How It Works -->
+  <section id="how-it-works" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Як це працює</span>
+        <h2>Від розвідданих до <span class="text-gradient">порятунку життів</span></h2>
+        <p class="section-description">Чотири автоматизовані кроки — від первинного повідомлення до безпечного укриття.</p>
+      </div>
+      <div class="steps reveal">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-icon">📡</div>
+          <h4>Моніторинг</h4>
+          <p>Пряме підключення до оперативних військових каналів із затримкою отримання 0.1–0.3 секунди</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-icon">🧠</div>
+          <h4>Аналіз ШІ</h4>
+          <p>Штучний інтелект миттєво визначає тип загрози, швидкість, висоту, траєкторію та орієнтовний час підльоту</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-icon">📲</div>
+          <h4>Миттєве сповіщення</h4>
+          <p>Адресне доставлення тривоги на смартфон з обходом беззвучного режиму та сигналом тривоги</p>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-icon">🛡️</div>
+          <h4>Маршрут у безпеку</h4>
+          <p>Автоматичний підбір найближчого надійного сховища з пішохідною навігацією та оцінкою часу</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Threat Types -->
+  <section id="threats">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Класифікація загроз</span>
+        <h2><span class="text-gradient">20 типів загроз</span> під контролем</h2>
+        <p class="section-description">Повна класифікація повітряних та тактичних небезпек з точними балістичними характеристиками.</p>
+      </div>
+      <div class="grid grid-4 reveal" data-stagger>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">🛵</div>
+          <h4 style="font-size:0.95rem;">Ударний БПЛА (Shahed)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--amber);">185 км/год</p>
+          <span class="badge badge--amber" style="margin-top:8px;">Активність: до 3 год</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Детальніше</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">🚀</div>
+          <h4 style="font-size:0.95rem;">Крилата ракета (Х-101)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--red);">850 км/год</p>
+          <span class="badge badge--red" style="margin-top:8px;">Активність: 45 хв</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Детальніше</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">💥</div>
+          <h4 style="font-size:0.95rem;">Балістика (Іскандер-М)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--red);">5500 км/год</p>
+          <span class="badge badge--red" style="margin-top:8px;">Активність: 10 хв</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Детальніше</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">⚡</div>
+          <h4 style="font-size:0.95rem;">МіГ-31К (Кинджал)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--cyan);">2500 км/год</p>
+          <span class="badge badge--cyan" style="margin-top:8px;">Активність: 30 хв</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Детальніше</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">✈️</div>
+          <h4 style="font-size:0.95rem;">Стратегічна авіація</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--cyan);">800 км/год</p>
+          <span class="badge badge--cyan" style="margin-top:8px;">Активність: 1.5 год</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Детальніше</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">💣</div>
+          <h4 style="font-size:0.95rem;">Керована авіабомба (КАБ)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--red);">900 км/год</p>
+          <span class="badge badge--red" style="margin-top:8px;">Активність: 5 хв</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Детальніше</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">🔥</div>
+          <h4 style="font-size:0.95rem;">Гіперзвук (Циркон)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--red);">11000 км/год</p>
+          <span class="badge badge--red" style="margin-top:8px;">Активність: 10 хв</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Детальніше</span> <span class="arrow">→</span>
+          </div>
+        </a>
+        <a href="features.html#threats" class="glass-card text-center">
+          <div style="font-size:2rem; margin-bottom:8px;">🎯</div>
+          <h4 style="font-size:0.95rem;">БпЛА-приманка (Гербера)</h4>
+          <p class="text-mono" style="font-size:0.8rem; color:var(--amber);">150 км/год</p>
+          <span class="badge badge--amber" style="margin-top:8px;">Активність: 2 год</span>
+          <div class="feature-card-action" style="justify-content: center; margin-top: 10px;">
+            <span>Детальніше</span> <span class="arrow">→</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Quick Threat Selector Pills -->
+      <div class="text-center mt-xl reveal">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: var(--space-sm);">Швидкий перехід за типами озброєння:</p>
+        <div class="threat-pills" style="justify-content: center;">
+          <a href="features.html#threats" class="threat-pill">🚀 Х-101 / Х-555</a>
+          <a href="features.html#threats" class="threat-pill">⚡ Іскандер-М / KN-23</a>
+          <a href="features.html#threats" class="threat-pill">🔥 Кинджал Х-47М2</a>
+          <a href="features.html#threats" class="threat-pill">🌊 Калібр 3М14</a>
+          <a href="features.html#threats" class="threat-pill">🛸 Shahed-136</a>
+          <a href="features.html#threats" class="threat-pill">💣 КАБ / УМПК</a>
+          <a href="features.html#threats" class="threat-pill">💥 Циркон 3М22</a>
+          <a href="features.html#threats" class="threat-pill">📡 Іскандер-К</a>
+          <a href="features.html#threats" class="threat-pill">🛩️ Су-34 / Су-35</a>
+          <a href="features.html#threats" class="threat-pill">✈️ Ту-95МС / Ту-22М3</a>
+        </div>
+      </div>
+
+      <div class="text-center mt-xl reveal">
+        <a href="features.html#threats" class="btn btn-outline">Переглянути всі 20 типів загроз з балістичними профілями →</a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Autonomous AI Self-Learning Deep Dive Section -->
+  <section id="ai-engine" style="background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Нейромережевий інтелект</span>
+        <h2>Штучний інтелект, який <span class="text-gradient">навчається з кожною атакою</span></h2>
+        <p class="section-description">SirenUA не просто транслює сигнали — автономний нейроконтур щосекунди фільтрує шуми, аналізує маневри та адаптує правила розпізнавання загроз.</p>
+      </div>
+
+      <div class="grid grid-2 items-center" style="gap: var(--space-4xl); margin-bottom: var(--space-3xl);">
+        <div class="reveal-left">
+          <h3>Чотириетапний цикл <span class="text-gradient">самонавчання</span></h3>
+          <p>Після завершення кожної тривоги чи масованого нальоту сервер запускає автономну сесію ретроспективного аналізу (Post-Mortem Analysis):</p>
+          <div style="display: flex; flex-direction: column; gap: var(--space-md); margin-top: var(--space-lg);">
+            <a href="features.html#ai-system" class="glass-card" style="padding: var(--space-md) var(--space-lg); text-decoration: none; color: inherit; display: block; transition: all var(--transition-fast);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: var(--cyan);">1. Збір та зіставлення траєкторій</strong>
+                <span style="color: var(--cyan); font-size: 0.85rem;">→</span>
+              </div>
+              <p style="margin: 4px 0 0; font-size: 0.88rem; color: var(--text-secondary);">Порівняння прогнозованих маршрутів із фактичними радіолокаційними точками збиття та змінами висот.</p>
+            </a>
+            <a href="features.html#analytics" class="glass-card" style="padding: var(--space-md) var(--space-lg); text-decoration: none; color: inherit; display: block; transition: all var(--transition-fast);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: var(--cyan);">2. Виявлення нових тактичних маневрів</strong>
+                <span style="color: var(--cyan); font-size: 0.85rem;">→</span>
+              </div>
+              <p style="margin: 4px 0 0; font-size: 0.88rem; color: var(--text-secondary);">Ідентифікація обхідних маршрутів, рельєфного огинання місцевості та тактики хибних дронів-приманок.</p>
+            </a>
+            <a href="features.html#ai-system" class="glass-card" style="padding: var(--space-md) var(--space-lg); text-decoration: none; color: inherit; display: block; transition: all var(--transition-fast);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: var(--cyan);">3. Автономна генерація нових евристик</strong>
+                <span style="color: var(--cyan); font-size: 0.85rem;">→</span>
+              </div>
+              <p style="margin: 4px 0 0; font-size: 0.88rem; color: var(--text-secondary);">ШІ формує оновлені коефіцієнти швидкості, очікувані часові рамки та динамічні правила векторизації.</p>
+            </a>
+            <a href="features.html#network" class="glass-card" style="padding: var(--space-md) var(--space-lg); text-decoration: none; color: inherit; display: block; transition: all var(--transition-fast);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: var(--cyan);">4. Валідація за 7 критеріями безпеки</strong>
+                <span style="color: var(--cyan); font-size: 0.85rem;">→</span>
+              </div>
+              <p style="margin: 4px 0 0; font-size: 0.88rem; color: var(--text-secondary);">Жодне нове правило не потрапляє у бойовий контур без проходження суворих статистичних та математичних фільтрів.</p>
+            </a>
+          </div>
+        </div>
+
+        <div class="reveal-right">
+          <div class="deep-dive-banner">
+            <span class="badge badge--cyan mb-sm">⚡ Швидкість нейроконтуру</span>
+            <h3 style="font-size: 1.5rem; margin-bottom: var(--space-sm);">&lt; 2.8 секунди на повний цикл сповіщення</h3>
+            <p style="color: var(--text-secondary); font-size: 0.92rem; margin-bottom: var(--space-lg);">Від надходження первинного розвідсигналу через паралельний транспорт до спрацювання критичного сигналу тривоги на смартфонах у визначеному секторі.</p>
+
+            <div class="grid grid-2" style="gap: var(--space-md); margin-bottom: var(--space-lg);">
+              <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+                <div style="font-family: var(--font-mono); color: var(--cyan); font-size: 1.3rem; font-weight: 700;">94.2%</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Точність класифікації</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+                <div style="font-family: var(--font-mono); color: var(--cyan); font-size: 1.3rem; font-weight: 700;">26 баз</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Укриття цивільного захисту</div>
+              </div>
+            </div>
+
+            <a href="features.html#ai-system" class="btn btn-primary" style="width: 100%; justify-content: center;">
+              🧠 Читати повний технічний опис алгоритмів ШІ →
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Palantir-Grade Multi-Domain Sensor Fusion Section -->
+  <section id="sensor-fusion" style="background: var(--bg-tertiary);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Оборонні технології</span>
+        <h2>Багатодоменне об'єднання даних <span class="text-gradient">рівня Palantir AIP</span></h2>
+        <p class="section-description">SirenUA синхронізує та зіставляє 5 незалежних потоків розвідданих у реальному часі, формуючи єдиний граф повітряної обстановки (Common Operating Picture).</p>
+      </div>
+
+      <div class="sensor-fusion-grid reveal" data-stagger>
+        <a href="features.html#sensor-fusion" class="sensor-node-card">
+          <span class="badge badge--cyan mb-sm">📡 Потік 1</span>
+          <h4>MTProto та OSINT-канали</h4>
+          <p>Мілісекундний парсинг військових зведень із автоматичним відсіюванням дезінформації.</p>
+          <div class="feature-card-action">
+            <span>Детальніше</span> <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#sensor-fusion" class="sensor-node-card">
+          <span class="badge badge--blue mb-sm">📻 Потік 2</span>
+          <h4>Радіотехнічна розвідка (РТР)</h4>
+          <p>Детекція випромінювання радарів підсвітки ЗРК та польотів ворожих літаків ДРЛВ А-50У/Іл-22.</p>
+          <div class="feature-card-action">
+            <span>Детальніше</span> <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#sensor-fusion" class="sensor-node-card">
+          <span class="badge badge--amber mb-sm">🔊 Потік 3</span>
+          <h4>Акустичний аналіз сигнатур</h4>
+          <p>Спектральний аналіз частот двигунів Shahed-136 та реактивних турбін крилатих ракет.</p>
+          <div class="feature-card-action">
+            <span>Детальніше</span> <span class="arrow">→</span>
+          </div>
+        </a>
+
+        <a href="features.html#sensor-fusion" class="sensor-node-card">
+          <span class="badge badge--red mb-sm">🛰️ Потік 4</span>
+          <h4>Супутникова теплова детекція</h4>
+          <p>Фіксація теплових факелів двигунів балістичних ракет у момент пуску з пускових рубежів.</p>
+          <div class="feature-card-action">
+            <span>Детальніше</span> <span class="arrow">→</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Screenshots / App Preview Carousel -->
+  <section id="screenshots" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div class="carousel-header-row reveal">
+        <div>
+          <span class="section-subtitle">Інтерфейс додатку</span>
+          <h2>Створено для <span class="text-gradient">швидкої орієнтації</span></h2>
+          <p class="section-description" style="text-align: left; margin: 0;">Темний контрастний інтерфейс з плавною анімацією та інтуїтивним керуванням. Натисніть на будь-який екран для детального огляду.</p>
+        </div>
+        <div class="carousel-controls">
+          <button class="carousel-btn" id="carousel-prev" aria-label="Попередній екран">‹</button>
+          <button class="carousel-btn" id="carousel-next" aria-label="Наступний екран">›</button>
+        </div>
+      </div>
+
+      <div class="carousel-container">
+        <div class="screenshots-scroll reveal" id="screenshots-scroll">
+          <a href="features.html#map" class="screenshot-item">
+            <div class="screenshot-item-top">
+              <span>ЕКРАН 1</span>
+              <span>КАРТА</span>
+            </div>
+            <div class="screenshot-item-icon">🗺️</div>
+            <div>
+              <h3 class="screenshot-item-title">Інтерактивна карта</h3>
+              <p class="screenshot-item-desc">Відображення траєкторій польоту загроз та векторів руху по всій Україні.</p>
+            </div>
+            <div class="screenshot-item-badges">
+              <span class="badge badge--red">🔴 Тривога</span>
+              <span class="badge badge--amber">🟡 Загроза</span>
+            </div>
+            <div class="feature-card-action">
+              <span>Огляд карти</span> <span class="arrow">→</span>
+            </div>
+          </a>
+
+          <a href="features.html#ai-system" class="screenshot-item">
+            <div class="screenshot-item-top">
+              <span>ЕКРАН 2</span>
+              <span>РЕГІОН</span>
+            </div>
+            <div class="screenshot-item-icon">📊</div>
+            <div>
+              <h3 class="screenshot-item-title">Деталі по області</h3>
+              <p class="screenshot-item-desc">Рівень достовірності ШІ, перелік активних цілей та орієнтовний час підльоту.</p>
+            </div>
+            <div class="screenshot-item-badges">
+              <span class="badge badge--cyan">🧠 Точність ШІ 94%</span>
+            </div>
+            <div class="feature-card-action">
+              <span>Телеметрія ШІ</span> <span class="arrow">→</span>
+            </div>
+          </a>
+
+          <a href="features.html#shelters" class="screenshot-item">
+            <div class="screenshot-item-top">
+              <span>ЕКРАН 3</span>
+              <span>БЕЗПЕКА</span>
+            </div>
+            <div class="screenshot-item-icon">🛡️</div>
+            <div>
+              <h3 class="screenshot-item-title">Пошук укриттів</h3>
+              <p class="screenshot-item-desc">Миттєвий розрахунок відстані до найближчого перевіреного сховища.</p>
+            </div>
+            <div class="screenshot-item-badges">
+              <span class="badge badge--cyan">📍 250 м</span>
+              <span class="badge badge--blue">🚶 3 хв</span>
+            </div>
+            <div class="feature-card-action">
+              <span>База сховищ</span> <span class="arrow">→</span>
+            </div>
+          </a>
+
+          <a href="features.html#analytics" class="screenshot-item">
+            <div class="screenshot-item-top">
+              <span>ЕКРАН 4</span>
+              <span>ІСТОРІЯ</span>
+            </div>
+            <div class="screenshot-item-icon">📜</div>
+            <div>
+              <h3 class="screenshot-item-title">Хронологія подій</h3>
+              <p class="screenshot-item-desc">Повна історія тривог та активності за останні 24 години по регіонах.</p>
+            </div>
+            <div class="screenshot-item-badges">
+              <span class="badge badge--cyan">🕐 24 години</span>
+            </div>
+            <div class="feature-card-action">
+              <span>Аналітика</span> <span class="arrow">→</span>
+            </div>
+          </a>
+
+          <a href="features.html#notifications" class="screenshot-item">
+            <div class="screenshot-item-top">
+              <span>ЕКРАН 5</span>
+              <span>ПРОФІЛЬ</span>
+            </div>
+            <div class="screenshot-item-icon">⚙️</div>
+            <div>
+              <h3 class="screenshot-item-title">Гнучкі налаштування</h3>
+              <p class="screenshot-item-desc">7 звукових профілів, критичні сповіщення та вибір окремих районів.</p>
+            </div>
+            <div class="screenshot-item-badges">
+              <span class="badge badge--cyan">🔔 Сповіщення</span>
+            </div>
+            <div class="feature-card-action">
+              <span>Звукові канали</span> <span class="arrow">→</span>
+            </div>
+          </a>
+
+          <a href="features.html#network" class="screenshot-item">
+            <div class="screenshot-item-top">
+              <span>ЕКРАН 6</span>
+              <span>ПРЕМІУМ</span>
+            </div>
+            <div class="screenshot-item-icon">⭐</div>
+            <div>
+              <h3 class="screenshot-item-title">Розширений захист</h3>
+              <p class="screenshot-item-desc">Зони підвищеної уваги, точні вектори та детальна аналітика маршрутів.</p>
+            </div>
+            <div class="screenshot-item-badges">
+              <span class="badge badge--amber">⭐ 14 днів пробний</span>
+            </div>
+            <div class="feature-card-action">
+              <span>Преміум функції</span> <span class="arrow">→</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Statistics -->
+  <section id="stats">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Надійність</span>
+        <h2>Показники системи <span class="text-gradient">захисту</span></h2>
+      </div>
+      <div class="grid grid-4 reveal" data-stagger>
+        <a href="features.html#threats" class="stat-card" style="text-decoration: none; color: inherit; display: block; transition: transform var(--transition-fast);">
+          <span class="stat-value" data-count="20" data-suffix="">0</span>
+          <span class="stat-label">Категорій загроз</span>
+        </a>
+        <a href="features.html#map" class="stat-card" style="text-decoration: none; color: inherit; display: block; transition: transform var(--transition-fast);">
+          <span class="stat-value" data-count="136" data-suffix="">0</span>
+          <span class="stat-label">Районів під наглядом</span>
+        </a>
+        <a href="features.html#sensor-fusion" class="stat-card" style="text-decoration: none; color: inherit; display: block; transition: transform var(--transition-fast);">
+          <span class="stat-value" data-count="7" data-suffix="">0</span>
+          <span class="stat-label">Базових платформ пуску</span>
+        </a>
+        <a href="features.html#network" class="stat-card" style="text-decoration: none; color: inherit; display: block; transition: transform var(--transition-fast);">
+          <span class="stat-value" data-count="15" data-suffix=" хв">0</span>
+          <span class="stat-label">Хмарне резервування</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Technology Stack -->
+  <section id="tech" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Архітектура</span>
+        <h2>Створено на базі <span class="text-gradient">надійних технологій</span></h2>
+      </div>
+      <div class="tech-stack reveal">
+        <div class="tech-item">
+          <span class="tech-item-icon">🍎</span>
+          <span>Swift / iOS</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">🐍</span>
+          <span>Серверна логіка</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">🧠</span>
+          <span>Штучний інтелект</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">🔥</span>
+          <span>Хмарна доставка</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">🗺️</span>
+          <span>Картографічний рушій</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">💾</span>
+          <span>Локальна база</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">📡</span>
+          <span>Прямий протокол</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-item-icon">☁️</span>
+          <span>Хмарна синхронізація</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- For Investors Preview -->
+  <section id="investors-preview" class="cta-section">
+    <div class="container">
+      <div class="reveal">
+        <span class="section-subtitle">Партнерство</span>
+        <h2>Інвестуйте в технологічну <span class="text-gradient">безпеку України</span></h2>
+        <p>SirenUA — технологічна платформа захисту з потенціалом охоплення понад 40 мільйонів громадян. Ми співпрацюємо з інвесторами, грантовими фондами та державними програмами.</p>
+        <div class="hero-actions" style="margin-top: 2rem; margin-bottom: 0;">
+          <a href="investors.html" class="btn btn-primary btn-lg">
+            <span class="btn-icon">📈</span>
+            Матеріали для партнерів
+          </a>
+          <a href="investors.html#grants" class="btn btn-secondary btn-lg">
+            <span class="btn-icon">🏛️</span>
+            Державні та грантові програми
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Download CTA -->
+  <section id="download">
+    <div class="container">
+      <div class="text-center reveal">
+        <h2 class="mb-lg">Завантажте <span class="text-gradient">SirenUA</span> на свій пристрій</h2>
+        <p class="section-description mb-2xl">Доступно в App Store. Базове сповіщення про тривоги та пошук укриттів — безкоштовно назавжди.</p>
+        <div class="hero-actions">
+          <a href="#" class="appstore-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            Завантажити в App Store
+          </a>
+        </div>
+        <p class="text-muted" style="margin-top: 1rem; font-size: 0.85rem;">iOS 17.0+ · iPhone · Повна українська локалізація</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-logo">
+            <img src="assets/app-icon.png" alt="SirenUA Logo" class="nav-logo-img">
+            <span>SirenUA</span>
+          </a>
+          <p>Система штучного інтелекту раннього попередження про повітряні загрози для захисту населення України.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Продукт</h4>
+          <ul>
+            <li><a href="features.html">Можливості</a></li>
+            <li><a href="features.html#threats">Типи загроз</a></li>
+            <li><a href="features.html#shelters">Укриття</a></li>
+            <li><a href="features.html#palantir">Аналітика коридорів</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Підтримка</h4>
+          <ul>
+            <li><a href="support.html">Часті запитання</a></li>
+            <li><a href="support.html#guides">Інструкції</a></li>
+            <li><a href="support.html#contact">Зворотний зв'язок</a></li>
+            <li><a href="about.html">Про команду</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Правова інформація</h4>
+          <ul>
+            <li><a href="privacy.html">Конфіденційність</a></li>
+            <li><a href="terms.html">Умови використання</a></li>
+            <li><a href="investors.html">Інвесторам</a></li>
+            <li><a href="referral.html">Реферали / Кабінет</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2024–2026 SirenUA. Усі права захищені.</span>
+        <div class="footer-socials">
+          <a href="#" aria-label="Telegram">📱</a>
+          <a href="#" aria-label="GitHub">💻</a>
+          <a href="mailto:support@sirenua.online" aria-label="Email">📧</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/animations.js"></script>
+</body>
+</html>

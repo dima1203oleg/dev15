@@ -38,7 +38,12 @@ jobs:
       - name: Validate and build
         env:
           # Hash navigation keeps every product section usable on static Pages.
-          VITE_BASE_PATH: /Dev20/
+          VITE_BASE_PATH: /dev15/
+          # Production ThreatServer documented by the upstream repositories.
+          # The frontend still keeps explicit LIVE/STALE/OFFLINE semantics.
+          VITE_API_BASE_URL: https://sirenua.online
+          # Configure in repository settings; never commit the Apple subject.
+          VITE_REFERRAL_APPLE_USER_ID: ${{ secrets.SIRENUA_REFERRAL_APPLE_USER_ID }}
         run: pnpm check
 
       - name: Configure Pages

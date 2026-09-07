@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+
+<html lang="uk">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Інвесторам та Партнерам — SirenUA</title>
+<meta content="Інвестуйте в технологічну безпеку України. SirenUA — масштабована ШІ-платформа раннього попередження з потенціалом охоплення понад 40M користувачів." name="description"/>
+<link href="assets/app-icon.png" rel="icon" type="image/png"/>
+<link href="css/main.css?v=2.2" rel="stylesheet"/>
+<link href="css/components.css?v=2.2" rel="stylesheet"/>
+<link href="css/animations.css?v=2.2" rel="stylesheet"/>
+</head>
+<body>
+<!-- Ambient Glow -->
+<div class="ambient-glow ambient-glow--cyan"></div>
+<!-- Navigation -->
+<nav class="navbar" id="navbar">
+<div class="container">
+<a class="nav-logo" href="index.html">
+<img alt="SirenUA Logo" class="nav-logo-img" src="assets/app-icon.png"/>
+<span>SirenUA</span>
+</a>
+<ul class="nav-links" id="nav-links">
+<li><a href="index.html">Головна</a></li>
+<li><a href="features.html">Можливості</a></li>
+<li><a href="referral.html">Реферали</a></li>
+<li><a href="support.html">Підтримка</a></li>
+<li><a class="active" href="investors.html">Інвесторам</a></li>
+<li><a href="about.html">Про нас</a></li>
+<li><a class="nav-cta" href="index.html#download">Завантажити</a></li>
+</ul>
+<div class="nav-right">
+<a href="referral.html" class="nav-cabinet-btn" title="Кабінет амбасадора та реферальна система">
+<span class="cabinet-badge-icon">👤</span> Кабінет
+</a>
+<div class="lang-switch">
+<a class="lang-btn active" href="investors.html">UA</a>
+<span class="lang-divider">|</span>
+<a class="lang-btn" href="en/investors.html">EN</a>
+</div>
+<button aria-label="Меню" class="nav-toggle" id="nav-toggle"><span></span><span></span><span></span></button>
+</div>
+</div>
+</nav>
+<!-- Hero -->
+<section class="hero" style="min-height: 80dvh;">
+<canvas id="hero-canvas"></canvas>
+<div class="container">
+<div class="hero-content">
+<div class="hero-badge">
+<span class="pulse-dot"></span>
+          Партнерські та інвестиційні можливості
+        </div>
+<h1>Інвестуйте в технологічну <span class="text-gradient">безпеку України</span></h1>
+<p class="hero-subtitle">SirenUA — цифрова платформа раннього попередження цивільного населення на базі штучного інтелекту з потенціалом охоплення понад 40 мільйонів користувачів. Ми відкриті до співпраці з фондами, грантовими організаціями та державними установами.</p>
+<div class="hero-actions">
+<a class="btn btn-primary btn-lg" href="#contact-investor">📩 Зв'язатися з командою</a>
+<a class="btn btn-secondary btn-lg" href="#business-model">📊 Бізнес-модель та розвиток</a>
+</div>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- KPI Metrics -->
+<section>
+<div class="container">
+<div class="metrics-row reveal" data-stagger="">
+<div class="metric-card">
+<div class="metric-icon">🎯</div>
+<span class="metric-value" data-count="20" data-suffix="">0</span>
+<span class="metric-label">Типів загроз під контролем</span>
+</div>
+<div class="metric-card">
+<div class="metric-icon">📡</div>
+<span class="metric-value" data-count="27" data-suffix="">0</span>
+<span class="metric-label">Областей у системі</span>
+</div>
+<div class="metric-card">
+<div class="metric-icon">⚡</div>
+<span class="metric-value" data-count="3" data-prefix="&lt;" data-suffix=" с">0</span>
+<span class="metric-label">Час реакції ШІ</span>
+</div>
+<div class="metric-card">
+<div class="metric-icon">🏠</div>
+<span class="metric-value" data-count="40" data-suffix="M+">0</span>
+<span class="metric-label">Потенційна аудиторія</span>
+</div>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Problem & Solution -->
+<section style="background: var(--bg-secondary);">
+<div class="container">
+<div class="grid grid-2 items-center" style="gap: var(--space-4xl);">
+<div class="reveal-left">
+<span class="section-subtitle">Проблема</span>
+<h2>Критична потреба у <span class="text-gradient">секундах для порятунку</span></h2>
+<p>Україна щодня стикається з комбінованими ударами балістичними ракетами, крилатими ракетами, дронами-камікадзе та керованими авіабомбами. Час підльоту балістичної ракети чи КАБ складає лише <strong>кілька хвилин</strong>, тому кожна зекономлена секунда рятує життя.</p>
+<ul style="margin-top: var(--space-lg); color: var(--text-secondary);">
+<li>💔 Потреба у персоналізованому адресного захисту міст та сіл</li>
+<li>⏱️ Необхідність миттєвої ідентифікації типу зброї та її напрямку</li>
+<li>🏚️ Брак швидкої пішохідної навігації до безпечних укриттів</li>
+<li>📊 Потреба у предиктивній оцінці ймовірних маршрутів</li>
+</ul>
+</div>
+<div class="reveal-right">
+<span class="section-subtitle">Рішення SirenUA</span>
+<h2>ШІ-аналіз із затримкою <span class="text-gradient">&lt;3 секунд</span></h2>
+<p>SirenUA обробляє потік розвідувальних даних через систему штучного інтелекту. Алгоритм за лічені секунди розпізнає тип загрози, балістичні характеристики, вектор польоту та надсилає адресне критичне сповіщення користувачам.</p>
+<ul style="margin-top: var(--space-lg); color: var(--text-secondary);">
+<li>🧠 Нейромережевий аналіз із самонавчанням після кожної атаки</li>
+<li>⚡ Швидкість обробки інформації менше 3 секунд</li>
+<li>🛡️ Інтегрована база сертифікованих укриттів із навігацією</li>
+<li>📊 Просторовий аналіз та розрахунок коридорів польоту</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Technology Edge -->
+<section>
+<div class="container">
+<div class="section-header reveal">
+<span class="section-subtitle">Технологічні переваги</span>
+<h2>Інноваційна архітектура <span class="text-gradient">захисту</span></h2>
+</div>
+<div class="grid grid-3 reveal" data-stagger="">
+<a class="feature-card" href="features.html#ai-system">
+<div class="feature-card-icon feature-card-icon--cyan">🧠</div>
+<h3>ШІ з динамічними правилами</h3>
+<p>Підбір найбільш точних правил розпізнавання під кожне повідомлення. Автономне донавчання за підсумками атак.</p>
+<div class="feature-card-action">
+<span>Детальніше про ШІ</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="feature-card" href="features.html#sensor-fusion">
+<div class="feature-card-icon feature-card-icon--blue">🔄</div>
+<h3>Подвійний контур збору даних</h3>
+<p>Прямий транспорт повідомлень із резервним каналом обробки у разі перебоїв зв'язку.</p>
+<div class="feature-card-action">
+<span>Злиття даних</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="feature-card" href="features.html#threats">
+<div class="feature-card-icon feature-card-icon--cyan">📐</div>
+<h3>20 категорій загроз</h3>
+<p>Повна фізико-балістична модель: розрахункова швидкість, висота, час життя та сектори пусків.</p>
+<div class="feature-card-action">
+<span>Реєстр загроз</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="feature-card" href="features.html#shelters">
+<div class="feature-card-icon feature-card-icon--cyan">🛡️</div>
+<h3>Готова база сховищ</h3>
+<p>26 регіональних реєстрів захисних споруд цивільного захисту з оцінкою надійності за 4 категоріями.</p>
+<div class="feature-card-action">
+<span>База укриттів</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="feature-card" href="features.html#analytics">
+<div class="feature-card-icon feature-card-icon--amber">📊</div>
+<h3>Аналітика коридорів</h3>
+<p>Моделювання ймовірнісних траєкторій, аналіз щільності ППО та фіксація пускових аеродромів ворога.</p>
+<div class="feature-card-action">
+<span>Аналітика</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="feature-card" href="features.html#network">
+<div class="feature-card-icon feature-card-icon--red">🔐</div>
+<h3>5-Рівнева Хмарна Стійкість</h3>
+<p>Подієве WAL-логування, зліпки кожні 15 хв, дзеркалювання у Firebase Cloud, hot-boot за 50 мс та офлайн-кеш на пристроях.</p>
+<div class="feature-card-action">
+<span>Архітектура відмовостійкості</span> <span class="arrow">→</span>
+</div>
+</a>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Business Model -->
+<section id="business-model" style="background: var(--bg-secondary);">
+<div class="container">
+<div class="section-header reveal">
+<span class="section-subtitle">Модель стійкості</span>
+<h2>Збалансована модель <span class="text-gradient">розвитку</span></h2>
+</div>
+<div class="grid grid-2 reveal" data-stagger="">
+<a class="glass-card" href="index.html#download" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-md" style="align-self: flex-start;">Соціальна місія</span>
+<h3>Базовий безоплатний доступ</h3>
+<p style="flex-grow: 1;">Офіційні тривоги, пошук найближчих укриттів та базові сповіщення — завжди безкоштовні для кожного українця.</p>
+<div class="feature-card-action" style="margin-top: var(--space-md);">
+<span>Завантажити додаток</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card gradient-border" href="features.html#notifications" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--amber mb-md" style="align-self: flex-start;">Розширена підписка</span>
+<h3>Преміум-функціонал</h3>
+<p style="flex-grow: 1;">Зони підвищеної уваги, точні вектори руху на карті, добова хронологія та окремі звукові профілі ШІ. 14-денний ознайомчий період.</p>
+<div class="feature-card-action" style="margin-top: var(--space-md);">
+<span>Огляд преміум-функцій</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="#contact-investor" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--blue mb-md" style="align-self: flex-start;">Державне партнерство</span>
+<h3>Інтеграція з державними службами</h3>
+<p style="flex-grow: 1;">Співпраця з ДСНС, органами місцевого самоврядування та регіональними штабами цивільного захисту.</p>
+<div class="feature-card-action" style="margin-top: var(--space-md);">
+<span>Обговорити партнерство</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="#contact-investor" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-md" style="align-self: flex-start;">Корпоративний сектор</span>
+<h3>Захист бізнесу та інфраструктури</h3>
+<p style="flex-grow: 1;">Спеціалізоване адресне сповіщення для логістичних комплексів, енергетичних об'єктів та промислових підприємств.</p>
+<div class="feature-card-action" style="margin-top: var(--space-md);">
+<span>Запит на корпоративний API</span> <span class="arrow">→</span>
+</div>
+</a>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Grants & Programs -->
+<section id="grants">
+<div class="container">
+<div class="section-header reveal">
+<span class="section-subtitle">Програми та гранти</span>
+<h2>Державні та міжнародні <span class="text-gradient">ініціативи</span></h2>
+<p class="section-description">Проєкт відповідає пріоритетам гуманітарних, оборонних та технологічних програм підтримки України.</p>
+</div>
+<div class="grid grid-2 reveal" data-stagger="">
+<a class="grant-card" href="#contact-investor" style="text-decoration: none; color: inherit;">
+<div class="grant-icon">🇺🇸</div>
+<div>
+<h4>Міжнародні програми цифрової стійкості</h4>
+<p>Програми технічної допомоги та гранти для розвитку цифрової інфраструктури та цивільного захисту України.</p>
+</div>
+</a>
+<a class="grant-card" href="#contact-investor" style="text-decoration: none; color: inherit;">
+<div class="grant-icon">🇪🇺</div>
+<div>
+<h4>Європейські інноваційні фонди цивільної безпеки</h4>
+<p>Грантові напрямки з розробки штучного інтелекту для попередження кризових ситуацій та захисту суспільства.</p>
+</div>
+</a>
+<a class="grant-card" href="#contact-investor" style="text-decoration: none; color: inherit;">
+<div class="grant-icon">🇺🇦</div>
+<div>
+<h4>Українські фонди розвитку інновацій</h4>
+<p>Державні та приватні гранти для стартапів подвійного призначення та систем цивільної безпеки.</p>
+</div>
+</a>
+<a class="grant-card" href="#contact-investor" style="text-decoration: none; color: inherit;">
+<div class="grant-icon">🏛️</div>
+<div>
+<h4>Міжнародні акселератори технологій безпеки</h4>
+<p>Програми підтримки інноваційних систем спостереження, раннього реагування та захисту життя.</p>
+</div>
+</a>
+<a class="grant-card" href="#contact-investor" style="text-decoration: none; color: inherit;">
+<div class="grant-icon">🌍</div>
+<div>
+<h4>Гуманітарні технологічні місії</h4>
+<p>Співпраця з міжнародними благодійними та гуманітарними організаціями щодо цивільної безпеки.</p>
+</div>
+</a>
+<a class="grant-card" href="#contact-investor" style="text-decoration: none; color: inherit;">
+<div class="grant-icon">🏢</div>
+<div>
+<h4>Хмарні гранти для ШІ-стартапів</h4>
+<p>Програми надання обчислювальних хмарних ресурсів для проєктів із вагомим соціальним впливом.</p>
+</div>
+</a>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Roadmap -->
+<section style="background: var(--bg-secondary);">
+<div class="container">
+<div class="section-header reveal">
+<span class="section-subtitle">План розвитку</span>
+<h2>Етапи масштабування <span class="text-gradient">проєкту</span></h2>
+</div>
+<div class="roadmap reveal" data-stagger="">
+<a class="roadmap-card roadmap-card--q3-26" href="#contact-investor" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="roadmap-quarter">Q3 2026</span>
+<h4>Клієнт для платформи Android</h4>
+<p>Розробка нативного Android-додатку з повним функціональним паритетом та критичними сповіщеннями.</p>
+<div class="feature-card-action" style="margin-top: 10px; font-size: 0.8rem;"><span>Запит на партнерство</span><span class="arrow">→</span></div></a>
+<a class="roadmap-card roadmap-card--q4-26" href="#contact-investor" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="roadmap-quarter">Q4 2026</span>
+<h4>Смарт-годинники та віджети</h4>
+<p>Інтеграція з Apple Watch: тактильні вібросигнали тривоги та віджети швидкого доступу на циферблаті.</p>
+<div class="feature-card-action" style="margin-top: 10px; font-size: 0.8rem;"><span>Запит на партнерство</span><span class="arrow">→</span></div></a>
+<a class="roadmap-card roadmap-card--q1-27" href="#contact-investor" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="roadmap-quarter">Q1 2027</span>
+<h4>Глибоке предиктивне моделювання</h4>
+<p>Прогнозування потенційних векторів ударів на основі часових патернів та метеорологічних умов.</p>
+<div class="feature-card-action" style="margin-top: 10px; font-size: 0.8rem;"><span>Запит на партнерство</span><span class="arrow">→</span></div></a>
+<a class="roadmap-card roadmap-card--q2-27" href="#contact-investor" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="roadmap-quarter">Q2 2027</span>
+<h4>Відкритий програмний інтерфейс</h4>
+<p>Безпечний інтерфейс для інтеграції з корпоративними системами оповіщення та інфраструктурними мережами.</p>
+<div class="feature-card-action" style="margin-top: 10px; font-size: 0.8rem;"><span>Запит на партнерство</span><span class="arrow">→</span></div></a>
+<a class="roadmap-card roadmap-card--q3-27" href="#contact-investor" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="roadmap-quarter">Q3 2027</span>
+<h4>Багатомовна локалізація</h4>
+<p>Повна підтримка англійської та польської мов для української діаспори та іноземних партнерів.</p>
+<div class="feature-card-action" style="margin-top: 10px; font-size: 0.8rem;"><span>Запит на партнерство</span><span class="arrow">→</span></div></a>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Contact Investor -->
+<section class="cta-section" id="contact-investor">
+<div class="container">
+<div class="reveal">
+<span class="section-subtitle">Контакт для партнерів</span>
+<h2>Запит на <span class="text-gradient">співпрацю</span></h2>
+<p style="max-width: 600px; margin: 0 auto var(--space-2xl);">Ми готові надати презентаційні матеріали, технічну документацію та обговорити формати стратегічного партнерства.</p>
+</div>
+<form class="contact-form reveal" id="contact-form">
+<div class="form-row">
+<div class="form-group">
+<label for="investor-name">Ім'я / Назва організації *</label>
+<input id="investor-name" name="name" placeholder="Ім'я або організація" required="" type="text"/>
+</div>
+<div class="form-group">
+<label for="investor-email">Контактний Email *</label>
+<input id="investor-email" name="email" placeholder="partner@example.com" required="" type="email"/>
+</div>
+</div>
+<div class="form-group">
+<label for="investor-type">Тип партнерства</label>
+<select id="investor-type" name="topic">
+<option value="">Оберіть напрямок...</option>
+<option value="grant">Грантова або благодійна програма</option>
+<option value="government">Державна установа / Орган місцевого самоврядування</option>
+<option value="corporate">Корпоративне партнерство / Бізнес</option>
+<option value="investor">Приватний інвестор / Фонд</option>
+<option value="other">Інший формат співпраці</option>
+</select>
+</div>
+<div class="form-group">
+<label for="investor-message">Короткий опис пропозиції *</label>
+<textarea id="investor-message" name="message" placeholder="Опишіть ваші цілі та можливий формат співпраці..." required=""></textarea>
+</div>
+<button class="btn btn-primary" style="align-self: flex-start;" type="submit">
+          📩 Надіслати запит на співпрацю
+        </button>
+<div class="success-message">
+          ✅ Дякуємо за інтерес до проєкту! Наша команда зв'яжеться з вами протягом 24–48 годин з детальною інформацією.
+        </div>
+</form>
+</div>
+</section>
+<!-- Footer -->
+<footer class="footer">
+<div class="container">
+<div class="footer-grid">
+<div class="footer-brand">
+<a class="nav-logo" href="index.html">
+<img alt="SirenUA Logo" class="nav-logo-img" src="assets/app-icon.png"/>
+<span>SirenUA</span>
+</a>
+<p>Система штучного інтелекту раннього попередження для захисту цивільного населення України.</p>
+</div>
+<div class="footer-column">
+<h4>Продукт</h4>
+<ul>
+<li><a href="features.html">Можливості</a></li>
+<li><a href="index.html#screenshots">Додаток</a></li>
+</ul>
+</div>
+<div class="footer-column">
+<h4>Підтримка</h4>
+<ul>
+<li><a href="support.html">Часті запитання</a></li>
+<li><a href="support.html#contact">Зворотний зв'язок</a></li>
+</ul>
+</div>
+<div class="footer-column">
+<h4>Правова інформація</h4>
+<ul>
+<li><a href="privacy.html">Конфіденційність</a></li>
+<li><a href="terms.html">Умови використання</a></li>
+<li><a href="referral.html">Реферали / Кабінет</a></li>
+</ul>
+</div>
+</div>
+<div class="footer-bottom">
+<span>© 2024–2026 SirenUA. Усі права захищені.</span>
+<div class="footer-socials">
+<a aria-label="Telegram" href="#">📱</a>
+<a aria-label="Email" href="mailto:support@sirenua.online">📧</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="js/main.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/animations.js"></script>
+<script src="js/support.js"></script>
+</body>
+</html>

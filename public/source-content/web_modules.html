@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SirenUA Web Platform — Архітектура та Модульна Система</title>
+  <meta name="description" content="Інтерактивний каталог 8 модулів та 41 файлів SirenUA Web Platform. Повна архітектурна топологія, Dual TLS 1.3, SNI reverse proxy, Universal Links та Glassmorphism дизайн-система.">
+  <link rel="icon" type="image/png" href="assets/app-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --bg-card: rgba(15, 20, 32, 0.75);
+      --border-card: rgba(0, 240, 255, 0.12);
+      --border-hover: rgba(0, 240, 255, 0.4);
+      --cyan-glow: #00f0ff;
+      --purple-glow: #a855f7;
+      --emerald-glow: #10b981;
+      --amber-glow: #f59e0b;
+      --text-muted: #8e9bb0;
+      --text-bright: #f0f6fc;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(ellipse at 15% 10%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(ellipse at 85% 25%, rgba(168, 85, 247, 0.07) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 80%, rgba(16, 185, 129, 0.06) 0%, transparent 45%);
+      color: var(--text-bright);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Global Nav Link */
+    .modules-nav-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(7, 9, 14, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 12px 24px;
+    }
+    .nav-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: white;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+    .nav-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .back-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s ease;
+    }
+    .back-link:hover {
+      color: var(--cyan-glow);
+    }
+
+    /* Project Switcher Tabs */
+    .project-tabs-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+    .project-tabs {
+      display: inline-flex;
+      background: rgba(15, 20, 32, 0.8);
+      padding: 5px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      gap: 6px;
+    }
+    .project-tab {
+      padding: 8px 18px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .project-tab:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .project-tab.active {
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(168, 85, 247, 0.25));
+      color: white;
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+    }
+
+    /* Hero Header */
+    .modules-header {
+      padding: 40px 24px 20px;
+      text-align: center;
+      position: relative;
+    }
+    .status-badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--cyan-glow);
+      margin-bottom: 16px;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan-glow);
+      box-shadow: 0 0 10px var(--cyan-glow);
+      animation: pulseGlow 2s infinite;
+    }
+    .modules-title {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0 0 12px;
+      line-height: 1.15;
+    }
+    .text-gradient {
+      background: linear-gradient(135deg, #00f0ff 0%, #a855f7 50%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .modules-desc {
+      max-width: 850px;
+      margin: 0 auto 32px;
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      max-width: 1400px;
+      margin: 0 auto 40px;
+      padding: 0 24px;
+    }
+    .kpi-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-hover);
+      box-shadow: 0 10px 25px -5px rgba(0, 240, 255, 0.1);
+    }
+    .kpi-value {
+      font-size: 2.2rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      margin-bottom: 4px;
+    }
+    .kpi-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    .kpi-subtext {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 6px;
+    }
+
+    /* Pipeline Flowchart Section */
+    .pipeline-section {
+      max-width: 1400px;
+      margin: 0 auto 40px;
+      padding: 0 24px;
+    }
+    .pipeline-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+    }
+    .pipeline-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #f8fafc;
+    }
+    .pipeline-stages {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .stage-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 16px;
+      position: relative;
+    }
+    .stage-box:hover {
+      border-color: rgba(0, 240, 255, 0.3);
+      background: rgba(0, 240, 255, 0.02);
+    }
+    .stage-step {
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      color: var(--cyan-glow);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .stage-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 6px;
+    }
+    .stage-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Sticky Search & Filter Bar */
+    .control-bar-wrapper {
+      position: sticky;
+      top: 60px;
+      z-index: 900;
+      background: rgba(7, 9, 14, 0.9);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 14px 24px;
+      margin-bottom: 30px;
+    }
+    .control-bar {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .search-input-wrap {
+      position: relative;
+      width: 100%;
+    }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+    }
+    .search-input {
+      width: 100%;
+      background: rgba(15, 20, 32, 0.8);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 10px;
+      padding: 12px 14px 12px 42px;
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+      box-sizing: border-box;
+      transition: all 0.2s ease;
+    }
+    .search-input:focus {
+      border-color: var(--cyan-glow);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+      background: rgba(20, 28, 45, 0.95);
+    }
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .filter-pills::-webkit-scrollbar {
+      display: none;
+    }
+    .pill-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 6px 14px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .pill-btn:hover {
+      color: white;
+      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .pill-btn.active {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: var(--cyan-glow);
+      color: var(--cyan-glow);
+    }
+
+    /* Modules Catalog Container */
+    .modules-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .module-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 18px;
+      padding: 28px;
+      backdrop-filter: blur(16px);
+      transition: border-color 0.2s ease;
+    }
+    .module-card:hover {
+      border-color: var(--border-hover);
+    }
+
+    .module-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .module-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .module-icon {
+      font-size: 1.8rem;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+    }
+    .module-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 0 4px;
+      letter-spacing: -0.01em;
+    }
+    .module-path {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--cyan-glow);
+    }
+
+    .module-meta-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+    .badge-cyan {
+      background: rgba(0, 240, 255, 0.1);
+      color: #00f0ff;
+      border: 1px solid rgba(0, 240, 255, 0.25);
+    }
+    .badge-purple {
+      background: rgba(168, 85, 247, 0.1);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.25);
+    }
+    .badge-emerald {
+      background: rgba(16, 185, 129, 0.1);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .module-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin: 0 0 24px;
+    }
+
+    /* Files Grid */
+    .files-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 12px;
+    }
+    .file-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 14px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 85px;
+      transition: all 0.2s ease;
+    }
+    .file-card:hover {
+      background: rgba(0, 240, 255, 0.04);
+      border-color: rgba(0, 240, 255, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .file-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .file-name {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-lines {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .lines-ok {
+      background: rgba(16, 185, 129, 0.1);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .lines-config {
+      background: rgba(245, 158, 11, 0.1);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    .file-path {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-bottom: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .file-tag {
+      background: rgba(255, 255, 255, 0.04);
+      color: #94a3b8;
+      font-size: 0.68rem;
+      font-family: var(--font-mono);
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* File Detail Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-window {
+      background: #0d121f;
+      border: 1px solid var(--border-hover);
+      border-radius: 16px;
+      max-width: 650px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0, 240, 255, 0.25);
+      overflow: hidden;
+      animation: modalSlide 0.2s ease-out;
+    }
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--cyan-glow);
+      margin: 0;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .modal-close:hover {
+      color: white;
+    }
+    .modal-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .modal-field-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .modal-field-value {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      word-break: break-all;
+    }
+    .modal-tag-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    @keyframes modalSlide {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="modules-nav-bar">
+    <div class="nav-content">
+      <a href="index.html" class="brand-group">
+        <img src="assets/app-icon.png" alt="SirenUA" class="brand-icon">
+        <span>SirenUA Platform</span>
+      </a>
+      <div class="nav-actions">
+        <a href="index.html" class="back-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Повернутися на Головну
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="modules-header">
+    <div class="container">
+      <div class="project-tabs-container">
+        <nav class="project-tabs">
+          <a href="modules.html" class="project-tab">🛡️ ThreatServer (363)</a>
+          <a href="ios_modules.html" class="project-tab">📱 SirenUA iOS (402)</a>
+          <a href="web_modules.html" class="project-tab active">🌐 SirenUA Web (41)</a>
+        </nav>
+      </div>
+
+      <div class="status-badge-live">
+        <span class="pulse-dot"></span>
+        <span>Dual TLS 1.3 • Multi-Tenant SNI • Universal Links Ready</span>
+      </div>
+      <h1 class="modules-title">Архітектура та <span class="text-gradient">Модулі Веб-Платформи</span></h1>
+      <p class="modules-desc">
+        Повний інтерактивний каталог усіх 8 модулів та 41 файлів SirenUA Web Platform.
+        Високопродуктивний сервер на базі SocketServer з підтримкою багатодоменної віртуалізації (sirenua.online та westinvest.site),
+        нульовим часом простою під час оновлення сертифікатів Let's Encrypt та Liquid Glassmorphism презентаційним інтерфейсом.
+      </p>
+    </div>
+  </header>
+
+  <!-- KPI Top Stats -->
+  <section class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-value" style="color: #00f0ff;">8</div>
+      <div class="kpi-label">Канонічних Модулів</div>
+      <div class="kpi-subtext">8 функціональних кластерів</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value" style="color: #38bdf8;">41</div>
+      <div class="kpi-label">Активних Файлів</div>
+      <div class="kpi-subtext">Покриття 100% веб-репозиторію</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value" style="color: #a855f7;">16,772</div>
+      <div class="kpi-label">Рядків Коду</div>
+      <div class="kpi-subtext">HTML, CSS, JS, Python та Docs</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value" style="color: #10b981;">TLS 1.3</div>
+      <div class="kpi-label">Dual-Stack Безпека</div>
+      <div class="kpi-subtext">SNI & ACME HTTP-01 Webroot</div>
+    </div>
+  </section>
+
+  <!-- Interactive Dataflow Pipeline -->
+  <section class="pipeline-section">
+    <div class="pipeline-card">
+      <h3 class="pipeline-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Конвеєр Запитів та Архітектурний Dataflow Веб-Платформи
+      </h3>
+      <div class="pipeline-stages">
+        <div class="stage-box">
+          <div class="stage-step">Stage 1 • Маршрутизація</div>
+          <div class="stage-name">MikroTik RouterOS & NAT</div>
+          <div class="stage-desc">Порти 80/443 маршрутизуються через DNAT та Hairpin NAT на локальний порт 8080 (HTTP) та 8443 (HTTPS TLS 1.3).</div>
+        </div>
+        <div class="stage-box">
+          <div class="stage-step">Stage 2 • Сервер & SNI</div>
+          <div class="stage-name">server.py Multi-Domain Engine</div>
+          <div class="stage-desc">Динамічний SNI диспетчер сертифікатів sirenua.online та westinvest.site, ізольоване виконання потоків без блокування accept loop.</div>
+        </div>
+        <div class="stage-box">
+          <div class="stage-step">Stage 3 • Проксі & Universal Links</div>
+          <div class="stage-name">Reverse Proxy & Deep Links</div>
+          <div class="stage-desc">Трансляція /api/* до ThreatServer (порт 8085) та маршрутизація apple-app-site-association для безшовного переходу в iOS додаток.</div>
+        </div>
+        <div class="stage-box">
+          <div class="stage-step">Stage 4 • Презентація</div>
+          <div class="stage-name">Glassmorphism UI & Particles</div>
+          <div class="stage-desc">Презентаційний шар з нульовим навантаженням на клієнт: тактичний радар на Canvas, акордеони та амбасадорський кабінет.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search & Filter Controls -->
+  <div class="control-bar-wrapper">
+    <div class="control-bar">
+      <div class="search-input-wrap">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Пошук компонентів за назвою, шляхом або функціоналом (напр. server.py, particles, referral)..." oninput="handleSearch()">
+      </div>
+      <div class="filter-pills">
+        <button class="pill-btn active" onclick="filterByModule('all')">Усі Модулі (41)</button>
+          <button class="pill-btn" onclick="filterByModule('Server___Infrastructure')">🖥️ Server & Infrastructure (5)</button>
+          <button class="pill-btn" onclick="filterByModule('Core_Pages__UA_')">🇺🇦 Core Pages (UA) (8)</button>
+          <button class="pill-btn" onclick="filterByModule('Internationalization__EN_')">🌍 Internationalization (EN) (7)</button>
+          <button class="pill-btn" onclick="filterByModule('Routing___Deep_Links')">🔗 Routing & Deep Links (2)</button>
+          <button class="pill-btn" onclick="filterByModule('Stylesheets__CSS_')">🎨 Stylesheets (CSS) (4)</button>
+          <button class="pill-btn" onclick="filterByModule('Client_Logic__JS_')">⚡ Client Logic (JS) (5)</button>
+          <button class="pill-btn" onclick="filterByModule('Architecture_Specs__Docs_')">📐 Architecture Specs (Docs) (7)</button>
+          <button class="pill-btn" onclick="filterByModule('Meta__Tooling___Assets')">📦 Meta, Tooling & Assets (3)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modules Grid -->
+  <main class="modules-container">
+
+    <section class="module-card" id="module-Server___Infrastructure" data-pkg="Server___Infrastructure">
+      <div class="module-header">
+        <div class="module-title-wrap">
+          <div class="module-icon">🖥️</div>
+          <div>
+            <h2 class="module-name">Server & Infrastructure</h2>
+            <div class="module-path">SirenUA-Website/server/</div>
+          </div>
+        </div>
+        <div class="module-meta-badges">
+          <span class="badge badge-cyan">5 файлів</span>
+          <span class="badge badge-purple">630 рядків</span>
+          <span class="badge badge-emerald">TLS 1.3 / SNI</span>
+        </div>
+      </div>
+      <p class="module-desc">Standalone multi-domain dual TLS 1.3 HTTP/HTTPS server (`server.py`), Let's Encrypt SSL renewal, and lifecycle daemon control scripts.</p>
+
+      <div class="files-grid">
+
+        <div class="file-card" data-search="server.py server.py sirenua web component in server &amp; infrastructure multidomainhandler threadinghttpsserver" onclick='openFileModal({"path": "server.py", "name": "server.py", "lines": 445, "is_small": false, "types": ["MultiDomainHandler", "ThreadingHTTPSServer"], "doc": "SirenUA Web component in Server & Infrastructure"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">server.py</span>
+              <span class="file-lines lines-config">445 рядків (Large)</span>
+            </div>
+            <div class="file-path">server.py</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">MultiDomainHandler</span><span class="file-tag">ThreadingHTTPSServer</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="renew_ssl.sh renew_ssl.sh sirenua web component in server &amp; infrastructure bash script" onclick='openFileModal({"path": "renew_ssl.sh", "name": "renew_ssl.sh", "lines": 29, "is_small": true, "types": ["Bash Script"], "doc": "SirenUA Web component in Server & Infrastructure"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">renew_ssl.sh</span>
+              <span class="file-lines lines-ok">29 рядків</span>
+            </div>
+            <div class="file-path">renew_ssl.sh</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Bash Script</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="start_server.sh scripts/start_server.sh sirenua web component in server &amp; infrastructure bash script" onclick='openFileModal({"path": "scripts/start_server.sh", "name": "start_server.sh", "lines": 64, "is_small": true, "types": ["Bash Script"], "doc": "SirenUA Web component in Server & Infrastructure"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">start_server.sh</span>
+              <span class="file-lines lines-ok">64 рядків</span>
+            </div>
+            <div class="file-path">scripts/start_server.sh</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Bash Script</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="status_server.sh scripts/status_server.sh sirenua web component in server &amp; infrastructure bash script" onclick='openFileModal({"path": "scripts/status_server.sh", "name": "status_server.sh", "lines": 38, "is_small": true, "types": ["Bash Script"], "doc": "SirenUA Web component in Server & Infrastructure"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">status_server.sh</span>
+              <span class="file-lines lines-ok">38 рядків</span>
+            </div>
+            <div class="file-path">scripts/status_server.sh</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Bash Script</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="stop_server.sh scripts/stop_server.sh sirenua web component in server &amp; infrastructure bash script" onclick='openFileModal({"path": "scripts/stop_server.sh", "name": "stop_server.sh", "lines": 54, "is_small": true, "types": ["Bash Script"], "doc": "SirenUA Web component in Server & Infrastructure"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">stop_server.sh</span>
+              <span class="file-lines lines-ok">54 рядків</span>
+            </div>
+            <div class="file-path">scripts/stop_server.sh</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Bash Script</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="module-card" id="module-Core_Pages__UA_" data-pkg="Core_Pages__UA_">
+      <div class="module-header">
+        <div class="module-title-wrap">
+          <div class="module-icon">🇺🇦</div>
+          <div>
+            <h2 class="module-name">Core Pages (UA)</h2>
+            <div class="module-path">SirenUA-Website/core/</div>
+          </div>
+        </div>
+        <div class="module-meta-badges">
+          <span class="badge badge-cyan">8 файлів</span>
+          <span class="badge badge-purple">3,482 рядків</span>
+          <span class="badge badge-emerald">Landing & Portal</span>
+        </div>
+      </div>
+      <p class="module-desc">Ukrainian civil defense web portal: landing page with live radar preview, 20 threat features, ambassador referral dashboard, and support center.</p>
+
+      <div class="files-grid">
+
+        <div class="file-card" data-search="index.html index.html sirenua web component in core pages (ua) html document" onclick='openFileModal({"path": "index.html", "name": "index.html", "lines": 816, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Core Pages (UA)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">index.html</span>
+              <span class="file-lines lines-ok">816 рядків</span>
+            </div>
+            <div class="file-path">index.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="about.html about.html sirenua web component in core pages (ua) html document" onclick='openFileModal({"path": "about.html", "name": "about.html", "lines": 229, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Core Pages (UA)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">about.html</span>
+              <span class="file-lines lines-ok">229 рядків</span>
+            </div>
+            <div class="file-path">about.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="features.html features.html sirenua web component in core pages (ua) html document" onclick='openFileModal({"path": "features.html", "name": "features.html", "lines": 770, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Core Pages (UA)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">features.html</span>
+              <span class="file-lines lines-ok">770 рядків</span>
+            </div>
+            <div class="file-path">features.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="referral.html referral.html sirenua web component in core pages (ua) html document" onclick='openFileModal({"path": "referral.html", "name": "referral.html", "lines": 330, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Core Pages (UA)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">referral.html</span>
+              <span class="file-lines lines-ok">330 рядків</span>
+            </div>
+            <div class="file-path">referral.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="investors.html investors.html sirenua web component in core pages (ua) html document" onclick='openFileModal({"path": "investors.html", "name": "investors.html", "lines": 410, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Core Pages (UA)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">investors.html</span>
+              <span class="file-lines lines-ok">410 рядків</span>
+            </div>
+            <div class="file-path">investors.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="support.html support.html sirenua web component in core pages (ua) html document" onclick='openFileModal({"path": "support.html", "name": "support.html", "lines": 737, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Core Pages (UA)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">support.html</span>
+              <span class="file-lines lines-ok">737 рядків</span>
+            </div>
+            <div class="file-path">support.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="privacy.html privacy.html sirenua web component in core pages (ua) html document" onclick='openFileModal({"path": "privacy.html", "name": "privacy.html", "lines": 103, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Core Pages (UA)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">privacy.html</span>
+              <span class="file-lines lines-ok">103 рядків</span>
+            </div>
+            <div class="file-path">privacy.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="terms.html terms.html sirenua web component in core pages (ua) html document" onclick='openFileModal({"path": "terms.html", "name": "terms.html", "lines": 87, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Core Pages (UA)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">terms.html</span>
+              <span class="file-lines lines-ok">87 рядків</span>
+            </div>
+            <div class="file-path">terms.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="module-card" id="module-Internationalization__EN_" data-pkg="Internationalization__EN_">
+      <div class="module-header">
+        <div class="module-title-wrap">
+          <div class="module-icon">🌍</div>
+          <div>
+            <h2 class="module-name">Internationalization (EN)</h2>
+            <div class="module-path">SirenUA-Website/internationalization/</div>
+          </div>
+        </div>
+        <div class="module-meta-badges">
+          <span class="badge badge-cyan">7 файлів</span>
+          <span class="badge badge-purple">3,037 рядків</span>
+          <span class="badge badge-emerald">i18n English</span>
+        </div>
+      </div>
+      <p class="module-desc">English localization for international media, diplomatic delegations, and global defense tech partners.</p>
+
+      <div class="files-grid">
+
+        <div class="file-card" data-search="en/index.html en/index.html sirenua web component in internationalization (en) html document" onclick='openFileModal({"path": "en/index.html", "name": "en/index.html", "lines": 812, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Internationalization (EN)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">en/index.html</span>
+              <span class="file-lines lines-ok">812 рядків</span>
+            </div>
+            <div class="file-path">en/index.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="en/about.html en/about.html sirenua web component in internationalization (en) html document" onclick='openFileModal({"path": "en/about.html", "name": "en/about.html", "lines": 224, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Internationalization (EN)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">en/about.html</span>
+              <span class="file-lines lines-ok">224 рядків</span>
+            </div>
+            <div class="file-path">en/about.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="en/features.html en/features.html sirenua web component in internationalization (en) html document" onclick='openFileModal({"path": "en/features.html", "name": "en/features.html", "lines": 752, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Internationalization (EN)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">en/features.html</span>
+              <span class="file-lines lines-ok">752 рядків</span>
+            </div>
+            <div class="file-path">en/features.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="en/investors.html en/investors.html sirenua web component in internationalization (en) html document" onclick='openFileModal({"path": "en/investors.html", "name": "en/investors.html", "lines": 391, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Internationalization (EN)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">en/investors.html</span>
+              <span class="file-lines lines-ok">391 рядків</span>
+            </div>
+            <div class="file-path">en/investors.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="en/support.html en/support.html sirenua web component in internationalization (en) html document" onclick='openFileModal({"path": "en/support.html", "name": "en/support.html", "lines": 668, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Internationalization (EN)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">en/support.html</span>
+              <span class="file-lines lines-ok">668 рядків</span>
+            </div>
+            <div class="file-path">en/support.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="en/privacy.html en/privacy.html sirenua web component in internationalization (en) html document" onclick='openFileModal({"path": "en/privacy.html", "name": "en/privacy.html", "lines": 103, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Internationalization (EN)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">en/privacy.html</span>
+              <span class="file-lines lines-ok">103 рядків</span>
+            </div>
+            <div class="file-path">en/privacy.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="en/terms.html en/terms.html sirenua web component in internationalization (en) html document" onclick='openFileModal({"path": "en/terms.html", "name": "en/terms.html", "lines": 87, "is_small": true, "types": ["HTML Document"], "doc": "SirenUA Web component in Internationalization (EN)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">en/terms.html</span>
+              <span class="file-lines lines-ok">87 рядків</span>
+            </div>
+            <div class="file-path">en/terms.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="module-card" id="module-Routing___Deep_Links" data-pkg="Routing___Deep_Links">
+      <div class="module-header">
+        <div class="module-title-wrap">
+          <div class="module-icon">🔗</div>
+          <div>
+            <h2 class="module-name">Routing & Deep Links</h2>
+            <div class="module-path">SirenUA-Website/routing/</div>
+          </div>
+        </div>
+        <div class="module-meta-badges">
+          <span class="badge badge-cyan">2 файлів</span>
+          <span class="badge badge-purple">374 рядків</span>
+          <span class="badge badge-emerald">Universal Links</span>
+        </div>
+      </div>
+      <p class="module-desc">Apple Universal Links (`apple-app-site-association`) and client-side referral redirector routing `sirenua.online/ref/</p>
+
+      <div class="files-grid">
+
+        <div class="file-card" data-search=".well-known/apple-app-site-association .well-known/apple-app-site-association sirenua web component in routing &amp; deep links json configuration" onclick='openFileModal({"path": ".well-known/apple-app-site-association", "name": ".well-known/apple-app-site-association", "lines": 33, "is_small": true, "types": ["JSON Configuration"], "doc": "SirenUA Web component in Routing & Deep Links"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">.well-known/apple-app-site-association</span>
+              <span class="file-lines lines-ok">33 рядків</span>
+            </div>
+            <div class="file-path">.well-known/apple-app-site-association</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">JSON Configuration</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="ref/index.html ref/index.html sirenua web component in routing &amp; deep links html document / deep-link router" onclick='openFileModal({"path": "ref/index.html", "name": "ref/index.html", "lines": 341, "is_small": true, "types": ["HTML Document / Deep-Link Router"], "doc": "SirenUA Web component in Routing & Deep Links"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">ref/index.html</span>
+              <span class="file-lines lines-ok">341 рядків</span>
+            </div>
+            <div class="file-path">ref/index.html</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">HTML Document / Deep-Link Router</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="module-card" id="module-Stylesheets__CSS_" data-pkg="Stylesheets__CSS_">
+      <div class="module-header">
+        <div class="module-title-wrap">
+          <div class="module-icon">🎨</div>
+          <div>
+            <h2 class="module-name">Stylesheets (CSS)</h2>
+            <div class="module-path">SirenUA-Website/stylesheets/</div>
+          </div>
+        </div>
+        <div class="module-meta-badges">
+          <span class="badge badge-cyan">4 файлів</span>
+          <span class="badge badge-purple">3,839 рядків</span>
+          <span class="badge badge-emerald">Glassmorphism 120 FPS</span>
+        </div>
+      </div>
+      <p class="module-desc">Hardware-accelerated cyber-tech design system: Glassmorphism tokens, CSS custom properties, keyframe radar pulses, and atomic component styles.</p>
+
+      <div class="files-grid">
+
+        <div class="file-card" data-search="css/main.css css/main.css sirenua web component in stylesheets (css) css stylesheet" onclick='openFileModal({"path": "css/main.css", "name": "css/main.css", "lines": 852, "is_small": true, "types": ["CSS Stylesheet"], "doc": "SirenUA Web component in Stylesheets (CSS)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">css/main.css</span>
+              <span class="file-lines lines-ok">852 рядків</span>
+            </div>
+            <div class="file-path">css/main.css</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">CSS Stylesheet</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="css/components.css css/components.css sirenua web component in stylesheets (css) css stylesheet" onclick='openFileModal({"path": "css/components.css", "name": "css/components.css", "lines": 1953, "is_small": true, "types": ["CSS Stylesheet"], "doc": "SirenUA Web component in Stylesheets (CSS)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">css/components.css</span>
+              <span class="file-lines lines-ok">1953 рядків</span>
+            </div>
+            <div class="file-path">css/components.css</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">CSS Stylesheet</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="css/animations.css css/animations.css sirenua web component in stylesheets (css) css stylesheet" onclick='openFileModal({"path": "css/animations.css", "name": "css/animations.css", "lines": 361, "is_small": true, "types": ["CSS Stylesheet"], "doc": "SirenUA Web component in Stylesheets (CSS)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">css/animations.css</span>
+              <span class="file-lines lines-ok">361 рядків</span>
+            </div>
+            <div class="file-path">css/animations.css</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">CSS Stylesheet</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="css/referral.css css/referral.css sirenua web component in stylesheets (css) css stylesheet" onclick='openFileModal({"path": "css/referral.css", "name": "css/referral.css", "lines": 673, "is_small": true, "types": ["CSS Stylesheet"], "doc": "SirenUA Web component in Stylesheets (CSS)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">css/referral.css</span>
+              <span class="file-lines lines-ok">673 рядків</span>
+            </div>
+            <div class="file-path">css/referral.css</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">CSS Stylesheet</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="module-card" id="module-Client_Logic__JS_" data-pkg="Client_Logic__JS_">
+      <div class="module-header">
+        <div class="module-title-wrap">
+          <div class="module-icon">⚡</div>
+          <div>
+            <h2 class="module-name">Client Logic (JS)</h2>
+            <div class="module-path">SirenUA-Website/client/</div>
+          </div>
+        </div>
+        <div class="module-meta-badges">
+          <span class="badge badge-cyan">5 файлів</span>
+          <span class="badge badge-purple">1,874 рядків</span>
+          <span class="badge badge-emerald">Frontend Engines</span>
+        </div>
+      </div>
+      <p class="module-desc">Frontend client-side controllers: canvas particle radar simulation, IntersectionObserver animations, referral QR generator, and interactive FAQ.</p>
+
+      <div class="files-grid">
+
+        <div class="file-card" data-search="js/main.js js/main.js sirenua web component in client logic (js) javascript controller" onclick='openFileModal({"path": "js/main.js", "name": "js/main.js", "lines": 274, "is_small": true, "types": ["JavaScript Controller"], "doc": "SirenUA Web component in Client Logic (JS)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">js/main.js</span>
+              <span class="file-lines lines-ok">274 рядків</span>
+            </div>
+            <div class="file-path">js/main.js</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">JavaScript Controller</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="js/referral.js js/referral.js sirenua web component in client logic (js) javascript controller" onclick='openFileModal({"path": "js/referral.js", "name": "js/referral.js", "lines": 879, "is_small": false, "types": ["JavaScript Controller"], "doc": "SirenUA Web component in Client Logic (JS)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">js/referral.js</span>
+              <span class="file-lines lines-config">879 рядків (Large)</span>
+            </div>
+            <div class="file-path">js/referral.js</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">JavaScript Controller</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="js/animations.js js/animations.js sirenua web component in client logic (js) javascript controller" onclick='openFileModal({"path": "js/animations.js", "name": "js/animations.js", "lines": 142, "is_small": true, "types": ["JavaScript Controller"], "doc": "SirenUA Web component in Client Logic (JS)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">js/animations.js</span>
+              <span class="file-lines lines-ok">142 рядків</span>
+            </div>
+            <div class="file-path">js/animations.js</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">JavaScript Controller</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="js/particles.js js/particles.js sirenua web component in client logic (js) javascript controller" onclick='openFileModal({"path": "js/particles.js", "name": "js/particles.js", "lines": 295, "is_small": true, "types": ["JavaScript Controller"], "doc": "SirenUA Web component in Client Logic (JS)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">js/particles.js</span>
+              <span class="file-lines lines-ok">295 рядків</span>
+            </div>
+            <div class="file-path">js/particles.js</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">JavaScript Controller</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="js/support.js js/support.js sirenua web component in client logic (js) javascript controller" onclick='openFileModal({"path": "js/support.js", "name": "js/support.js", "lines": 284, "is_small": true, "types": ["JavaScript Controller"], "doc": "SirenUA Web component in Client Logic (JS)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">js/support.js</span>
+              <span class="file-lines lines-ok">284 рядків</span>
+            </div>
+            <div class="file-path">js/support.js</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">JavaScript Controller</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="module-card" id="module-Architecture_Specs__Docs_" data-pkg="Architecture_Specs__Docs_">
+      <div class="module-header">
+        <div class="module-title-wrap">
+          <div class="module-icon">📐</div>
+          <div>
+            <h2 class="module-name">Architecture Specs (Docs)</h2>
+            <div class="module-path">SirenUA-Website/architecture/</div>
+          </div>
+        </div>
+        <div class="module-meta-badges">
+          <span class="badge badge-cyan">7 файлів</span>
+          <span class="badge badge-purple">2,278 рядків</span>
+          <span class="badge badge-emerald">Technical Blueprints</span>
+        </div>
+      </div>
+      <p class="module-desc">Comprehensive technical blueprints: CI/CD deployment webhooks, operations guide, referral ecosystem architecture, and threat radar unification.</p>
+
+      <div class="files-grid">
+
+        <div class="file-card" data-search="docs/ci_cd_deployment_webhook.md docs/ci_cd_deployment_webhook.md sirenua web component in architecture specs (docs) markdown specification" onclick='openFileModal({"path": "docs/CI_CD_DEPLOYMENT_WEBHOOK.md", "name": "docs/CI_CD_DEPLOYMENT_WEBHOOK.md", "lines": 129, "is_small": true, "types": ["Markdown Specification"], "doc": "SirenUA Web component in Architecture Specs (Docs)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">docs/CI_CD_DEPLOYMENT_WEBHOOK.md</span>
+              <span class="file-lines lines-ok">129 рядків</span>
+            </div>
+            <div class="file-path">docs/CI_CD_DEPLOYMENT_WEBHOOK.md</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Markdown Specification</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="docs/engineering_audit_and_optimization_report_2026_09_04.md docs/engineering_audit_and_optimization_report_2026_09_04.md sirenua web component in architecture specs (docs) markdown specification" onclick='openFileModal({"path": "docs/ENGINEERING_AUDIT_AND_OPTIMIZATION_REPORT_2026_09_04.md", "name": "docs/ENGINEERING_AUDIT_AND_OPTIMIZATION_REPORT_2026_09_04.md", "lines": 236, "is_small": true, "types": ["Markdown Specification"], "doc": "SirenUA Web component in Architecture Specs (Docs)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">docs/ENGINEERING_AUDIT_AND_OPTIMIZATION_REPORT_2026_09_04.md</span>
+              <span class="file-lines lines-ok">236 рядків</span>
+            </div>
+            <div class="file-path">docs/ENGINEERING_AUDIT_AND_OPTIMIZATION_REPORT_2026_09_04.md</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Markdown Specification</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="docs/operations_and_deployment_guide.md docs/operations_and_deployment_guide.md sirenua web component in architecture specs (docs) markdown specification" onclick='openFileModal({"path": "docs/OPERATIONS_AND_DEPLOYMENT_GUIDE.md", "name": "docs/OPERATIONS_AND_DEPLOYMENT_GUIDE.md", "lines": 194, "is_small": true, "types": ["Markdown Specification"], "doc": "SirenUA Web component in Architecture Specs (Docs)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">docs/OPERATIONS_AND_DEPLOYMENT_GUIDE.md</span>
+              <span class="file-lines lines-ok">194 рядків</span>
+            </div>
+            <div class="file-path">docs/OPERATIONS_AND_DEPLOYMENT_GUIDE.md</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Markdown Specification</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="docs/referral_ecosystem_architecture_2026_09_03.md docs/referral_ecosystem_architecture_2026_09_03.md sirenua web component in architecture specs (docs) markdown specification" onclick='openFileModal({"path": "docs/REFERRAL_ECOSYSTEM_ARCHITECTURE_2026_09_03.md", "name": "docs/REFERRAL_ECOSYSTEM_ARCHITECTURE_2026_09_03.md", "lines": 948, "is_small": true, "types": ["Markdown Specification"], "doc": "SirenUA Web component in Architecture Specs (Docs)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">docs/REFERRAL_ECOSYSTEM_ARCHITECTURE_2026_09_03.md</span>
+              <span class="file-lines lines-ok">948 рядків</span>
+            </div>
+            <div class="file-path">docs/REFERRAL_ECOSYSTEM_ARCHITECTURE_2026_09_03.md</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Markdown Specification</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="docs/tactical_integrity_and_track_fusion_architecture_2026_09_04.md docs/tactical_integrity_and_track_fusion_architecture_2026_09_04.md sirenua web component in architecture specs (docs) markdown specification" onclick='openFileModal({"path": "docs/TACTICAL_INTEGRITY_AND_TRACK_FUSION_ARCHITECTURE_2026_09_04.md", "name": "docs/TACTICAL_INTEGRITY_AND_TRACK_FUSION_ARCHITECTURE_2026_09_04.md", "lines": 160, "is_small": true, "types": ["Markdown Specification"], "doc": "SirenUA Web component in Architecture Specs (Docs)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">docs/TACTICAL_INTEGRITY_AND_TRACK_FUSION_ARCHITECTURE_2026_09_04.md</span>
+              <span class="file-lines lines-ok">160 рядків</span>
+            </div>
+            <div class="file-path">docs/TACTICAL_INTEGRITY_AND_TRACK_FUSION_ARCHITECTURE_2026_09_04.md</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Markdown Specification</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="docs/tactical_threat_origin_and_radar_unification_2026_09_04.md docs/tactical_threat_origin_and_radar_unification_2026_09_04.md sirenua web component in architecture specs (docs) markdown specification" onclick='openFileModal({"path": "docs/TACTICAL_THREAT_ORIGIN_AND_RADAR_UNIFICATION_2026_09_04.md", "name": "docs/TACTICAL_THREAT_ORIGIN_AND_RADAR_UNIFICATION_2026_09_04.md", "lines": 220, "is_small": true, "types": ["Markdown Specification"], "doc": "SirenUA Web component in Architecture Specs (Docs)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">docs/TACTICAL_THREAT_ORIGIN_AND_RADAR_UNIFICATION_2026_09_04.md</span>
+              <span class="file-lines lines-ok">220 рядків</span>
+            </div>
+            <div class="file-path">docs/TACTICAL_THREAT_ORIGIN_AND_RADAR_UNIFICATION_2026_09_04.md</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Markdown Specification</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="docs/web_portal_architecture_2026_09_03.md docs/web_portal_architecture_2026_09_03.md sirenua web component in architecture specs (docs) markdown specification" onclick='openFileModal({"path": "docs/WEB_PORTAL_ARCHITECTURE_2026_09_03.md", "name": "docs/WEB_PORTAL_ARCHITECTURE_2026_09_03.md", "lines": 391, "is_small": true, "types": ["Markdown Specification"], "doc": "SirenUA Web component in Architecture Specs (Docs)"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">docs/WEB_PORTAL_ARCHITECTURE_2026_09_03.md</span>
+              <span class="file-lines lines-ok">391 рядків</span>
+            </div>
+            <div class="file-path">docs/WEB_PORTAL_ARCHITECTURE_2026_09_03.md</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Markdown Specification</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="module-card" id="module-Meta__Tooling___Assets" data-pkg="Meta__Tooling___Assets">
+      <div class="module-header">
+        <div class="module-title-wrap">
+          <div class="module-icon">📦</div>
+          <div>
+            <h2 class="module-name">Meta, Tooling & Assets</h2>
+            <div class="module-path">SirenUA-Website/meta,/</div>
+          </div>
+        </div>
+        <div class="module-meta-badges">
+          <span class="badge badge-cyan">3 файлів</span>
+          <span class="badge badge-purple">1,258 рядків</span>
+          <span class="badge badge-emerald">DevOps & Tooling</span>
+        </div>
+      </div>
+      <p class="module-desc">Project README, SSOT automated synchronization script (`sync_web_modules_from_skill.py`), and high-resolution app icon asset.</p>
+
+      <div class="files-grid">
+
+        <div class="file-card" data-search="readme.md readme.md sirenua web component in meta, tooling &amp; assets markdown documentation" onclick='openFileModal({"path": "README.md", "name": "README.md", "lines": 225, "is_small": true, "types": ["Markdown Documentation"], "doc": "SirenUA Web component in Meta, Tooling & Assets"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">README.md</span>
+              <span class="file-lines lines-ok">225 рядків</span>
+            </div>
+            <div class="file-path">README.md</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Markdown Documentation</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="sync_web_modules_from_skill.py scripts/sync_web_modules_from_skill.py sirenua web component in meta, tooling &amp; assets python sync engine" onclick='openFileModal({"path": "scripts/sync_web_modules_from_skill.py", "name": "sync_web_modules_from_skill.py", "lines": 1033, "is_small": false, "types": ["Python Sync Engine"], "doc": "SirenUA Web component in Meta, Tooling & Assets"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">sync_web_modules_from_skill.py</span>
+              <span class="file-lines lines-config">1033 рядків (Large)</span>
+            </div>
+            <div class="file-path">scripts/sync_web_modules_from_skill.py</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Python Sync Engine</span>
+          </div>
+        </div>
+
+        <div class="file-card" data-search="assets/app-icon.png assets/app-icon.png sirenua web component in meta, tooling &amp; assets binary png image (1024x1024)" onclick='openFileModal({"path": "assets/app-icon.png", "name": "assets/app-icon.png", "lines": 0, "is_small": true, "types": ["Binary PNG Image (1024x1024)"], "doc": "SirenUA Web component in Meta, Tooling & Assets"})'>
+          <div>
+            <div class="file-card-top">
+              <span class="file-name">assets/app-icon.png</span>
+              <span class="file-lines lines-ok">0 рядків</span>
+            </div>
+            <div class="file-path">assets/app-icon.png</div>
+          </div>
+          <div class="file-tags">
+            <span class="file-tag">Binary PNG Image (1024x1024)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- File Detail Modal -->
+  <div id="fileModal" class="modal-backdrop" onclick="closeFileModal(event)">
+    <div class="modal-window" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h4 id="modalFileName" class="modal-title">FileName.html</h4>
+        <button class="modal-close" onclick="closeFileModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <div class="modal-field-label">Шлях у репозиторії</div>
+          <div id="modalFilePath" class="modal-field-value">SirenUA-Website/path/to/file</div>
+        </div>
+        <div>
+          <div class="modal-field-label">Кількість рядків коду</div>
+          <div id="modalFileLines" class="modal-field-value">120 рядків</div>
+        </div>
+        <div>
+          <div class="modal-field-label">Типи та Ключові Структури</div>
+          <div id="modalFileTypes" class="modal-tag-group"></div>
+        </div>
+        <div>
+          <div class="modal-field-label">Призначення компонента</div>
+          <div id="modalFileDoc" class="modal-field-value" style="color: var(--text-muted); font-family: 'Inter', sans-serif;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeFilter = 'all';
+
+    function filterByModule(pkg) {
+      activeFilter = pkg;
+      document.querySelectorAll('.pill-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      const sections = document.querySelectorAll('.module-card');
+      sections.forEach(sec => {
+        if (pkg === 'all' || sec.dataset.pkg === pkg) {
+          sec.style.display = 'block';
+        } else {
+          sec.style.display = 'none';
+        }
+      });
+      handleSearch();
+    }
+
+    function handleSearch() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const sections = document.querySelectorAll('.module-card');
+
+      sections.forEach(sec => {
+        if (activeFilter !== 'all' && sec.dataset.pkg !== activeFilter) {
+          sec.style.display = 'none';
+          return;
+        }
+
+        const files = sec.querySelectorAll('.file-card');
+        let visibleCount = 0;
+
+        files.forEach(f => {
+          const text = f.dataset.search;
+          if (!query || text.includes(query)) {
+            f.style.display = 'flex';
+            visibleCount++;
+          } else {
+            f.style.display = 'none';
+          }
+        });
+
+        if (visibleCount > 0) {
+          sec.style.display = 'block';
+        } else {
+          sec.style.display = 'none';
+        }
+      });
+    }
+
+    function openFileModal(fileData) {
+      document.getElementById('modalFileName').innerText = fileData.name;
+      document.getElementById('modalFilePath').innerText = 'SirenUA-Website/' + fileData.path;
+      document.getElementById('modalFileLines').innerText = fileData.lines + ' рядків' + (fileData.is_small ? ' (Оптимізовано)' : ' (Великий обсяг)');
+      document.getElementById('modalFileDoc').innerText = fileData.doc;
+
+      const typesContainer = document.getElementById('modalFileTypes');
+      typesContainer.innerHTML = '';
+      if (fileData.types && fileData.types.length > 0) {
+        fileData.types.forEach(t => {
+          const span = document.createElement('span');
+          span.className = 'badge badge-purple';
+          span.innerText = t;
+          typesContainer.appendChild(span);
+        });
+      } else {
+        typesContainer.innerHTML = '<span style="color:#64748b; font-size:0.85rem;">-</span>';
+      }
+
+      const modal = document.getElementById('fileModal');
+      modal.style.display = 'flex';
+    }
+
+    function closeFileModal(event) {
+      if (!event || event.target.id === 'fileModal' || event.target.classList.contains('modal-close')) {
+        document.getElementById('fileModal').style.display = 'none';
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeFileModal();
+    });
+  </script>
+</body>
+</html>

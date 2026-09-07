@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Technology &amp; Architecture — SirenUA</title>
+<meta content="In-depth technical breakdown of SirenUA: real-time AI threat analysis, live geospatial trajectory mapping, 3-stage shelter routing, corridor analytics, and resilient server networking." name="description"/>
+<link href="../assets/app-icon.png" rel="icon" type="image/png"/>
+<link href="../css/main.css?v=2.2" rel="stylesheet"/>
+<link href="../css/components.css?v=2.2" rel="stylesheet"/>
+<link href="../css/animations.css?v=2.2" rel="stylesheet"/>
+</head>
+<body>
+<!-- Ambient Glow -->
+<div class="ambient-glow ambient-glow--cyan"></div>
+<!-- Navigation -->
+<nav class="navbar" id="navbar">
+<div class="container">
+<a class="nav-logo" href="index.html">
+<img alt="SirenUA Logo" class="nav-logo-img" src="../assets/app-icon.png"/>
+<span>SirenUA</span>
+</a>
+<ul class="nav-links" id="nav-links">
+<li><a href="index.html">Home</a></li>
+<li><a class="active" href="features.html">Features</a></li>
+<li><a href="support.html">Support</a></li>
+<li><a href="investors.html">Investors</a></li>
+<li><a href="about.html">About</a></li>
+<li><a class="nav-cta" href="index.html#download">Download</a></li>
+</ul>
+<div class="nav-right">
+<div class="lang-switch">
+<a class="lang-btn" href="../features.html">UA</a>
+<span class="lang-divider">|</span>
+<a class="lang-btn active" href="features.html">EN</a>
+</div>
+<button aria-label="Menu" class="nav-toggle" id="nav-toggle"><span></span><span></span><span></span></button>
+</div>
+</div>
+</nav>
+<!-- Page Header -->
+<div class="page-header">
+<div class="container">
+<span class="section-subtitle">System Architecture</span>
+<h1>Technology &amp; <span class="text-gradient">Capabilities</span></h1>
+<p>A comprehensive architectural overview of the neural models, spatial algorithms, and resilience pipelines powering SirenUA.</p>
+</div>
+</div>
+<!-- Feature Navigation (Wrapped Tactical Subnav) -->
+<div class="subnav-wrapper">
+<div class="container">
+<div class="subnav-bar">
+<a class="subnav-item" href="#ai-system">🧠 AI Classification</a>
+<a class="subnav-item" href="#sensor-fusion">🛰️ Sensor Fusion (Palantir)</a>
+<a class="subnav-item" href="#map">🗺️ Tactical Map</a>
+<a class="subnav-item" href="#shelters">🛡️ Shelter Engine</a>
+<a class="subnav-item" href="#analytics">📊 Corridor Analytics</a>
+<a class="subnav-item" href="#notifications">🔔 Alert Delivery</a>
+<a class="subnav-item" href="#threats">🎯 20 Threat Types</a>
+<a class="subnav-item" href="#network">🌐 Network Resilience</a>
+</div>
+</div>
+</div>
+<!-- Article 1: AI System -->
+<section id="ai-system">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Module 1</div>
+<h2>🧠 Artificial Intelligence — Real-Time Tactical Threat Analysis</h2>
+<div class="highlight-box">
+<p><strong>Core Advantage:</strong> SirenUA executes real-time neural threat classification with dynamic rule injection against 5 high-speed intelligence streams. Ingestion-to-alert latency averages under 3 seconds.</p>
+</div>
+<h3>Dynamic Rule Injection Engine</h3>
+<p>Prior to executing each classification prompt, the inference engine ranks and dynamically selects the 6–8 most accurate empirical rules from the knowledge base. Rules are evaluated based on historical precision and confirmation frequency.</p>
+<p><strong>Priority Multipliers:</strong> Direct mentions of specific administrative centers (Kyiv, Kharkiv, Odesa, Dnipro, Lviv) or weapon classes (ballistics, Shahed drone, glide bomb) trigger higher weighting. Launch site correlation heuristics receive top priority for rapid regional classification.</p>
+<h3>20 Canonical Threat Categories</h3>
+<p>Every aerial track is mapped into one of 20 standardized categories with custom kinematic models:</p>
+<table class="threat-table">
+<thead>
+<tr>
+<th>Icon</th>
+<th>Threat Classification</th>
+<th>Kinematic Speed</th>
+<th>Active Lifetime</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>🛩️</td><td>Shahed-136 Loitering Munition (Attack Drone)</td><td style="font-family: var(--font-mono);">185 km/h</td><td>up to 3 hours</td></tr>
+<tr><td>⚡️</td><td>Jet-Powered Attack UAV (Shahed-238)</td><td style="font-family: var(--font-mono);">550 km/h</td><td>1.5 hours</td></tr>
+<tr><td>⚡️</td><td>Jet Drone / Gerbera Decoy Drone</td><td style="font-family: var(--font-mono);">550 km/h</td><td>2 hours</td></tr>
+<tr><td>🚀</td><td>Subsonic Cruise Missile (Kalibr / Kh-101 / Kh-59 / mKR Banderol)</td><td style="font-family: var(--font-mono);">850 km/h</td><td>45 minutes</td></tr>
+<tr><td>🚀</td><td>Quasi-Ballistic Missile (Iskander-M / KN-23 / С-300)</td><td style="font-family: var(--font-mono);">4,500–5,500 km/h</td><td>10 minutes</td></tr>
+<tr><td>🚀</td><td>Kh-47M2 Kinzhal Aeroballistic Missile (Carrier: MiG-31K)</td><td style="font-family: var(--font-mono);">3,000–4,000 km/h</td><td>30 minutes</td></tr>
+<tr><td>💣</td><td>Guided Aerial Bomb (KAB / FAB with UMPK / UMPB D-30SN)</td><td style="font-family: var(--font-mono);">900 km/h</td><td>5 minutes</td></tr>
+<tr><td>🚀</td><td>Kh-101 / Kh-555 Cruise Missiles (Carrier: Tu-95MS)</td><td style="font-family: var(--font-mono);">750–850 km/h</td><td>1.5 hours</td></tr>
+<tr><td>🚀</td><td>Kh-22 / Kh-32 Supersonic Missiles (Carrier: Tu-22M3)</td><td style="font-family: var(--font-mono);">900–4,200 km/h</td><td>1 hour</td></tr>
+<tr><td>🚀</td><td>Kh-59/69 / Kh-31P Tactical Missiles (Carriers: Su-34 / Su-35)</td><td style="font-family: var(--font-mono);">900–1,100 km/h</td><td>45 minutes</td></tr>
+<tr><td>🚀</td><td>Iskander-K Ground-Launched Cruise Missile</td><td style="font-family: var(--font-mono);">850 km/h</td><td>20 minutes</td></tr>
+<tr><td>💥</td><td>Tube Artillery / Border Shelling</td><td style="font-family: var(--font-mono);">1,200 km/h</td><td>30 minutes</td></tr>
+<tr><td>🛡️</td><td>Urban Combat / Active Hostilities Zone</td><td style="font-family: var(--font-mono);">—</td><td>continuous</td></tr>
+<tr><td>🧪</td><td>Chemical Contamination Alert</td><td style="font-family: var(--font-mono);">—</td><td>2 hours</td></tr>
+<tr><td>☢️</td><td>Radiological Emergency Alert (ZNPP)</td><td style="font-family: var(--font-mono);">—</td><td>2 hours</td></tr>
+<tr><td>🚀</td><td>Hypersonic 3M22 Zircon Missile</td><td style="font-family: var(--font-mono);">9,000–11,000 km/h</td><td>10 minutes</td></tr>
+<tr><td>💥</td><td>Heavy MLRS (Tornado-S / Grad / Smerch)</td><td style="font-family: var(--font-mono);">2,200 km/h</td><td>20 minutes</td></tr>
+<tr><td>🛸</td><td>Tactical FPV Drone / Lancet</td><td style="font-family: var(--font-mono);">120–140 km/h</td><td>30 minutes</td></tr>
+<tr><td>👁️</td><td>Reconnaissance Drone (Orlan / Zala / Supercam)</td><td style="font-family: var(--font-mono);">120 km/h</td><td>1 hour</td></tr>
+<tr><td>🚨</td><td>Official General Air Raid Alert</td><td style="font-family: var(--font-mono);">—</td><td>1 hour</td></tr>
+</tbody>
+</table>
+<h3>Post-Attack Autonomous Reflection</h3>
+<p>Upon the conclusion of an attack wave, the system triggers a post-mortem review: comparing initial OSINT alerts, tactical vectors, air defense interceptions, and event lifespans. The AI autonomously generates 1–3 calibrated empirical rules to refine subsequent classification accuracy.</p>
+<h3>6-Hour Statistical Learning Loop</h3>
+<p>Every 6 hours, background statistical jobs analyze the past 30 days of data across <strong>7 mathematical validation criteria</strong>:</p>
+<ol>
+<li><strong>Route Vector Patterns</strong> — Mapping recurring transit corridors across regions</li>
+<li><strong>Confidence Calibration</strong> — Adjusting sensitivity thresholds in low-density sectors</li>
+<li><strong>Temporal Clustering</strong> — Identifying peak hours for recurring drone launches</li>
+<li><strong>Flight ETA Calculations</strong> — Refining flight duration math for specific corridors</li>
+<li><strong>Airbase Correlation</strong> — Tracking takeoffs from Olenya, Engels-2, and Savasleyka</li>
+<li><strong>Launch Hub Fingerprinting</strong> — Primorsko-Akhtarsk, Chauda, and Caspian launch sectors</li>
+<li><strong>Rule Decay &amp; Pruning</strong> — Deactivating heuristics with dropping accuracy</li>
+</ol>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 2: Palantir Sensor Fusion -->
+<section id="sensor-fusion" style="background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Module 2</div>
+<h2>🛰️ Palantir-Grade Multi-Domain Sensor Fusion Architecture</h2>
+<div class="highlight-box">
+<p><strong>Defense-Grade Paradigm:</strong> SirenUA operates on an autonomous sensor fusion layer comparable to military systems like Palantir AIP and Foundry. Rather than relying on a single telemetry point, our pipeline continuously integrates 5 heterogeneous data streams into a unified Common Operating Picture (COP).</p>
+</div>
+<h3>4 Multispectral Ingestion Channels</h3>
+<p>Every incoming signal is timestamped with sub-millisecond precision, deduplicated, and passed through dynamic noise filters:</p>
+<div class="sensor-fusion-grid">
+<a class="sensor-node-card" href="#sensor-fusion" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-sm">📡 Stream 1</span>
+<h4>MTProto &amp; OSINT Engine</h4>
+<p>Direct low-latency socket parsers reading verified military feeds with automated misinformation filtering.</p>
+</a>
+<a class="sensor-node-card" href="#sensor-fusion" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--blue mb-sm">📻 Stream 2</span>
+<h4>ELINT Radar Signatures</h4>
+<p>Detection of air-defense illumination radar frequencies and airborne early warning (AWACS) patrol orbits.</p>
+</a>
+<a class="sensor-node-card" href="#sensor-fusion" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--amber mb-sm">🔊 Stream 3</span>
+<h4>Acoustic Harmonic Mesh</h4>
+<p>Frequency spectrogram analysis of internal combustion engines (Shahed-136) and micro-turbojets (Kh-101).</p>
+</a>
+<a class="sensor-node-card" href="#sensor-fusion" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--red mb-sm">🛰️ Stream 4</span>
+<h4>Thermal Launch Telemetry</h4>
+<p>Tracking high-temperature rocket plumes at launch hubs and ballistic missile launch pads.</p>
+</a>
+</div>
+<h3 style="margin-top: var(--space-2xl);">Autonomous Multi-Agent Neural Mesh</h3>
+<p>Our server architecture coordinates 4 dedicated sub-agents in parallel:</p>
+<ul>
+<li><strong>KinematicsPredictor</strong> — Computes ballistic parabola curves, structural G-forces, and interception debris dispersion radius.</li>
+<li><strong>TerrainMaskingEngine</strong> — Correlates target flight altitudes against 3D Digital Elevation Models (DEM) to pinpoint blind radar sectors.</li>
+<li><strong>DeceptionClassifier</strong> — Isolates decoy drones (Gerbera/Parodiya) without warheads using mass-to-velocity radar returns.</li>
+<li><strong>EvacuationOptimizer</strong> — Dynamically generates turn-by-turn routing to verified Tier 1–4 civil defense shelters.</li>
+</ul>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 3: Interactive Map -->
+<section id="map" style="background: var(--bg-secondary);">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Module 3</div>
+<h2>🗺️ Tactical Map — Zero-Flicker Vector Rendering</h2>
+<div class="highlight-box">
+<p><strong>Core Advantage:</strong> Fullscreen live map supporting all 27 regions with smoothed Bézier flight curves, launch markers, and optimized state diffing for 0% idle CPU overhead.</p>
+</div>
+<h3>27 Regional Polygons</h3>
+<p>Every administrative region is color-coded based on live threat telemetry. Boundary polygons are decoded in background threads and cached locally to ensure fluid 60/120 FPS panning on iOS devices.</p>
+<h3>Smoothed Bézier Trajectories</h3>
+<p>Flight paths are rendered as smooth curvature vectors using mathematical smoothing algorithms:</p>
+<ul>
+<li><strong>Solid Vector Lines</strong> — Active confirmed flight path from launch/detection point to target sector</li>
+<li><strong>Dashed Carrier Ingress</strong> — Aircraft flight path from base to designated missile launch рубеж</li>
+<li><strong>Flow Chevrons</strong> — Dynamic heading arrows showing immediate flight direction</li>
+<li><strong>Pulsing Node Markers</strong> — Latest confirmed telemetry coordinates</li>
+</ul>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 3: Shelters -->
+<section id="shelters">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Module 3</div>
+<h2>🛡️ Civil Defense Shelter Engine — 3-Stage Cascading Search</h2>
+<div class="highlight-box">
+<p><strong>Core Advantage:</strong> Immediate routing to the nearest verified bunker. Pre-seeded with 26 regional civil defense databases ensuring zero cold-start latency even under degraded network conditions.</p>
+</div>
+<h3>3-Stage Cascading Search Architecture</h3>
+<ol>
+<li><strong>Stage 1: Pre-Seeded Civil Defense Registry</strong> — Verified bomb shelters, subway stations, specialized basements in schools, hospitals, and administrative centers loaded instantly from local storage.</li>
+<li><strong>Stage 2: Spatial OpenStreetMap Verification</strong> — Regular background updates filtering out non-shelter structures such as bus stops or kiosks.</li>
+<li><strong>Stage 3: Targeted Live Proximity Query</strong> — Rapid radial search to identify underground parking structures and newly designated safe spaces.</li>
+</ol>
+<h3>Safety Tier Classification</h3>
+<div class="grid grid-2" style="margin: var(--space-lg) 0;">
+<a class="glass-card" href="support.html#guide-shelters" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-sm" style="align-self: flex-start;">Tier 1 (Highest)</span>
+<p style="font-size: 0.9rem; flex-grow: 1;">Sealed bomb shelters, deep underground metro stations, specialized reinforced bunkers</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Shelter Guide</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="support.html#guide-shelters" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--blue mb-sm" style="align-self: flex-start;">Tier 2 (High)</span>
+<p style="font-size: 0.9rem; flex-grow: 1;">Reinforced basements of administrative buildings and commercial centers</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Shelter Guide</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="support.html#guide-shelters" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--amber mb-sm" style="align-self: flex-start;">Tier 3 (Standard)</span>
+<p style="font-size: 0.9rem; flex-grow: 1;">Basements and ground levels of residential apartment complexes</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Shelter Guide</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="support.html#guide-shelters" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--red mb-sm" style="align-self: flex-start;">Tier 4 (Basic)</span>
+<p style="font-size: 0.9rem; flex-grow: 1;">Basic designated municipal protection areas</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Shelter Guide</span> <span class="arrow">→</span>
+</div>
+</a>
+</div>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 4: Analytics -->
+<section id="analytics" style="background: var(--bg-secondary);">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Module 4</div>
+<h2>📊 Tactical Corridor Modeling &amp; Geospatial Intelligence</h2>
+<div class="highlight-box">
+<p><strong>Core Advantage:</strong> Probabilistic route chain modeling that anticipates likely target regions, evaluates air defense interception zones, and tracks enemy launch infrastructure.</p>
+</div>
+<h3>Probabilistic Multi-Hop Route Chains</h3>
+<p>By analyzing the spatial history of past attacks, the system models transition probabilities between adjacent regions. When incoming targets reach key navigational checkpoints, neighboring sectors are warned in advance.</p>
+<h3>Air Defense Density Mapping</h3>
+<p>Analysis of defensive coverage enables accurate estimation of interception points and likely flight path deviations.</p>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 5: Notifications -->
+<section id="notifications">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Module 5</div>
+<h2>🔔 Intelligent Critical Alert Delivery</h2>
+<div class="highlight-box">
+<p><strong>Core Advantage:</strong> 4 distinct alert sounds, 7 independent configuration toggles, guaranteed Critical Alert delivery through Do Not Disturb, and batch debouncing during mass attack waves.</p>
+</div>
+<h3>4 Distinct Alert Channels</h3>
+<div class="grid grid-2" style="margin: var(--space-lg) 0;">
+<a class="glass-card" href="support.html#guide-notifications" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--red mb-sm" style="align-self: flex-start;">🔴 General Alert</span>
+<h4 style="font-size: 1rem;">Official Siren</h4>
+<p style="font-size: 0.85rem; flex-grow: 1;">Official air raid alert triggered for the selected region</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Notification Guide</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="support.html#guide-notifications" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--amber mb-sm" style="align-self: flex-start;">⚠️ Tactical Threat</span>
+<h4 style="font-size: 1rem;">AI Threat Tone</h4>
+<p style="font-size: 0.85rem; flex-grow: 1;">Specific incoming threat: Shahed UAV, missile, or glide bomb release</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Notification Guide</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="support.html#guide-notifications" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-sm" style="align-self: flex-start;">🔷 All Clear</span>
+<h4 style="font-size: 1rem;">Official Clearance</h4>
+<p style="font-size: 0.85rem; flex-grow: 1;">Official all-clear signal from civil defense authorities</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Notification Guide</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="support.html#guide-notifications" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-sm" style="align-self: flex-start;">✅ Sector Clear</span>
+<h4 style="font-size: 1rem;">Local Clearance</h4>
+<p style="font-size: 0.85rem; flex-grow: 1;">AI confirms interception or exit of specific targets from the local sector</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Notification Guide</span> <span class="arrow">→</span>
+</div>
+</a>
+</div>
+<h3>Granular District Filtering</h3>
+<p>Users can subscribe to specific administrative districts inside large regions to avoid alert fatigue caused by distant events.</p>
+</div>
+</div>
+</section>
+<!-- Article 6: 20 Threat Types -->
+<section id="threats">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Module 6</div>
+<h2>🎯 20 Threat Types — Physics-Based Ballistic Profiles</h2>
+<div class="highlight-box">
+<p><strong>Complete Tactical Spectrum:</strong> SirenUA incorporates physics and kinematic models for 20 distinct aerial hazard classes — ranging from slow-flying loitering munitions to Mach-10 hypersonic aero-ballistic missiles.</p>
+</div>
+<div class="grid grid-2" style="gap: var(--space-xl); margin: var(--space-2xl) 0;">
+<a class="glass-card" href="#threats" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--red mb-sm">🚀 Subsonic Cruise Missiles (LACM)</span>
+<h4>Kh-101 / Kh-555 / Kalibr / Iskander-K</h4>
+<p><strong>Speed:</strong> 720–900 km/h (Mach 0.7–0.85)</p>
+<p><strong>Altitude:</strong> 30–120 meters terrain-following radar avoidance</p>
+<p><strong>AI Detection:</strong> Dynamic waypoint detection, programmable loops, and riverbed corridor tracking.</p>
+<div class="feature-card-action" style="margin-top: 12px;"><span>View Threat Matrix</span><span class="arrow">→</span></div></a>
+<a class="glass-card" href="#threats" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--red mb-sm">💥 Quasi-Ballistic Missiles (SRBM)</span>
+<h4>Iskander-M (9M723) / KN-23</h4>
+<p><strong>Speed:</strong> 2,100–5,500 km/h (up to Mach 5.5)</p>
+<p><strong>Altitude:</strong> High-altitude quasi-ballistic arc up to 50 km</p>
+<p><strong>AI Detection:</strong> Instant launch point identification and impact zone sector computation under 40 seconds.</p>
+<div class="feature-card-action" style="margin-top: 12px;"><span>View Threat Matrix</span><span class="arrow">→</span></div></a>
+<a class="glass-card" href="#threats" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-sm">⚡ Hypersonic &amp; Aero-Ballistic</span>
+<h4>Kh-47M2 Kinzhal / 3M22 Zircon</h4>
+<p><strong>Speed:</strong> 7,000–11,000 km/h (up to Mach 10)</p>
+<p><strong>Flight Time:</strong> 2–6 minutes to any point in Ukraine</p>
+<p><strong>AI Detection:</strong> Airborne radar detection of MiG-31K sorties from Savasleyka/Mozdok airbases.</p>
+<div class="feature-card-action" style="margin-top: 12px;"><span>View Threat Matrix</span><span class="arrow">→</span></div></a>
+<a class="glass-card" href="#threats" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--amber mb-sm">🛸 Loitering Munitions &amp; Decoys</span>
+<h4>Shahed-136 / Geran-2 / Gerbera</h4>
+<p><strong>Speed:</strong> 150–220 km/h</p>
+<p><strong>Endurance:</strong> 4–6 hours loitering time</p>
+<p><strong>AI Detection:</strong> Swarm clustering, acoustic signature verification, and decoy separation.</p>
+<div class="feature-card-action" style="margin-top: 12px;"><span>View Threat Matrix</span><span class="arrow">→</span></div></a>
+<a class="glass-card" href="#threats" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--red mb-sm">💣 Guided Aerial Bombs (KAB)</span>
+<h4>FAB-250/500/1500 with UMPK Kit</h4>
+<p><strong>Glide Speed:</strong> 800–1,000 km/h</p>
+<p><strong>Standoff Range:</strong> 45–80 km from frontline</p>
+<p><strong>AI Detection:</strong> Tracking Su-34 tactical loft maneuvers and instantaneous border alerts.</p>
+<div class="feature-card-action" style="margin-top: 12px;"><span>View Threat Matrix</span><span class="arrow">→</span></div></a>
+<a class="glass-card" href="#threats" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+<span class="badge badge--blue mb-sm">✈️ Strategic Bombers</span>
+<h4>Tu-95MS / Tu-22M3 / Tu-160</h4>
+<p><strong>Launch Hubs:</strong> Caspian Sea, Engels, Olenya, Mozdok</p>
+<p><strong>AI Detection:</strong> Flight time calculation from launch sectors to missile impact zones.</p>
+<div class="feature-card-action" style="margin-top: 12px;"><span>View Threat Matrix</span><span class="arrow">→</span></div></a>
+</div>
+<h3>Full Catalog of 20 Threat Classes</h3>
+<p>Every aerial threat is classified using an individual physics and ballistics profile to calculate precise flight arrival times and civil defense protocols:</p>
+<div class="threat-catalog-grid reveal" data-stagger="">
+<!-- 01 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🛵</div>
+<span class="threat-catalog-id">CLASS #01</span>
+</div>
+<div class="threat-catalog-title">Shahed-136 / Geran-2</div>
+<div class="threat-catalog-desc">Long-range loitering munition with acoustic engine signature tracking and riverbed masking.</div>
+<div class="threat-catalog-footer">
+<span>Low-Altitude</span>
+<span class="threat-catalog-speed">⚡ 185 km/h</span>
+</div>
+</a>
+<!-- 02 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🚀</div>
+<span class="threat-catalog-id">CLASS #02</span>
+</div>
+<div class="threat-catalog-title">Kh-101 / Kh-555 / mKR Banderol</div>
+<div class="threat-catalog-desc">Strategic air-launched and small-sized loitering cruise missiles with terrain-following radar.</div>
+<div class="threat-catalog-footer">
+<span>Cruise Missile</span>
+<span class="threat-catalog-speed">⚡ 550–850 km/h</span>
+</div>
+</a>
+<!-- 03 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🌊</div>
+<span class="threat-catalog-id">CLASS #03</span>
+</div>
+<div class="threat-catalog-title">3M-54 Kalibr</div>
+<div class="threat-catalog-desc">Sea-launched cruise missile deployed from submarines and surface corvettes in the Black/Caspian seas.</div>
+<div class="threat-catalog-footer">
+<span>Sea-Launched</span>
+<span class="threat-catalog-speed">⚡ 880 km/h</span>
+</div>
+</a>
+<!-- 04 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">💥</div>
+<span class="threat-catalog-id">CLASS #04</span>
+</div>
+<div class="threat-catalog-title">9M723 Iskander-M</div>
+<div class="threat-catalog-desc">Quasi-ballistic solid-propellant missile with extreme terminal dive velocity and sub-3-minute arrival.</div>
+<div class="threat-catalog-footer">
+<span>SRBM Ballistic</span>
+<span class="threat-catalog-speed">⚡ 5,500 km/h</span>
+</div>
+</a>
+<!-- 05 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">⚡</div>
+<span class="threat-catalog-id">CLASS #05</span>
+</div>
+<div class="threat-catalog-title">Kh-47M2 Kinzhal</div>
+<div class="threat-catalog-desc">Air-launched aero-ballistic system carried by MiG-31K jets with high-altitude hypersonic acceleration.</div>
+<div class="threat-catalog-footer">
+<span>Aero-Ballistic</span>
+<span class="threat-catalog-speed">⚡ Up to Mach 10</span>
+</div>
+</a>
+<!-- 06 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">💣</div>
+<span class="threat-catalog-id">CLASS #06</span>
+</div>
+<div class="threat-catalog-title">Guided Bomb (KAB/UMPK/UMPB D-30SN)</div>
+<div class="threat-catalog-desc">Modular glide bombs (FAB-250/500/1500, UMPB) released from tactical aircraft at altitudes up to 12 km.</div>
+<div class="threat-catalog-footer">
+<span>Glide Bomb</span>
+<span class="threat-catalog-speed">⚡ 900 km/h</span>
+</div>
+</a>
+<!-- 07 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">✈️</div>
+<span class="threat-catalog-id">CLASS #07</span>
+</div>
+<div class="threat-catalog-title">Tu-95MS Strategic Bear</div>
+<div class="threat-catalog-desc">Turboprop strategic missile platform (launch lines: Caspian Sea, Engels, Volgodonsk).</div>
+<div class="threat-catalog-footer">
+<span>Strategic Air</span>
+<span class="threat-catalog-speed">⚡ 800 km/h</span>
+</div>
+</a>
+<!-- 08 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🛩️</div>
+<span class="threat-catalog-id">CLASS #08</span>
+</div>
+<div class="threat-catalog-title">Tu-22M3 (Kh-22/32)</div>
+<div class="threat-catalog-desc">Supersonic maritime strike bomber armed with heavy supersonic anti-ship and land-attack missiles.</div>
+<div class="threat-catalog-footer">
+<span>Long-Range Air</span>
+<span class="threat-catalog-speed">⚡ 4,200 km/h</span>
+</div>
+</a>
+<!-- 09 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🔥</div>
+<span class="threat-catalog-id">CLASS #09</span>
+</div>
+<div class="threat-catalog-title">3M22 Zircon</div>
+<div class="threat-catalog-desc">Scramjet-powered hypersonic anti-ship/land-attack cruise missile launched from coastal systems in Crimea.</div>
+<div class="threat-catalog-footer">
+<span>Hypersonic</span>
+<span class="threat-catalog-speed">⚡ 11,000 km/h</span>
+</div>
+</a>
+<!-- 10 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🎯</div>
+<span class="threat-catalog-id">CLASS #10</span>
+</div>
+<div class="threat-catalog-title">9M728 Iskander-K</div>
+<div class="threat-catalog-desc">Ground-launched tactical cruise missile traveling at low altitudes to bypass radar detection horizons.</div>
+<div class="threat-catalog-footer">
+<span>Ground Cruise</span>
+<span class="threat-catalog-speed">⚡ 850 km/h</span>
+</div>
+</a>
+<!-- 11 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🛸</div>
+<span class="threat-catalog-id">CLASS #11</span>
+</div>
+<div class="threat-catalog-title">Gerbera Decoy Drone</div>
+<div class="threat-catalog-desc">Unarmed foam decoy with radar reflectors designed to saturate air defense radars and deplete interceptors.</div>
+<div class="threat-catalog-footer">
+<span>Decoy Drone</span>
+<span class="threat-catalog-speed">⚡ 150 km/h</span>
+</div>
+</a>
+<!-- 12 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🏹</div>
+<span class="threat-catalog-id">CLASS #12</span>
+</div>
+<div class="threat-catalog-title">Kh-31P / Kh-58</div>
+<div class="threat-catalog-desc">High-speed tactical anti-radiation missile homing in on air defense radar emissions.</div>
+<div class="threat-catalog-footer">
+<span>Anti-Radiation</span>
+<span class="threat-catalog-speed">⚡ 3,300 km/h</span>
+</div>
+</a>
+<!-- 13 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🌊</div>
+<span class="threat-catalog-id">CLASS #13</span>
+</div>
+<div class="threat-catalog-title">P-800 Oniks</div>
+<div class="threat-catalog-desc">Supersonic coastal defense cruise missile fired from Bastion-P launchers in occupied Crimea.</div>
+<div class="threat-catalog-footer">
+<span>Coastal Strike</span>
+<span class="threat-catalog-speed">⚡ 3,180 km/h</span>
+</div>
+</a>
+<!-- 14 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">💥</div>
+<span class="threat-catalog-id">CLASS #14</span>
+</div>
+<div class="threat-catalog-title">S-300 / S-400 (Surface)</div>
+<div class="threat-catalog-desc">Repurposed anti-aircraft missiles fired on ballistic surface-to-surface trajectories at frontline cities.</div>
+<div class="threat-catalog-footer">
+<span>SAM in Ground Mode</span>
+<span class="threat-catalog-speed">⚡ 4,500 km/h</span>
+</div>
+</a>
+<!-- 15 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">💢</div>
+<span class="threat-catalog-id">CLASS #15</span>
+</div>
+<div class="threat-catalog-title">Smerch / Tornado-S MLRS</div>
+<div class="threat-catalog-desc">Heavy 300mm multiple launch rocket systems dispersing cluster and fragmentation warheads.</div>
+<div class="threat-catalog-footer">
+<span>Heavy MLRS</span>
+<span class="threat-catalog-speed">⚡ 2,200 km/h</span>
+</div>
+</a>
+<!-- 16 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🎯</div>
+<span class="threat-catalog-id">CLASS #16</span>
+</div>
+<div class="threat-catalog-title">Su-34 / Su-35 Tactical Jets</div>
+<div class="threat-catalog-desc">Frontline strike aircraft performing glide bomb releases and tactical standoff missile launches.</div>
+<div class="threat-catalog-footer">
+<span>Tactical Air</span>
+<span class="threat-catalog-speed">⚡ 950 km/h</span>
+</div>
+</a>
+<!-- 17 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">👁️</div>
+<span class="threat-catalog-id">CLASS #17</span>
+</div>
+<div class="threat-catalog-title">Orlan-10 / Zala / Supercam</div>
+<div class="threat-catalog-desc">Operational-tactical optical/thermal reconnaissance drones directing real-time strike targeting.</div>
+<div class="threat-catalog-footer">
+<span>Recon UAV</span>
+<span class="threat-catalog-speed">⚡ 120 km/h</span>
+</div>
+</a>
+<!-- 18 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">☢️</div>
+<span class="threat-catalog-id">CLASS #18</span>
+</div>
+<div class="threat-catalog-title">Radiation Hazard</div>
+<div class="threat-catalog-desc">Critical radiation alerts, nuclear facility emergency protocols, and sealed bunker routing.</div>
+<div class="threat-catalog-footer">
+<span>CBRN Threat</span>
+<span class="threat-catalog-speed">⚡ Immediate Shelter</span>
+</div>
+</a>
+<!-- 19 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">⚠️</div>
+<span class="threat-catalog-id">CLASS #19</span>
+</div>
+<div class="threat-catalog-title">Chemical Hazard</div>
+<div class="threat-catalog-desc">Industrial toxic substance spills (chlorine, ammonia) or chemical munition alerts.</div>
+<div class="threat-catalog-footer">
+<span>Toxic Hazard</span>
+<span class="threat-catalog-speed">⚡ Air-Sealed Bunker</span>
+</div>
+</a>
+<!-- 20 -->
+<a class="threat-catalog-card" href="#threats">
+<div class="threat-catalog-header">
+<div class="threat-catalog-icon">🔔</div>
+<span class="threat-catalog-id">CLASS #20</span>
+</div>
+<div class="threat-catalog-title">Regional General Siren</div>
+<div class="threat-catalog-desc">Official regional air raid alert issued by the Ukrainian Air Force and State Emergency Service.</div>
+<div class="threat-catalog-footer">
+<span>Official Protocol</span>
+<span class="threat-catalog-speed">⚡ Direct Feed</span>
+</div>
+</a>
+</div>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- Article 7: Network & Multi-Tier Disaster Recovery -->
+<section id="network" style="background: var(--bg-secondary);">
+<div class="container">
+<div class="article-content reveal">
+<div class="section-subtitle">Module 7</div>
+<h2>🌐 Defense-Grade Network Architecture, Multi-Tier Disaster Recovery &amp; Fault Tolerance</h2>
+<div class="highlight-box">
+<p><strong>Defense-Grade Infrastructure Resilience:</strong> Engineered to the Zero-Data-Loss standard (RPO = 0s, RTO &lt; 1.2s). SirenUA combines 5 layers of active state persistence — ranging from 15-minute cryptographic snapshots to event-driven WAL disk commits, geo-distributed cloud clusters, and local on-device iPhone edge caching.</p>
+</div>
+<div class="grid grid-2" style="gap: var(--space-xl); margin: var(--space-2xl) 0;">
+<a class="glass-card" href="investors.html" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--cyan mb-sm" style="align-self: flex-start;">🔄 Tier 1</span>
+<h4>15-Minute Automated Cloud Snapshots</h4>
+<p style="flex-grow: 1;">Background daemons execute atomic snapshot routines every 15 minutes, validating active threat grids, bearing vectors, and session history logs before sealing cryptographically.</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Architecture Specs</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="investors.html" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--blue mb-sm" style="align-self: flex-start;">⚡ Tier 2</span>
+<h4>Event-Driven Instant WAL Persistence</h4>
+<p style="flex-grow: 1;">Every single newly detected hazard, heading adjustment, or regional all-clear trigger immediately writes to high-speed disk using Write-Ahead Logging (WAL), preventing data corruption during unexpected power outages.</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Architecture Specs</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="investors.html" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--purple mb-sm" style="align-self: flex-start;">☁️ Tier 3</span>
+<h4>Geo-Distributed Firebase &amp; Cloud Storage Mesh</h4>
+<p style="flex-grow: 1;">Active state is mirrored in real time across geo-redundant cloud clusters. If a primary data center suffers an ISP blackout or infrastructure disruption, secondary replica nodes immediately assume full traffic load with zero dropped alerts.</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Architecture Specs</span> <span class="arrow">→</span>
+</div>
+</a>
+<a class="glass-card" href="investors.html" style="text-decoration: none; display: flex; flex-direction: column;">
+<span class="badge badge--amber mb-sm" style="align-self: flex-start;">🚀 Tier 4</span>
+<h4>0.05-Second Hot-Boot Recovery (Pre-Shutdown Hooks)</h4>
+<p style="flex-grow: 1;">During software updates or maintenance cycles, SIGTERM/SIGINT lifecycle interceptors freeze memory state instantly. On boot, the server reloads the complete operational state in under 50 ms without re-querying external sources.</p>
+<div class="feature-card-action" style="margin-top: 8px;">
+<span>Architecture Specs</span> <span class="arrow">→</span>
+</div>
+</a>
+</div>
+<h3>📱 Tier 5: On-Device Edge Offline Resilience</h3>
+<p>The SirenUA iOS client embeds an encrypted local SQLite database covering all 26 regional shelter networks and offline walking route math. Even during <strong>total cellular tower blackouts and internet loss</strong>, civilians instantly retain access to nearby Tier 1–4 bomb shelters, offline bearing compasses, and safety protocols.</p>
+<h3>Dual-Endpoint Client Failover</h3>
+<p>The iOS client maintains concurrent active connections via dual independent network transports: primary high-throughput static IP and encrypted edge proxy tunnel. Gateway switching executes seamlessly within 300 ms without interrupting emergency sirens.</p>
+<div class="metrics-row" style="display: flex; gap: var(--space-xl); margin-top: var(--space-xl); flex-wrap: wrap;">
+<div style="flex: 1; min-width: 200px; background: var(--bg-card); padding: var(--space-lg); border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+<div style="font-size: 1.6rem; font-weight: 700; color: var(--cyan); font-family: var(--font-mono);">RPO = 0s</div>
+<div style="font-size: 0.85rem; color: var(--text-muted);">Zero telemetry data loss under any failure</div>
+</div>
+<div style="flex: 1; min-width: 200px; background: var(--bg-card); padding: var(--space-lg); border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+<div style="font-size: 1.6rem; font-weight: 700; color: var(--cyan); font-family: var(--font-mono);">&lt; 1.2s</div>
+<div style="font-size: 0.85rem; color: var(--text-muted);">Complete Disaster Recovery Time (RTO)</div>
+</div>
+<div style="flex: 1; min-width: 200px; background: var(--bg-card); padding: var(--space-lg); border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+<div style="font-size: 1.6rem; font-weight: 700; color: var(--cyan); font-family: var(--font-mono);">99.98%</div>
+<div style="font-size: 0.85rem; color: var(--text-muted);">Architecture Availability &amp; Delivery SLA</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<hr class="section-divider"/>
+<!-- CTA -->
+<section class="cta-section">
+<div class="container reveal">
+<h2>Protect Yourself and Your <span class="text-gradient">Loved Ones</span></h2>
+<p>Download SirenUA for free on the Apple App Store.</p>
+<div class="hero-actions" style="margin-top: 2rem; margin-bottom: 0;">
+<a class="btn btn-primary btn-lg" href="index.html#download">📱 Download on App Store</a>
+<a class="btn btn-secondary btn-lg" href="support.html">💬 Support Center</a>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="footer">
+<div class="container">
+<div class="footer-grid">
+<div class="footer-brand">
+<a class="nav-logo" href="index.html">
+<img alt="SirenUA Logo" class="nav-logo-img" src="../assets/app-icon.png"/>
+<span>SirenUA</span>
+</a>
+<p>Real-time AI-powered early warning system dedicated to the protection of Ukrainian civilians.</p>
+</div>
+<div class="footer-column">
+<h4>Product</h4>
+<ul>
+<li><a href="#ai-system">AI System</a></li>
+<li><a href="#map">Tactical Map</a></li>
+<li><a href="#shelters">Shelters</a></li>
+<li><a href="#analytics">Analytics</a></li>
+</ul>
+</div>
+<div class="footer-column">
+<h4>Support</h4>
+<ul>
+<li><a href="support.html">FAQ</a></li>
+<li><a href="support.html#guides">User Guides</a></li>
+<li><a href="support.html#contact">Contact Us</a></li>
+</ul>
+</div>
+<div class="footer-column">
+<h4>Legal</h4>
+<ul>
+<li><a href="privacy.html">Privacy Policy</a></li>
+<li><a href="terms.html">Terms of Service</a></li>
+</ul>
+</div>
+</div>
+<div class="footer-bottom">
+<span>© 2024–2026 SirenUA. All rights reserved.</span>
+</div>
+</div>
+</footer>
+<script src="../js/main.js"></script>
+<script src="../js/animations.js"></script>
+</body>
+</html>

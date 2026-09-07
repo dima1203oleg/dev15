@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Технічна Підтримка — SirenUA</title>
+  <meta name="description" content="Центр допомоги SirenUA — часті запитання, покрокові інструкції, онлайн-чат підтримки та зв'язок з командою.">
+  <link rel="icon" type="image/png" href="assets/app-icon.png">
+  <link rel="stylesheet" href="css/main.css?v=2.2">
+  <link rel="stylesheet" href="css/components.css?v=2.2">
+  <link rel="stylesheet" href="css/animations.css?v=2.2">
+</head>
+<body>
+
+  <!-- Ambient Glow -->
+  <div class="ambient-glow ambient-glow--cyan"></div>
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="assets/app-icon.png" alt="SirenUA Logo" class="nav-logo-img">
+        <span>SirenUA</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html">Головна</a></li>
+        <li><a href="features.html">Можливості</a></li>
+        <li><a href="referral.html">Реферали</a></li>
+        <li><a href="support.html" class="active">Підтримка</a></li>
+        <li><a href="investors.html">Інвесторам</a></li>
+        <li><a href="about.html">Про нас</a></li>
+        <li><a href="index.html#download" class="nav-cta">Завантажити</a></li>
+      </ul>
+      <div class="nav-right">
+        <a href="referral.html" class="nav-cabinet-btn" title="Кабінет амбасадора та реферальна система">
+          <span class="cabinet-badge-icon">👤</span> Кабінет
+        </a>
+        <div class="lang-switch">
+          <a href="support.html" class="lang-btn active">UA</a>
+          <span class="lang-divider">|</span>
+          <a href="en/support.html" class="lang-btn">EN</a>
+        </div>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Меню"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="container">
+      <span class="section-subtitle">Центр Допомоги</span>
+      <h1>Технічна <span class="text-gradient">підтримка</span> SirenUA</h1>
+      <p>Відповіді на поширені запитання, інструкції з налаштування та прямий зв'язок із нашою командою.</p>
+      <div style="margin-top: var(--space-xl);">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          Усі сервери та системи моніторингу працюють у штатному режимі
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <section style="padding: var(--space-2xl) 0;">
+    <div class="container container--narrow">
+      <div class="form-group">
+        <input type="text" id="faq-search" placeholder="🔍 Пошук по запитаннях та темах..." style="padding: 16px 20px; font-size: 1rem; border-radius: var(--radius-lg); background: var(--bg-card); border: 1px solid var(--border-glass);">
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section id="faq" style="padding-top: 0;">
+    <div class="container container--narrow">
+      <div class="section-header reveal">
+        <h2>Часті <span class="text-gradient">запитання</span></h2>
+      </div>
+
+      <!-- Category Filter -->
+      <div class="faq-categories reveal">
+        <button class="faq-category-btn active" data-category="all">Всі теми</button>
+        <button class="faq-category-btn" data-category="start">🚀 Початок роботи</button>
+        <button class="faq-category-btn" data-category="notifications">🔔 Сповіщення</button>
+        <button class="faq-category-btn" data-category="map">🗺️ Карта</button>
+        <button class="faq-category-btn" data-category="shelters">🛡️ Укриття</button>
+        <button class="faq-category-btn" data-category="premium">⭐ Розширені функції</button>
+        <button class="faq-category-btn" data-category="tech">⚙️ Технічні питання</button>
+      </div>
+
+      <div class="accordion">
+        <!-- Початок роботи -->
+        <div class="accordion-item" data-category="start">
+          <button class="accordion-trigger">
+            <span>Як встановити та налаштувати SirenUA?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Завантажте SirenUA безкоштовно з магазину App Store на пристрій під керуванням iOS 17.0 або новішої версії. Після відкриття:</p>
+              <ol>
+                <li>Надайте дозвіл на отримання сповіщень (включно з критичними сигналами).</li>
+                <li>Надайте доступ до геолокації для пошуку найближчих укриттів (використовується лише під час пошуку).</li>
+                <li>Оберіть свою область або конкретні райони для спостереження.</li>
+                <li>Виберіть зручні звукові профілі для сигналів тривоги та відбою.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item" data-category="start">
+          <button class="accordion-trigger">
+            <span>Як обрати окремі райони моніторингу?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Відкрийте розділ <strong>Налаштування → Регіони</strong> у нижній панелі. Ви можете відстежувати:</p>
+              <ul>
+                <li><strong>Усю область</strong> — сповіщення про всі загрози в межах області.</li>
+                <li><strong>Вибрані райони</strong> — адресні сповіщення лише тоді, коли загроза зафіксована у вашому конкретному районі.</li>
+              </ul>
+              <p>Це дозволяє уникнути зайвих звукових тривог через події у далеких частинах великої області.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item" data-category="start">
+          <button class="accordion-trigger">
+            <span>Що означають колірні позначення областей на карті?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <ul>
+                <li>🔴 <strong>Червоний колір</strong> — оголошено офіційну повітряну тривогу в області.</li>
+                <li>🟠 <strong>Помаранчевий колір</strong> — штучний інтелект зафіксував активну загрозу (рух ракети, дрона або КАБ).</li>
+                <li>🟡 <strong>Жовтий колір</strong> — зона підвищеної уваги або ймовірний вектор руху загрози.</li>
+                <li>🔵 <strong>Синій / Спокійний статус</strong> — безпечно, загроз не виявлено.</li>
+                <li>⚫ <strong>Темно-сірий</strong> — тимчасово окуповані території.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Сповіщення -->
+        <div class="accordion-item" data-category="notifications">
+          <button class="accordion-trigger">
+            <span>Що робити, якщо сповіщення не приходять?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Виконайте наступну перевірку:</p>
+              <ol>
+                <li>Відкрийте <strong>Параметри iOS → SirenUA → Сповіщення</strong> і переконайтеся, що всі перемикачі активні.</li>
+                <li>Увімкніть опцію <strong>Критичні сповіщення</strong> у системних налаштуваннях додатку.</li>
+                <li>Перевірте, чи обрано хоча б одну область або район у вкладці налаштувань додатку.</li>
+                <li>Перевірте якість інтернет-з'єднання.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item" data-category="notifications">
+          <button class="accordion-trigger">
+            <span>Чому важливо увімкнути критичні сповіщення?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p><strong>Критичні сповіщення</strong> — це спеціальний системний рівень у системі iOS, який дозволяє відтворювати сигнал тривоги навіть тоді, коли:</p>
+              <ul>
+                <li>Увімкнено режим «Не турбувати»</li>
+                <li>Активовано нічний режим або «Сон»</li>
+                <li>Перемикач гучності переведено у беззвучний стан</li>
+              </ul>
+              <p>Це життєво важливо для своєчасного пробудження вночі у разі раптового ракетного удару.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item" data-category="notifications">
+          <button class="accordion-trigger">
+            <span>Чим відрізняється офіційна тривога від загрози ШІ?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <ul>
+                <li><strong>Офіційна тривога</strong> — надходить від Повітряних Сил ЗСУ через державні канали оповіщення.</li>
+                <li><strong>Загроза ШІ</strong> — результат аналізу оперативних розвідувальних каналів у реальному часі, що дозволяє дізнатися тип цілі (шахед, балістика, пуск КАБ) та напрямок руху ще до загального оголошення.</li>
+                <li><strong>Офіційний відбій</strong> — державне скасування загальної тривоги.</li>
+                <li><strong>Локальне очищення ШІ</strong> — підтвердження збиття або виходу конкретної цілі з вашого сектору.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Карта -->
+        <div class="accordion-item" data-category="map">
+          <button class="accordion-trigger">
+            <span>Як читати лінії руху та траєкторії на карті?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <ul>
+                <li><strong>Суцільний неоновий промінь</strong> — зафіксований активний вектор польоту цілі від точки виявлення чи рубежу пуску до цільового сектору.</li>
+                <li><strong>Штрихова лінія (пунктир)</strong> — курс підльоту літаків-носіїв (Ту-95МС, Ту-22М3, МіГ-31К) від аеродромів базування до рубежів пуску ракет.</li>
+                <li><strong>Тактичні стрілочки (шеврони)</strong> — показують точний кут і напрямок польоту на вістрі загрози та дистанцію ешелонів.</li>
+                <li><strong>Пульсуюча точка на рубежі</strong> — підтверджене місце старту або входу цілі в повітряний простір.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item" data-category="map">
+          <button class="accordion-trigger">
+            <span>Які кольори мають траєкторії та стрілочки для різних типів загроз?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Кожна категорія загрози має унікальний тактичний колір неонового променя та стрілочки:</p>
+              <ul>
+                <li>🟡 <strong>Жовтий неон</strong> — ударні безпілотники <em>Shahed-136</em>, реактивні дрони <em>Shahed-238</em>, тактичні <em>FPV-дрони</em> та «Ланцети».</li>
+                <li>🔴 <strong>Червоний тактичний</strong> — крилаті ракети <em>(Х-101, Калібр, Іскандер-К)</em>, стратегічна авіація <em>Ту-95МС</em> та ракетоносці <em>Ту-22М3</em> (із білим пунктиром підльоту від аеродромів).</li>
+                <li>🟣 <strong>Електричний пурпур</strong> — балістичні ракети <em>(Іскандер-М, KN-23, С-300)</em>, аеробалістичні <em>«Кинджали» (МіГ-31К)</em> та гіперзвуковий <em>«Циркон»</em>.</li>
+                <li>🟠 <strong>Бурштиновий помаранчевий</strong> — керовані авіабомби <em>(КАБ / УМПК / УМПБ)</em>, активність тактичної авіації <em>Су-34/Су-35</em> та залпи <em>РСЗВ</em>.</li>
+                <li>🔵 <strong>Тактичний синій</strong> — розвідувальні безпілотники <em>(Орлан-10, ZALA, Supercam)</em>.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Укриття -->
+        <div class="accordion-item" data-category="shelters">
+          <button class="accordion-trigger">
+            <span>Як працює пошук найближчого укриття?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <ol>
+                <li>Натисніть на вкладку <strong>«Укриття» (🛡️)</strong> у нижній панелі.</li>
+                <li>Додаток визначить вашу поточну позицію та відсортує найближчі сховища за відстанню.</li>
+                <li>Оберіть потрібний об'єкт для перегляду типу укриття та розрахункового часу пішої ходи.</li>
+                <li>Натисніть <strong>«Прокласти маршрут»</strong> для запуску покрокової навігації.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item" data-category="shelters">
+          <button class="accordion-trigger">
+            <span>Які рівні захисту мають укриття у базі?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Укриття класифікуються за 4 категоріями надійності:</p>
+              <ul>
+                <li>🟢 <strong>Рівень 1 (Найвищий)</strong> — герметичні бомбосховища, метрополітен, підземні паркінги глибокого залягання.</li>
+                <li>🔵 <strong>Рівень 2 (Надійний)</strong> — капітальні підвали адміністративних та громадських споруд.</li>
+                <li>🟡 <strong>Рівень 3 (Базовий)</strong> — цокольні поверхи та підвали багатоквартирних будинків.</li>
+                <li>🟠 <strong>Рівень 4 (Найпростіший)</strong> — прості захисні споруди місцевого значення.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Розширені функції -->
+        <div class="accordion-item" data-category="premium">
+          <button class="accordion-trigger">
+            <span>Які можливості надає розширена підписка?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Розширений захист включає:</p>
+              <ul>
+                <li>Відображення зон підвищеної уваги на карті</li>
+                <li>Деталізовані векторні траєкторії руху загроз</li>
+                <li>Повну хронологію подій за попередню добу</li>
+                <li>Окремі звукові сигнали ШІ для виявлення та зняття загроз</li>
+              </ul>
+              <p>Базові тривоги та пошук укриттів залишаються <strong>безкоштовними завжди</strong>.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item" data-category="premium">
+          <button class="accordion-trigger">
+            <span>Як скасувати або відновити підписку?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Управління здійснюється безпосередньо через обліковий запис Apple ID:</p>
+              <ol>
+                <li>Відкрийте <strong>Параметри iOS → Ваше ім'я → Підписки</strong>.</li>
+                <li>Оберіть <strong>SirenUA</strong> та за потреби змініть або скасуйте підписку.</li>
+                <li>Для відновлення на новому пристрої натисніть <strong>«Відновити покупки»</strong> у налаштуваннях додатку.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- Технічні питання -->
+        <div class="accordion-item" data-category="tech">
+          <button class="accordion-trigger">
+            <span>Як додаток впливає на заряд акумулятора?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>SirenUA створено з фокусом на енергоефективність:</p>
+              <ul>
+                <li>Основний масив аналізу виконується на захищених серверах, а не на смартфоні.</li>
+                <li>Сповіщення доставляються через нативну хмарну службу Apple, що не споживає енергії у фоні.</li>
+                <li>Геолокація вмикається лише в момент безпосереднього пошуку укриттів.</li>
+                <li>У фоновому режимі споживання батареї складає менше 2–3% за добу.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item" data-category="tech">
+          <button class="accordion-trigger">
+            <span>Які моделі iPhone підтримуються?</span>
+            <span class="accordion-trigger-icon">+</span>
+          </button>
+          <div class="accordion-content">
+            <div class="accordion-content-inner">
+              <p>Додаток сумісний з усіма смартфонами iPhone, що працюють під керуванням iOS 17.0 або новішої версії.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Guides Section -->
+  <section id="guides" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Інструкції</span>
+        <h2>Покрокові <span class="text-gradient">інструкції</span></h2>
+        <p class="section-description">Детальні посібники для швидкого освоєння всіх функцій додатку.</p>
+      </div>
+      <div class="grid grid-3 reveal" data-stagger>
+        <!-- Guide 1 -->
+        <a href="#guide-setup" class="guide-card" data-modal="guide-setup">
+          <div class="guide-card-image" style="background: linear-gradient(135deg, rgba(34,211,238,0.1), rgba(59,130,246,0.1));">📱</div>
+          <div class="guide-card-content">
+            <h4>Початкове налаштування</h4>
+            <p>Встановлення, дозволи на критичні сигнали, вибір областей та перший запуск.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="badge badge--cyan">Базовий посібник</span>
+              <span class="guide-card-action">Читати →</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Guide 2 -->
+        <a href="#guide-notifications" class="guide-card" data-modal="guide-notifications">
+          <div class="guide-card-image" style="background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(245,158,11,0.1));">🔔</div>
+          <div class="guide-card-content">
+            <h4>Налаштування сповіщень</h4>
+            <p>Критичні тривоги, робота в режимі сну, індивідуальні звукові сигнали для районів.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="badge badge--red">Важливо</span>
+              <span class="guide-card-action">Читати →</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Guide 3 -->
+        <a href="#guide-shelters" class="guide-card" data-modal="guide-shelters">
+          <div class="guide-card-image" style="background: linear-gradient(135deg, rgba(34,211,238,0.1), rgba(59,130,246,0.1));">🛡️</div>
+          <div class="guide-card-content">
+            <h4>Пошук та маршрути до укриттів</h4>
+            <p>Як швидко знайти найбезпечніше сховище та прокласти пішохідний маршрут.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="badge badge--cyan">Безпека</span>
+              <span class="guide-card-action">Читати →</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Guide 4 -->
+        <a href="#guide-map" class="guide-card" data-modal="guide-map">
+          <div class="guide-card-image" style="background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(34,211,238,0.1));">🗺️</div>
+          <div class="guide-card-content">
+            <h4>Робота з картою загроз</h4>
+            <p>Як читати вектори руху, визначати типи ракет і дронів та стежити за обстановкою.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="badge badge--blue">Карта</span>
+              <span class="guide-card-action">Читати →</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Guide 5 -->
+        <a href="#guide-premium" class="guide-card" data-modal="guide-premium">
+          <div class="guide-card-image" style="background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(34,211,238,0.1));">⭐</div>
+          <div class="guide-card-content">
+            <h4>Розширені можливості</h4>
+            <p>Зони підвищеної уваги, точні вектори та детальна добова хронологія.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="badge badge--amber">Розширено</span>
+              <span class="guide-card-action">Читати →</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Guide 6 -->
+        <a href="#guide-monitoring" class="guide-card" data-modal="guide-monitoring">
+          <div class="guide-card-image" style="background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(34,211,238,0.1));">📊</div>
+          <div class="guide-card-content">
+            <h4>Оперативний моніторинг</h4>
+            <p>Як аналізувати загальну ситуацію та ймовірні коридори повторних пусків.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="badge badge--cyan">Аналітика</span>
+              <span class="guide-card-action">Читати →</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- Contact Section -->
+  <section id="contact">
+    <div class="container container--narrow">
+      <div class="section-header reveal">
+        <span class="section-subtitle">Зворотний зв'язок</span>
+        <h2>Надіслати звернення до <span class="text-gradient">підтримки</span></h2>
+        <p class="section-description">Якщо у вас виникли запитання або пропозиції — заповніть форму нижче.</p>
+      </div>
+      <form class="contact-form reveal" id="contact-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="contact-name">Ваше ім'я *</label>
+            <input type="text" id="contact-name" name="name" required placeholder="Ім'я та прізвище">
+          </div>
+          <div class="form-group">
+            <label for="contact-email">Ваш Email *</label>
+            <input type="email" id="contact-email" name="email" required placeholder="name@example.com">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="contact-topic">Тема звернення</label>
+          <select id="contact-topic" name="topic">
+            <option value="">Оберіть тему...</option>
+            <option value="notifications">Питання щодо сповіщень</option>
+            <option value="shelters">База та навігація до укриттів</option>
+            <option value="premium">Розширені функції та підписка</option>
+            <option value="map">Робота карти та траєкторій</option>
+            <option value="bug">Повідомлення про технічну помилку</option>
+            <option value="feature">Пропозиція щодо вдосконалення</option>
+            <option value="other">Інше питання</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="contact-message">Повідомлення *</label>
+          <textarea id="contact-message" name="message" required placeholder="Опишіть ситуацію якомога детальніше..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="align-self: flex-start;">
+          📩 Надіслати звернення
+        </button>
+        <div class="success-message">
+          ✅ Дякуємо за звернення! Наша служба підтримки розгляне його та відповість на вказаний Email протягом 24 годин.
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Chat Widget -->
+  <div class="chat-widget">
+    <div class="chat-window" id="chat-window">
+      <div class="chat-header">
+        <h4><span class="online-dot"></span> Служба підтримки SirenUA</h4>
+        <button class="chat-close" aria-label="Закрити вікно чату">✕</button>
+      </div>
+      <div class="chat-body"></div>
+      <form class="chat-form" id="chat-support-form">
+        <input type="text" name="chat-name" placeholder="Ваше ім'я" required>
+        <input type="email" name="chat-email" placeholder="Ваш Email" required>
+        <select name="chat-topic">
+          <option value="">Оберіть тему звернення...</option>
+          <option value="notifications">Сповіщення</option>
+          <option value="shelters">Укриття</option>
+          <option value="premium">Розширені функції</option>
+          <option value="bug">Технічна помилка</option>
+          <option value="other">Інше</option>
+        </select>
+        <textarea name="chat-message" placeholder="Ваше запитання..." required></textarea>
+        <button type="submit">Надіслати повідомлення</button>
+      </form>
+    </div>
+    <button class="chat-toggle" aria-label="Відкрити чат підтримки">💬</button>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-logo">
+            <img src="assets/app-icon.png" alt="SirenUA Logo" class="nav-logo-img">
+            <span>SirenUA</span>
+          </a>
+          <p>Система штучного інтелекту раннього попередження для захисту цивільного населення України.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Продукт</h4>
+          <ul>
+            <li><a href="features.html">Можливості</a></li>
+            <li><a href="index.html#screenshots">Додаток</a></li>
+            <li><a href="investors.html">Інвесторам</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Підтримка</h4>
+          <ul>
+            <li><a href="#faq">Часті запитання</a></li>
+            <li><a href="#guides">Інструкції</a></li>
+            <li><a href="#contact">Зворотний зв'язок</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Правова інформація</h4>
+          <ul>
+            <li><a href="privacy.html">Конфіденційність</a></li>
+            <li><a href="terms.html">Умови використання</a></li>
+            <li><a href="referral.html">Реферали / Кабінет</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2024–2026 SirenUA. Усі права захищені.</span>
+        <div class="footer-socials">
+          <a href="#" aria-label="Telegram">📱</a>
+          <a href="mailto:support@sirenua.online" aria-label="Email">📧</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Guide Modals (Detailed Interactive Content) -->
+  
+  <!-- Modal 1: Початкове налаштування -->
+  <div class="modal" id="guide-setup">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📱 Початкове налаштування додатку</h3>
+        <button class="modal-close" aria-label="Закрити">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>1. Встановлення з App Store</h4>
+        <p>Завантажте офіційний додаток SirenUA з Apple App Store. Додаток сумісний з усіма моделями iPhone під управлінням <strong>iOS 17.0 або новішої</strong>.</p>
+        
+        <h4>2. Обов'язкові системні дозволи</h4>
+        <p>Для гарантованого та своєчасного отримання сигналів небезпеки виконайте такі кроки під час першого запуску:</p>
+        <ul>
+          <li><strong>Критичні оповіщення (Critical Alerts):</strong> Натисніть «Дозволити». Це дозволяє сирені звучати навіть коли iPhone переведено в беззвучний режим або режим «Не турбувати» / «Сон».</li>
+          <li><strong>Геолокація:</strong> Оберіть «Дозволити під час використання». Геолокація потрібна виключно для миттєвого пішохідного розрахунку маршруту до найближчого укриття на вкладці «Укриття».</li>
+          <li><strong>Фонове оновлення додатків:</strong> Переконайтеся, що в системних налаштуваннях iOS увімкнено фонове оновлення для своєчасної синхронізації оперативної карти.</li>
+        </ul>
+
+        <h4>3. Вибір домашнього регіону та районів</h4>
+        <p>У налаштуваннях оберіть вашу область (наприклад, Київська область / м. Київ) та окремі райони, для яких ви бажаєте отримувати пріоритетні тактичні сповіщення.</p>
+
+        <div class="highlight-box">
+          <p>💡 <strong>Порада:</strong> Після першого запуску додаток автоматично завантажує зашифровану базу укриттів вашого регіону в локальну пам'ять, що забезпечує повну працездатність навіть під час блекаутів мобільного зв'язку.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm modal-close">Зрозуміло</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Налаштування сповіщень -->
+  <div class="modal" id="guide-notifications">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>🔔 Налаштування сповіщень та звуків</h3>
+        <button class="modal-close" aria-label="Закрити">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>Гнучке керування 7 типами сповіщень</h4>
+        <p>SirenUA дозволяє індивідуально налаштувати кожен канал інформування:</p>
+        <ul>
+          <li>🔴 <strong>Офіційна повітряна тривога:</strong> Головний сигнал тривоги за розпорядженням Повітряних Сил ЗСУ.</li>
+          <li>🚀 <strong>Швидкісні ракети (крилаті / балістика):</strong> Миттєве попередження при фіксації пусків або входу ракет у зону спостереження.</li>
+          <li>🛵 <strong>Ударні дрони (Shahed-136):</strong> Попередження про рух ударних безпілотників із зазначенням орієнтовного напрямку.</li>
+          <li>💣 <strong>Пуски КАБ та авіація:</strong> Сигнал про активність тактичної авіації ворога на пускових рубежах.</li>
+          <li>✈️ <strong>Зліт стратегічної авіації:</strong> Попереднє сповіщення про виліт ракетоносців Ту-95МС / Ту-22М3 за 1-2 години до можливих пусків.</li>
+          <li>⚠️ <strong>Артилерійська / спеціальна загроза:</strong> Сигнали про обстріли РСЗВ, хімічну або радіаційну небезпеку.</li>
+          <li>✅ <strong>Відбій тривоги:</strong> Спокійний заспокійливий звук після повної нормалізації безпекової ситуації.</li>
+        </ul>
+
+        <h4>Індивідуальні звукові схеми</h4>
+        <p>У розділі «Звуки» ви можете вибрати класичну сирену, сучасний неоновий сигнал або м'який тактичний тон, щоб на слух відрізняти тип загрози.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm modal-close">Зрозуміло</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Пошук та маршрути до укриттів -->
+  <div class="modal" id="guide-shelters">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>🛡️ Пошук сховищ та пішохідна навігація</h3>
+        <button class="modal-close" aria-label="Закрити">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>4 сертифіковані категорії сховищ</h4>
+        <p>Усі укриття в реєстрі SirenUA розподілені за рівнем захисту:</p>
+        <ol>
+          <li><strong>Рівень 1 (Герметичні бомбосховища):</strong> Станції метрополітену, спеціальні споруди ЦЗ із фільтровентиляційними установками. Захищають від прямого влучання, уламків та газів.</li>
+          <li><strong>Рівень 2 (Спеціалізовані бункери):</strong> Протирадіаційні укриття (ПРУ) та монолітні залізобетонні споруди.</li>
+          <li><strong>Рівень 3 (Найпростіші укриття):</strong> Підземні паркінги, підвальні приміщення новобудов з двома виходами.</li>
+          <li><strong>Рівень 4 (Тимчасові підвали):</strong> Цокольні приміщення та підвали житлових будинків.</li>
+        </ol>
+
+        <h4>Пішохідна навігація за 3 кроки</h4>
+        <ul>
+          <li><strong>Крок 1:</strong> Відкрийте вкладку «Укриття» — додаток миттєво знайде найближче сховище найвищої доступної категорії.</li>
+          <li><strong>Крок 2:</strong> Подивіться на розрахований час добігу пішки (наприклад, 250м • 3 хв).</li>
+          <li><strong>Крок 3:</strong> Натисніть «Маршрут» для покрокової пішохідної навігації (працює офлайн без інтернету).</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm modal-close">Зрозуміло</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Робота з картою загроз -->
+  <div class="modal" id="guide-map">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>🗺️ Робота з тактичною картою загроз</h3>
+        <button class="modal-close" aria-label="Закрити">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>Колірна індикація картографічних секторів</h4>
+        <ul>
+          <li>🔴 <strong>Червоний:</strong> Офіційна активна повітряна тривога в області.</li>
+          <li>🟠 <strong>Помаранчевий:</strong> Штучний інтелект зафіксував активну швидкісну загрозу в секторі.</li>
+          <li>🟡 <strong>Жовтий:</strong> Зона підвищеної уваги або ймовірний вектор прольоту.</li>
+          <li>🔵 <strong>Синій:</strong> Спокійний безпечний статус, загроз не виявлено.</li>
+        </ul>
+
+        <h4>Вектори руху та радіуси підльоту</h4>
+        <p>На карті динамічно відображаються розраховані траєкторії польоту ракет і дронів. Стрілки вказують поточний азимут та розрахунковий час до досягнення меж вашого району.</p>
+
+        <div class="highlight-box">
+          <p>⚡ <strong>Технологія:</strong> Карта SirenUA побудована на оптимізованому рушії WebGL зі швидкістю 60 кадрів/сек і споживає менше 2% заряду батареї під час активного перегляду.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm modal-close">Зрозуміло</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Розширені можливості -->
+  <div class="modal" id="guide-premium">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>⭐ Розширені можливості та аналітика</h3>
+        <button class="modal-close" aria-label="Закрити">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>Що входить до розширеного функціоналу</h4>
+        <ul>
+          <li><strong>Зони підвищеної уваги:</strong> Завчасне попередження про зміну курсу ворожих об'єктів за 5-10 хвилин до офіційного сигналу тривоги.</li>
+          <li><strong>24-годинна хронологія атак:</strong> Деталізований журнал кожної повітряної атаки з похвилинною фіксацією прольотів цілей та роботи ППО.</li>
+          <li><strong>Пріоритетні сервери сповіщень:</strong> Доставка пуш-повідомлень через виділені високошвидкісні шлюзи з нульовою затримкою.</li>
+          <li><strong>Ексклюзивні звукові профілі:</strong> Авторські аудіо-сигнали для кожного типу цілей (Shahed, балістика, Кинджал).</li>
+        </ul>
+
+        <h4>14-денний безкоштовний пробний період</h4>
+        <p>Кожен новий користувач може протестувати повний розширений функціонал протягом 14 днів безкоштовно з можливістю скасування в будь-який момент через налаштування Apple ID.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm modal-close">Зрозуміло</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: Оперативний моніторинг -->
+  <div class="modal" id="guide-monitoring">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📊 Оперативний моніторинг та безпекові протоколи</h3>
+        <button class="modal-close" aria-label="Закрити">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>Як аналізувати оперативну обстановку</h4>
+        <p>Штучний інтелект SirenUA відстежує комплексну картину загроз за 5 розвідувальними каналами. Звертайте увагу на такі індикатори:</p>
+        <ul>
+          <li><strong>Зліт Ту-95МС / Ту-22М3:</strong> Означає підготовку масштабного ракетного удару; час підльоту складає від 40 до 90 хвилин.</li>
+          <li><strong>Вихід носіїв «Калібрів» у море:</strong> Означає загрозу залпу морських ракет по південних та центральних областях.</li>
+          <li><strong>Фіксація балістики (Іскандер-М / С-300):</strong> Вимагає негайного переходу в укриття (час підльоту &lt; 3 хвилини).</li>
+        </ul>
+
+        <h4>Правило двох стін та дії під час обстрілів</h4>
+        <p>Якщо ви не встигаєте добігти до стаціонарного сховища Рівня 1–2, негайно перейдіть у коридор або ванну кімнату за двома глухими стінами від віконних отворів.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm modal-close">Зрозуміло</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js?v=2.2"></script>
+  <script src="js/animations.js?v=2.2"></script>
+  <script src="js/support.js?v=2.2"></script>
+</body>
+</html>

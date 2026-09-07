@@ -34,6 +34,8 @@ non-production states, not promoted to live claims.
 
 Set `VITE_API_BASE_URL` to the authenticated API origin in a deployed environment. If the API is same-origin, leave it empty and route `/api/*` through the production reverse proxy.
 
+For the referral cabinet, configure the repository/environment secret `SIRENUA_REFERRAL_APPLE_USER_ID` and expose it to the build as `VITE_REFERRAL_APPLE_USER_ID`. This must be the Sign in with Apple subject stored by ThreatServer; do not commit it or use an email address as a substitute.
+
 The Vite development proxy (`SIREN_DEV_PROXY_TARGET`) is development-only and must not be used as a production integration boundary.
 
 Store links remain empty until official App Store / Google Play URLs are available. The UI intentionally shows a preparation state instead of inventing a download destination.
