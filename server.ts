@@ -1380,7 +1380,7 @@ async function startServer() {
           partnerRepository.listNetwork(partnerId, 'L1', limit, offset),
           partnerRepository.listNetwork(partnerId, 'L2', limit, offset)
         ]);
-        return res.json({ l1, l2, depthLimitNotice: 'Глибина партнерської моделі суворо обмежена 2 рівнями (L1 + L2). L3+ не оплачується.' });
+        return res.json({ status: 'LIVE', l1, l2, depthLimitNotice: 'Глибина партнерської моделі суворо обмежена 2 рівнями (L1 + L2). L3+ не оплачується.' });
       } catch (error) {
         console.error('[SIREN UA] partner network repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
         return res.status(503).json({ error: 'PARTNER_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Partner data temporarily unavailable.' });
@@ -1417,6 +1417,7 @@ async function startServer() {
     });
 
     res.json({
+      status: 'DEMO_DATA',
       l1: page(l1List),
       l2: page(l2List),
       depthLimitNotice: 'Глибина партнерської моделі суворо обмежена 2 рівнями (L1 + L2). L3+ не оплачується.'
@@ -1474,7 +1475,7 @@ async function startServer() {
         const dashboard = await partnerRepository.getDashboardForUser(principal.subject);
         if (!dashboard) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
         const entries = await partnerRepository.listLedger(dashboard.partner.id);
-        return res.json({ wallet: dashboard.wallet, entries, totalEntriesCount: entries.length, integrityCheck: 'DATABASE_PROJECTION' });
+        return res.json({ status: 'LIVE', wallet: dashboard.wallet, entries, totalEntriesCount: entries.length, integrityCheck: 'DATABASE_PROJECTION' });
       } catch (error) {
         console.error('[SIREN UA] ledger repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
         return res.status(503).json({ error: 'PARTNER_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Partner data temporarily unavailable.' });
@@ -1484,6 +1485,7 @@ async function startServer() {
     const wallet = calculateWallet(demoPartnerId);
 
     res.json({
+      status: 'DEMO_DATA',
       wallet,
       entries: entries.slice().reverse(),
       totalEntriesCount: entries.length,
@@ -1509,7 +1511,7 @@ async function startServer() {
       try {
         const dashboard = await partnerRepository.getDashboardForUser(principal.subject);
         if (!dashboard) return res.status(404).json({ error: 'PARTNER_NOT_FOUND' });
-        return res.json({ payouts: await partnerRepository.listPayouts(dashboard.partner.id) });
+        return res.json({ status: 'LIVE', payouts: await partnerRepository.listPayouts(dashboard.partner.id) });
       } catch (error) {
         console.error('[SIREN UA] payouts repository failure', { requestId: res.locals.requestId, message: error instanceof Error ? error.message : 'unknown' });
         return res.status(503).json({ error: 'PARTNER_DATA_UNAVAILABLE', status: 'NOT_CONNECTED', message: 'Partner data temporarily unavailable.' });
@@ -1517,6 +1519,7 @@ async function startServer() {
     }
     const list = payoutRequests.filter(p => p.partnerId === demoPartnerId);
     res.json({
+      status: 'DEMO_DATA',
       payouts: list.slice().reverse().map((payout) => ({
         ...payout,
         destinationAccount: maskSensitiveDestination(payout.destinationAccount)
