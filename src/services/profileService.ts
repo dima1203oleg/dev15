@@ -68,7 +68,7 @@ class ProfileService {
   public async getProfile(): Promise<DataEnvelope<UserProfileData>> {
     const updatedAt = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 
-    if (!runtimeConfig.apiBaseUrl && !runtimeConfig.allowDemoData) {
+    if (!runtimeConfig.apiBaseUrl && !runtimeConfig.referralAppleUserId && !runtimeConfig.allowDemoData) {
       return {
         data: null,
         state: 'NOT_CONNECTED',
@@ -82,7 +82,7 @@ class ProfileService {
     // ThreatServer's canonical identity is the referral user returned by
     // /api/referral/me. The legacy profile/dashboard routes do not expose this
     // account, so resolve the referral profile first when an identity is set.
-    if (runtimeConfig.apiBaseUrl && runtimeConfig.referralAppleUserId) {
+    if (runtimeConfig.referralAppleUserId) {
       try {
         const query = `?apple_user_id=${encodeURIComponent(runtimeConfig.referralAppleUserId)}`;
         const [remoteUser, remoteStats] = await Promise.all([
